@@ -4,7 +4,9 @@
     "pages/course/course",
     "pages/campus/campus",
     "pages/mine/mine",
-    "pages/camera/camera"
+    "pages/camera/camera",
+    "pages/menu/menu",
+    "pages/menu-admin/menu-admin"
   ],
   "window": {
     "navigationStyle": "custom",

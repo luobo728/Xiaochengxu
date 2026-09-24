@@ -47,6 +47,12 @@
       <view class="card-head">
         <view class="card-title">设置</view>
       </view>
+      <!-- 食谱管理入口（仅管理员可见） -->
+      <view class="row" wx:if="{{isAdmin}}" bindtap="onAdminTap">
+        <view class="row-ico" style="background:linear-gradient(135deg,#FFB020,#F08A00)">谱</view>
+        <view class="row-main"><view class="row-name">食谱管理</view></view>
+        <view class="arrow"></view>
+      </view>
       <view class="row">
         <view class="row-main">
           <view class="row-name">消息通知</view>

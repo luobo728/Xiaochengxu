@@ -1,4 +1,5 @@
 // app.js —— 全局逻辑与共享数据
+const env = require('./utils/env.js')
 
 // 顶部红色滚动屏展示的活动（bg 为卡片渐变背景，cover 留空则只用渐变）
 const ACTIVITIES = [
@@ -63,11 +64,14 @@ App({
     navBarHeight: 44,
     activities: ACTIVITIES,
     notices: NOTICES,
-    lastPhotoPath: ''
+    lastPhotoPath: '',
+    cloudReady: false,
+    cloudError: ''
   },
 
   onLaunch() {
     this.initSystemInfo()
+    this.initCloud()
   },
 
   // 兼容取状态栏高度：新版 API 优先，异常时兜底 20px
@@ -96,5 +100,26 @@ App({
 
     this.globalData.statusBarHeight = statusBarHeight
     this.globalData.navBarHeight = navBarHeight
+  },
+
+  // 云开发初始化：失败不让其它页面崩，只在食谱相关页面给出提示
+  initCloud() {
+    if (!wx.cloud) {
+      this.globalData.cloudReady = false
+      this.globalData.cloudError = '当前基础库不支持云开发，请升级微信后重试'
+      return
+    }
+    try {
+      const options = { traceUser: true }
+      if (env && env.ENV_ID) {
+        options.env = env.ENV_ID
+      }
+      wx.cloud.init(options)
+      this.globalData.cloudReady = true
+      this.globalData.cloudError = ''
+    } catch (e) {
+      this.globalData.cloudReady = false
+      this.globalData.cloudError = (e && e.message) || '云开发初始化失败'
+    }
   }
 })

@@ -83,6 +83,10 @@ Page({
 
   onQuickTap(e) {
     const key = e.currentTarget.dataset.key
+    if (key === 'meal') {
+      wx.navigateTo({ url: '/pages/menu/menu' })
+      return
+    }
     if (key === 'notice') {
       wx.switchTab({ url: '/pages/campus/campus' })
       return

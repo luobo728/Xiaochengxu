@@ -1,0 +1,373 @@
+/* pages/menu-admin/menu-admin.wxss —— 食谱管理端专有样式（通用 class 见 app.wxss） */
+
+/* 非 tab 页：不需要为底部自定义 tabBar 预留空间 */
+.page {
+  padding-bottom: 60rpx;
+}
+
+/* ---------- 顶部头图（食谱主题橙） ---------- */
+.hd-admin {
+  background: linear-gradient(135deg, #FFB020, #F08A00);
+}
+
+.hd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8rpx;
+}
+
+/* 标题已在 .hd-row 内，去掉 app.wxss 里的上间距 */
+.hd-admin .hd-title {
+  padding-top: 0;
+  font-size: 38rpx;
+}
+
+.hd-back {
+  flex-shrink: 0;
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hd-back-hover {
+  opacity: 0.7;
+}
+
+/* 右上占位：仅为保持标题居中 */
+.hd-back.ghost {
+  visibility: hidden;
+}
+
+/* 返回箭头（两条边框拼出的左尖括号） */
+.ico-back {
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: 6rpx;
+  border-left: 4rpx solid #FFFFFF;
+  border-bottom: 4rpx solid #FFFFFF;
+  transform: rotate(45deg);
+}
+
+/* ---------- 选择日期与餐次 ---------- */
+.opt-row {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+}
+
+.opt-lbl {
+  flex-shrink: 0;
+  width: 96rpx;
+  font-size: 26rpx;
+  color: #8A93A3;
+}
+
+.opt-val {
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2E6BFF;
+}
+
+/* 餐次胶囊：单选，选中为蓝色实底白字 */
+.pills {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.pill {
+  margin: 6rpx 12rpx 6rpx 0;
+  padding: 8rpx 22rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  color: #5A6273;
+  background: #F1F4FA;
+}
+
+.pill.on {
+  color: #FFFFFF;
+  font-weight: 600;
+  background: #2E6BFF;
+  box-shadow: 0 8rpx 16rpx rgba(46, 107, 255, 0.24);
+}
+
+/* 当前 openid（便于配置管理员白名单） */
+.adm-id {
+  margin-top: 14rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #F0F2F7;
+  font-size: 20rpx;
+  color: #A6AEBE;
+  word-break: break-all;
+}
+
+/* ---------- 上传区 ---------- */
+.up-box {
+  padding: 44rpx 24rpx;
+  border: 2rpx dashed #C6CDDA;
+  border-radius: 24rpx;
+  background: #FAFBFE;
+  text-align: center;
+}
+
+.up-box-hover {
+  border-color: #2E6BFF;
+  background: #F1F4FA;
+}
+
+.up-box.disabled {
+  opacity: 0.6;
+}
+
+.up-icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22rpx;
+}
+
+/* 加号 / 斜十字：每个由两条 CSS 线拼成 */
+.ico-plus {
+  position: relative;
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.ico-plus::before,
+.ico-plus::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 4rpx;
+  height: 40rpx;
+  margin-left: -2rpx;
+  border-radius: 2rpx;
+  background: #2E6BFF;
+}
+
+.ico-plus::after {
+  left: 0;
+  top: 50%;
+  width: 40rpx;
+  height: 4rpx;
+  margin-left: 0;
+  margin-top: -2rpx;
+}
+
+.ico-plus.rot {
+  margin-left: 22rpx;
+  transform: rotate(45deg);
+}
+
+.ico-plus.rot::before,
+.ico-plus.rot::after {
+  background: #FFB020;
+}
+
+.up-t1 {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.up-t2 {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+}
+
+.up-progress {
+  margin-top: 24rpx;
+}
+
+.up-ptxt {
+  margin-bottom: 12rpx;
+  font-size: 22rpx;
+  color: #8A93A3;
+}
+
+/* ---------- 已上传缩略图（三列） ---------- */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.cell {
+  position: relative;
+  width: 206rpx;
+  height: 206rpx;
+  margin-bottom: 14rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  background: #F1F4FA;
+}
+
+.cell-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 右上角半透明黑底删除按钮 */
+.cell-del {
+  position: absolute;
+  right: 8rpx;
+  top: 8rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 删除叉：两条白色斜线 */
+.ico-x {
+  position: relative;
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.ico-x::before,
+.ico-x::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 24rpx;
+  height: 3rpx;
+  margin-top: -2rpx;
+  border-radius: 2rpx;
+  background: #FFFFFF;
+}
+
+.ico-x::before {
+  transform: rotate(45deg);
+}
+
+.ico-x::after {
+  transform: rotate(-45deg);
+}
+
+.note {
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: #8A93A3;
+}
+
+/* ---------- 当日概览 ---------- */
+.ov-row {
+  display: flex;
+  align-items: center;
+  padding: 22rpx 0;
+}
+
+.ov-row + .ov-row {
+  border-top: 1rpx solid #F0F2F7;
+}
+
+.ov-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  color: #1B1F27;
+}
+
+.ov-val {
+  flex-shrink: 0;
+  font-size: 26rpx;
+  color: #8A93A3;
+}
+
+/* 当前选中的餐次高亮，与上方胶囊对应 */
+.ov-row.on .ov-name {
+  font-weight: 600;
+  color: #2E6BFF;
+}
+
+.ov-row.on .ov-val {
+  font-weight: 600;
+  color: #2E6BFF;
+}
+
+/* ---------- 非管理员 / 云开发未就绪 ---------- */
+.lock-box {
+  padding: 16rpx 0 4rpx;
+  text-align: center;
+}
+
+/* 锁：半圆锁梁 + 方形锁体 */
+.ico-lock {
+  position: relative;
+  width: 84rpx;
+  height: 80rpx;
+  margin: 8rpx auto 26rpx;
+}
+
+.ico-lock::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 54rpx;
+  height: 50rpx;
+  margin-left: -27rpx;
+  box-sizing: border-box;
+  border: 8rpx solid #C6CDDA;
+  border-bottom: none;
+  border-radius: 28rpx 28rpx 0 0;
+}
+
+.ico-lock::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 84rpx;
+  height: 56rpx;
+  border-radius: 16rpx;
+  background: #DCE3EF;
+}
+
+.lock-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.lock-sub {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+.lock-id {
+  margin-top: 18rpx;
+  font-size: 20rpx;
+  color: #A6AEBE;
+  word-break: break-all;
+}
+
+.lock-tip {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #F7F9FD;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #8A93A3;
+  text-align: left;
+}
+
+.btn-back {
+  margin-top: 32rpx;
+}

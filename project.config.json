@@ -14,12 +14,17 @@
     "useCompilerPlugins": false
   },
   "compileType": "miniprogram",
+  "cloudfunctionRoot": "cloudfunctions/",
   "simulatorPluginLibVersion": {},
   "packOptions": {
     "ignore": [
       {
         "type": "folder",
         "value": "preview"
+      },
+      {
+        "type": "folder",
+        "value": "docs"
       }
     ],
     "include": []

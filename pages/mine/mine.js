@@ -1,8 +1,11 @@
 const app = getApp()
+const menu = require('../../utils/menu.js')
 
 Page({
   data: {
     statusBarHeight: 20,
+    // 是否管理员（仅控制「食谱管理」入口是否显示）
+    isAdmin: false,
     // 孩子档案
     child: {
       avatar: '王',
@@ -63,6 +66,8 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 3 })
     }
+    // 管理员身份校验：仅用于展示「食谱管理」入口，失败静默
+    this.checkAdmin()
   },
 
   // 统一轻量交互
@@ -87,6 +92,35 @@ Page({
         if (res.confirm) {
           wx.showToast({ title: '已退出登录', icon: 'none' })
         }
+      }
+    })
+  },
+
+  // 管理员身份校验：仅决定入口是否显示，失败静默
+  checkAdmin() {
+    if (this.data.isAdmin) return
+    let task = null
+    try {
+      task = menu.whoami()
+    } catch (e) {
+      task = null
+    }
+    if (!task || typeof task.then !== 'function') return
+    task.then((res) => {
+      if (res && res.isAdmin && !this.data.isAdmin) {
+        this.setData({ isAdmin: true })
+      }
+    }).catch(() => {
+      // 家长端不暴露校验失败
+    })
+  },
+
+  // 管理员入口：食谱管理端
+  onAdminTap() {
+    wx.navigateTo({
+      url: '/pages/menu-admin/menu-admin',
+      fail() {
+        wx.showToast({ title: '打开失败', icon: 'none' })
       }
     })
   }

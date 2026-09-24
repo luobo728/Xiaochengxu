@@ -1,0 +1,140 @@
+<view class="page">
+  <view class="hd hd-admin" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack"><view class="ico-back"></view></view>
+      <view class="hd-title">食谱管理</view>
+      <view class="hd-back ghost"></view>
+    </view>
+    <view class="hd-sub">上传后家长端「今日食谱」立即可见</view>
+  </view>
+
+  <view class="body">
+    <!-- 分支 1：云开发未就绪 -->
+    <view class="card" wx:if="{{!cloudReady}}">
+      <view class="lock-box">
+        <view class="lock-title">云开发未就绪</view>
+        <view class="lock-sub">{{cloudError}}</view>
+        <view class="btn-primary btn-back" bindtap="goBack">返回</view>
+      </view>
+    </view>
+
+    <!-- 分支 2：身份检查中 -->
+    <view class="empty" wx:elif="{{!checked}}">正在校验身份…</view>
+
+    <!-- 分支 3：非管理员（不渲染任何上传 / 删除 UI） -->
+    <view class="card" wx:elif="{{!isAdmin}}">
+      <view class="lock-box">
+        <view class="ico-lock"></view>
+        <view class="lock-title">没有管理权限</view>
+        <view class="lock-sub">本页面仅幼儿园管理员可操作</view>
+        <view class="lock-id" wx:if="{{openid}}">{{openid}}</view>
+        <view class="lock-tip">把该 openid 加入云函数环境变量 ADMIN_OPENIDS，或写入数据库 menu_admins 集合（文档 ID = 该 openid）后重新进入本页</view>
+        <view class="btn-primary btn-back" bindtap="goBack">返回</view>
+      </view>
+    </view>
+
+    <!-- 分支 4：管理员 -->
+    <block wx:else>
+      <!-- 选择日期与餐次 -->
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">选择日期与餐次</view>
+          <view class="card-more">{{date === today ? '今天' : '历史日期'}}</view>
+        </view>
+
+        <view class="opt-row">
+          <view class="opt-lbl">日期</view>
+          <picker mode="date" value="{{date}}" end="{{today}}" bindchange="onDateChange">
+            <view class="opt-val">
+              <text>{{dateLabel}}</text>
+              <view class="arrow"></view>
+            </view>
+          </picker>
+        </view>
+
+        <view class="hairline"></view>
+
+        <view class="opt-row">
+          <view class="opt-lbl">餐次</view>
+          <view class="pills">
+            <view
+              class="pill {{meal === item.key ? 'on' : ''}}"
+              wx:for="{{meals}}"
+              wx:key="key"
+              data-key="{{item.key}}"
+              bindtap="onMealTap">{{item.name}}</view>
+          </view>
+        </view>
+
+        <view class="adm-id" wx:if="{{openid}}">当前 openid：{{openid}}</view>
+      </view>
+
+      <!-- 上传图片 -->
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">上传图片</view>
+          <view class="tag tag-orange">最多 9 张</view>
+        </view>
+
+        <view
+          class="up-box {{uploading ? 'disabled' : ''}}"
+          hover-class="{{uploading ? 'none' : 'up-box-hover'}}"
+          bindtap="onChoose">
+          <view class="up-icons">
+            <view class="ico-plus"></view>
+            <view class="ico-plus rot"></view>
+          </view>
+          <view class="up-t1">从相册或拍照添加图片</view>
+          <view class="up-t2 muted">单张建议 2MB 以内，最多 9 张</view>
+        </view>
+
+        <view class="up-progress" wx:if="{{uploading}}">
+          <view class="up-ptxt">上传中 {{done}}/{{total}}</view>
+          <view class="progress">
+            <view class="progress-inner" style="width:{{percent}}%"></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 当前日期 + 当前餐次已上传 -->
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">{{mealLabel}} 已上传</view>
+          <view class="card-more">{{current.length}} 张</view>
+        </view>
+
+        <view class="grid" wx:if="{{current.length}}">
+          <view class="cell" wx:for="{{current}}" wx:key="_id">
+            <image class="cell-img" src="{{item.fileID}}" mode="aspectFill" lazy-load></image>
+            <view class="cell-del" data-id="{{item._id}}" catchtap="onDelete">
+              <view class="ico-x"></view>
+            </view>
+          </view>
+        </view>
+        <view class="empty" wx:else>该餐次还没有图片</view>
+
+        <view class="hairline"></view>
+        <view class="note">删除会同时删除云存储中的文件</view>
+      </view>
+
+      <!-- 当日概览：点击某行可把上方餐次切换过去 -->
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">当日概览</view>
+          <view class="card-more">共 {{list.length}} 张</view>
+        </view>
+
+        <view
+          class="ov-row {{meal === item.key ? 'on' : ''}}"
+          wx:for="{{stats}}"
+          wx:key="key"
+          data-key="{{item.key}}"
+          bindtap="onMealTap">
+          <view class="ov-name">{{item.name}}</view>
+          <view class="ov-val">{{item.count}} 张</view>
+          <view class="arrow"></view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

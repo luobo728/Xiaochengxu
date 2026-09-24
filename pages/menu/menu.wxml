@@ -1,0 +1,84 @@
+<view class="page">
+  <!-- ============ 顶部：日期切换 ============ -->
+  <view class="hd hd-menu" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack">
+        <view class="ico-back"></view>
+      </view>
+      <view class="hd-title">今日食谱</view>
+      <view class="hd-back ghost"></view>
+    </view>
+    <view class="hd-sub">{{dateText}} · 共 {{total}} 张</view>
+
+    <view class="day-bar">
+      <view
+        class="day {{item.date === date ? 'on' : ''}}"
+        wx:for="{{days}}"
+        wx:key="date"
+        data-date="{{item.date}}"
+        bindtap="onDayTap">
+        <view class="day-week">{{item.week}}</view>
+        <view class="day-date">{{item.label}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="body">
+    <!-- 云开发还没就绪 -->
+    <view wx:if="{{!cloudReady}}" class="card">
+      <view class="card-head">
+        <view class="card-title">尚未连接云开发</view>
+      </view>
+      <view class="tip-text">{{cloudError || '请先在开发者工具中开通云开发并创建环境'}}</view>
+      <view class="tip-text muted">开通后把环境 ID 填到 utils/env.js 即可；只有一个环境时可以留空。</view>
+      <view class="btn-ghost" bindtap="onRetry">重新检测云开发</view>
+    </view>
+
+    <!-- 加载中 -->
+    <block wx:elif="{{loading}}">
+      <view class="card" wx:for="{{[1, 2]}}" wx:key="*this">
+        <view class="sk-line"></view>
+        <view class="sk-box"></view>
+      </view>
+    </block>
+
+    <!-- 加载失败 -->
+    <view wx:elif="{{failed}}" class="card">
+      <view class="empty">图片加载失败，请检查网络后重试</view>
+      <view class="btn-ghost" bindtap="onRetry">重新加载</view>
+    </view>
+
+    <!-- 当天还没有图片 -->
+    <view wx:elif="{{!groups.length}}" class="empty-wrap">
+      <view class="empty-ico"></view>
+      <view class="empty-title">这一天还没有上传食谱</view>
+      <view class="empty-sub">食谱由幼儿园后厨上传，请稍后再来看看</view>
+    </view>
+
+    <!-- 按餐次分组展示 -->
+    <block wx:else>
+      <view class="card" wx:for="{{groups}}" wx:key="key">
+        <view class="card-head">
+          <view class="card-title">{{item.name}}<text class="meal-time">{{item.time}}</text></view>
+          <view class="card-more">{{item.photos.length}} 张</view>
+        </view>
+        <view class="grid n{{item.photos.length === 1 ? 1 : (item.photos.length === 2 ? 2 : 3)}}">
+          <view
+            class="cell"
+            wx:for="{{item.photos}}"
+            wx:for-item="photo"
+            wx:for-index="pi"
+            wx:key="id"
+            data-meal="{{item.key}}"
+            data-index="{{pi}}"
+            hover-class="cell-hover"
+            bindtap="onPreview">
+            <image class="cell-img" src="{{photo.fileID}}" mode="aspectFill" lazy-load></image>
+          </view>
+        </view>
+      </view>
+
+      <view class="foot-tip">食谱由幼儿园后厨上传 · 仅供家长查看</view>
+    </block>
+  </view>
+</view>

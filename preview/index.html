@@ -50,6 +50,16 @@
   --ink-idle:#9AA1AD;
   --line:#F0F2F7;
   --chip:#F1F3F8;
+   /* 今日食谱主题（暖橙）与手机稿 4/5 专用 */
+   --orange:#F08A00;
+   --orange-deep:#E07B00;
+   --orange-grad:linear-gradient(135deg,#FFB020,#F08A00);
+   --orange-bar:linear-gradient(180deg,#FFB020,#F08A00);
+   --orange-dash:#E3B98A;
+   --ph-grad:linear-gradient(135deg,#FFE6C6,#FFD3A2);
+   --ink-3:#5B6474;
+   --pill-chip:#F1F4FA;
+   --shadow-card-sm:0 5px 15px rgba(24,40,80,.06);
 
   --r-card:14px;
   --r-screen:36px;
@@ -1264,6 +1274,319 @@ svg{display:block}
 .cam__shutter:active span{ transform:scale(.88); }
 
 /* =========================================================
+ /* =========================================================
+    手机稿 4 / 5 · 今日食谱（客户端） · 食谱管理（管理员端）
+    ---------------------------------------------------------
+    主题：暖橙 linear-gradient(135deg,#FFB020,#F08A00)
+    图片一律用「照片」占位块表示，不含真实食物照片
+    ========================================================= */
+ 
+ /* ---------- 橙色头图（两端共用） ---------- */
+ .m-hd{
+   position:relative;
+   flex:0 0 auto;
+    padding:6px 0 24px;
+   background:var(--orange-grad);
+   border-radius:0 0 18px 18px;
+   box-shadow:0 7px 17px rgba(240,138,0,.24);
+   color:#fff;
+ }
+ .m-hd > .status{ padding:0 16px; }
+ .m-hd__row{
+   height:40px;
+   padding:0 16px;
+   display:flex;
+   align-items:center;
+   justify-content:space-between;
+ }
+ .m-back{
+   flex:0 0 auto;
+   width:32px;
+   height:32px;
+   border-radius:50%;
+   background:rgba(255,255,255,.2);
+   display:grid;
+   place-items:center;
+ }
+ .m-back--ghost{ visibility:hidden; }
+ .m-hd__title{
+   font-size:19px;
+   font-weight:700;
+   line-height:24px;
+   letter-spacing:.4px;
+ }
+ .m-hd__sub{
+   padding:0 16px;
+   font-size:12px;
+   line-height:17px;
+   color:rgba(255,255,255,.82);
+ }
+ 
+ /* 日期胶囊：横排，可横向滚动 */
+ .m-days{
+   margin-top:12px;
+   padding:0 16px;
+   display:flex;
+   gap:8px;
+   overflow-x:auto;
+   scrollbar-width:none;
+ }
+ .m-days::-webkit-scrollbar{ display:none; }
+ .m-day{
+   flex:0 0 auto;
+   min-width:52px;
+   padding:6px 9px;
+   border-radius:12px;
+   background:rgba(255,255,255,.2);
+   text-align:center;
+ }
+  .m-day__week{ display:block; font-size:11px; line-height:14px; color:rgba(255,255,255,.9); }
+  .m-day__date{ display:block; margin-top:2px; font-size:12px; font-weight:700; line-height:16px; color:#fff; }
+ .m-day--on{ background:#fff; }
+ .m-day--on .m-day__week{ color:var(--orange-deep); }
+ .m-day--on .m-day__date{ color:var(--orange); }
+ 
+ /* ---------- 内容区：上浮 16px 压住头图底部 ---------- */
+ .m-body{
+   position:relative;
+   z-index:2;
+   flex:1 1 auto;
+   min-height:0;
+   margin-top:-16px;
+    padding:0 16px 8px;
+   display:flex;
+   flex-direction:column;
+    gap:10px;
+   overflow-y:auto;
+   scrollbar-width:none;
+ }
+ .m-body::-webkit-scrollbar{ width:0; height:0; }
+ .m-card{
+   flex:0 0 auto;
+    padding:10px 12px;
+   background:var(--surface);
+   border-radius:var(--r-card);
+   box-shadow:var(--shadow-card-sm);
+ }
+ .card__title--orange::before{ background:var(--orange-bar); }
+ 
+ /* 图片网格与「照片」占位块 */
+ .m-grid{ margin-top:8px; display:grid; gap:8px; }
+ .m-grid--2{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .m-grid--3{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+ .m-grid--1{ grid-template-columns:minmax(0,1fr); }
+ .m-ph{
+   position:relative;
+   border-radius:10px;
+   background:var(--ph-grad);
+   display:grid;
+   place-items:center;
+   color:rgba(0,0,0,.28);
+   font-size:11px;
+   letter-spacing:.5px;
+ }
+ .m-grid--2 .m-ph{ height:140px; }
+ .m-grid--3 .m-ph{ height:100px; }
+ .m-grid--1 .m-ph{ height:210px; }
+ .m-ph__del{
+   position:absolute;
+   top:6px;
+   right:6px;
+   width:20px;
+   height:20px;
+   border-radius:50%;
+   background:rgba(0,0,0,.45);
+ }
+ .m-ph__del::before,
+ .m-ph__del::after{
+   content:"";
+   position:absolute;
+   top:50%;
+   left:50%;
+   width:9px;
+   height:1.6px;
+   border-radius:1px;
+   background:#fff;
+ }
+ .m-ph__del::before{ transform:translate(-50%,-50%) rotate(45deg); }
+ .m-ph__del::after{ transform:translate(-50%,-50%) rotate(-45deg); }
+ 
+ /* ---------- 手机稿 5：选择日期与餐次 ---------- */
+ .m-opt{
+   display:flex;
+   align-items:center;
+   justify-content:space-between;
+   gap:10px;
+    min-height:32px;
+    padding:5px 2px;
+ }
+ .m-opt__lbl{ flex:0 0 auto; font-size:13px; line-height:18px; color:var(--ink-3); }
+ .m-opt__val{
+   display:inline-flex;
+   align-items:center;
+   gap:6px;
+   min-width:0;
+   font-size:14px;
+   line-height:18px;
+   color:var(--ink);
+ }
+ .m-pills{
+   display:flex;
+   flex-wrap:wrap;
+   justify-content:flex-end;
+   gap:8px 6px;
+ }
+ .m-pill{
+   flex:0 0 auto;
+   height:26px;
+   padding:0 11px;
+   border-radius:13px;
+   background:var(--pill-chip);
+   color:var(--ink-2);
+   font-size:12px;
+   line-height:26px;
+   white-space:nowrap;
+ }
+ .m-pill--on{
+   background:var(--brand);
+   color:#fff;
+   font-weight:600;
+   box-shadow:0 4px 8px rgba(46,107,255,.24);
+ }
+ .m-hair{ height:1px; background:var(--line); }
+ 
+ /* ---------- 手机稿 5：上传区块 ---------- */
+ .m-up{
+   padding:18px;
+   border:1.5px dashed var(--orange-dash);
+   border-radius:12px;
+   text-align:center;
+ }
+  .m-up__plus{ display:block;
+   position:relative;
+   width:24px;
+   height:24px;
+   margin:0 auto;
+ }
+ .m-up__plus::before,
+ .m-up__plus::after{
+   content:"";
+   position:absolute;
+   top:50%;
+   left:50%;
+   border-radius:2px;
+   background:var(--orange);
+   transform:translate(-50%,-50%);
+ }
+ .m-up__plus::before{ width:18px; height:3px; }
+ .m-up__plus::after{ width:3px; height:18px; }
+  .m-up__t1{ margin-top:6px; font-size:13px; line-height:18px; color:var(--ink-3); }
+  .m-up__t2{ margin-top:4px; font-size:11px; line-height:15px; color:var(--ink-2); }
+ 
+ /* ---------- 手机稿 5：已上传说明 + 当日概览 ---------- */
+ .m-note{
+    margin-top:10px;
+    padding-top:8px;
+   border-top:1px solid var(--line);
+   font-size:11px;
+   line-height:15px;
+   color:var(--ink-2);
+ }
+ .m-ovs{ margin-top:8px; }
+ .m-ov{
+   display:flex;
+   align-items:center;
+   justify-content:space-between;
+    min-height:32px;
+   padding:0 2px;
+ }
+ .m-ov + .m-ov{ border-top:1px solid var(--line); }
+ .m-ov__name{ font-size:13px; line-height:18px; color:var(--ink); }
+ .m-ov__val{ font-size:13px; font-weight:600; line-height:18px; color:var(--ink); }
+ .m-ov__val--zero{ font-weight:400; color:var(--ink-idle); }
+ 
+ /* ---------- 手机稿 4：页脚 ---------- */
+ .m-foot{
+    padding:0;
+   text-align:center;
+   font-size:11px;
+   line-height:15px;
+   color:var(--ink-2);
+ }
+ 
+ /* ---------- 手机稿 5 附：非管理员视图示意 ---------- */
+ .state-card{
+   width:100%;
+   max-width:308px;
+   display:flex;
+   flex-direction:column;
+   gap:8px;
+ }
+ .state-card__label{
+   font-size:11.5px;
+   line-height:16px;
+   color:var(--page-ink-2);
+   text-align:center;
+ }
+ .state-card__box{
+   padding:16px;
+   background:var(--surface);
+   border-radius:var(--r-card);
+   box-shadow:0 14px 34px rgba(0,0,0,.4);
+   text-align:center;
+   color:var(--ink);
+ }
+  .state-card__lock{ display:block;
+   position:relative;
+   width:42px;
+   height:40px;
+   margin:0 auto 12px;
+ }
+ .state-card__lock::before{
+   content:"";
+   position:absolute;
+   left:50%;
+   top:0;
+   box-sizing:border-box;
+   width:27px;
+   height:25px;
+   margin-left:-13.5px;
+   border:4px solid #C6CDDA;
+   border-bottom:none;
+   border-radius:14px 14px 0 0;
+ }
+ .state-card__lock::after{
+   content:"";
+   position:absolute;
+   left:0;
+   bottom:0;
+   width:42px;
+   height:28px;
+   border-radius:8px;
+   background:#DCE3EF;
+ }
+ .state-card__title{ font-size:15px; font-weight:600; line-height:20px; }
+ .state-card__sub{ margin-top:6px; font-size:12px; line-height:17px; color:var(--ink-2); }
+ .state-card__id{
+   margin-top:8px;
+   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+   font-size:11px;
+   line-height:15px;
+   color:#A6AEBE;
+   overflow-wrap:anywhere;
+ }
+ .state-card__btn{
+   display:block;
+   height:40px;
+   margin-top:12px;
+   border-radius:20px;
+   background:var(--brand-grad);
+   color:#fff;
+   font-size:14px;
+   font-weight:600;
+   line-height:40px;
+   box-shadow:0 6px 12px rgba(46,107,255,.24);
+ }
    响应式 + 动效降级
    ========================================================= */
 @media (max-width:1400px){
@@ -1299,7 +1622,7 @@ svg{display:block}
 <header class="page">
   <h1 class="page__title">阳光幼儿园 · 小程序 UI 预览</h1>
   <p class="page__lede">
-    三块手机稿按 750rpx ≈ 390px（2rpx ≈ 1px）1:1 还原：首页（红色活动滚动屏 + 快捷入口 + 今日安排 + 最新通知 + 底部导航）、底部导航栏 ×2 规范对照、相机页。
+     五块手机稿按 750rpx ≈ 390px（2rpx ≈ 1px）1:1 还原：首页（红色活动滚动屏 + 快捷入口 + 今日安排 + 最新通知 + 底部导航）、底部导航栏 ×2 规范对照、相机页、今日食谱（客户端只读）、食谱管理（管理员端）。
   </p>
   <p class="page__note"><b>演示数据</b> 页面内的活动、通知、课程、时间均为示意内容，非真实接口数据。</p>
 </header>
@@ -1757,6 +2080,190 @@ svg{display:block}
     <figcaption class="device__caption"><b>03</b>相机页 · 点击中间 + 进入</figcaption>
   </figure>
 
+   <!-- ============================================================
+        手机稿 4 · 今日食谱（客户端，只读）
+        ============================================================ -->
+   <figure class="device">
+     <div class="shell">
+       <div class="screen screen--menu">
+ 
+         <section class="m-hd" aria-label="今日食谱头部">
+           <div class="status">
+             <span class="status__time">9:41</span>
+             <span class="status__icons" aria-hidden="true">
+               <svg viewBox="0 0 17 11" width="17" height="11" fill="none"><rect x="0" y="7.2" width="3" height="3.8" rx="1.1" fill="#fff"/><rect x="4.6" y="5.2" width="3" height="5.8" rx="1.1" fill="#fff"/><rect x="9.2" y="2.9" width="3" height="8.1" rx="1.1" fill="#fff"/><rect x="13.8" y=".6" width="3" height="10.4" rx="1.1" fill="#fff"/></svg>
+               <svg viewBox="0 0 16 11" width="16" height="11" fill="none"><path d="M1.1 3.7a10.4 10.4 0 0 1 13.8 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M3.7 6.4a6.6 6.6 0 0 1 8.6 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="9.5" r="1.35" fill="#fff"/></svg>
+               <svg viewBox="0 0 25 12" width="25" height="12" fill="none"><rect x=".6" y=".6" width="20.8" height="10.8" rx="3.1" stroke="rgba(255,255,255,.6)" stroke-width="1.2"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.9" fill="#fff"/><path d="M23.2 4.3v3.4c.9-.4 1.3-1 1.3-1.7s-.4-1.3-1.3-1.7Z" fill="rgba(255,255,255,.6)"/></svg>
+             </span>
+           </div>
+ 
+           <div class="m-hd__row">
+             <span class="m-back" role="img" aria-label="返回">
+               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+             </span>
+             <h2 class="m-hd__title">今日食谱</h2>
+             <span class="m-back m-back--ghost" aria-hidden="true"></span>
+           </div>
+ 
+           <p class="m-hd__sub">2026-04-16 今天 · 共 6 张</p>
+ 
+           <div class="m-days" role="group" aria-label="按日期查看食谱">
+             <div class="m-day m-day--on"><span class="m-day__week">今天</span><span class="m-day__date">4/16</span></div>
+             <div class="m-day"><span class="m-day__week">昨天</span><span class="m-day__date">4/15</span></div>
+             <div class="m-day"><span class="m-day__week">周二</span><span class="m-day__date">4/14</span></div>
+             <div class="m-day"><span class="m-day__week">周一</span><span class="m-day__date">4/13</span></div>
+             <div class="m-day"><span class="m-day__week">周日</span><span class="m-day__date">4/12</span></div>
+             <div class="m-day"><span class="m-day__week">周六</span><span class="m-day__date">4/11</span></div>
+           </div>
+         </section>
+ 
+         <section class="m-body" aria-label="食谱内容">
+ 
+           <div class="m-card">
+             <div class="card__head">
+               <h3 class="card__title card__title--orange">早餐<span class="card__date">07:30</span></h3>
+               <span class="card__more">2 张</span>
+             </div>
+             <div class="m-grid m-grid--2">
+               <span class="m-ph" role="img" aria-label="早餐 照片 1（演示占位）"><span class="m-ph__txt">照片</span></span>
+               <span class="m-ph" role="img" aria-label="早餐 照片 2（演示占位）"><span class="m-ph__txt">照片</span></span>
+             </div>
+           </div>
+ 
+           <div class="m-card">
+             <div class="card__head">
+               <h3 class="card__title card__title--orange">午餐<span class="card__date">11:30</span></h3>
+               <span class="card__more">3 张</span>
+             </div>
+             <div class="m-grid m-grid--3">
+               <span class="m-ph" role="img" aria-label="午餐 照片 1（演示占位）"><span class="m-ph__txt">照片</span></span>
+               <span class="m-ph" role="img" aria-label="午餐 照片 2（演示占位）"><span class="m-ph__txt">照片</span></span>
+               <span class="m-ph" role="img" aria-label="午餐 照片 3（演示占位）"><span class="m-ph__txt">照片</span></span>
+             </div>
+           </div>
+ 
+           <div class="m-card">
+             <div class="card__head">
+               <h3 class="card__title card__title--orange">午点<span class="card__date">15:00</span></h3>
+               <span class="card__more">1 张</span>
+             </div>
+             <div class="m-grid m-grid--1">
+               <span class="m-ph" role="img" aria-label="午点 照片 1（演示占位）"><span class="m-ph__txt">照片</span></span>
+             </div>
+           </div>
+ 
+           <p class="m-foot">食谱由幼儿园后厨上传 · 仅供家长查看</p>
+         </section>
+ 
+       </div>
+     </div>
+     <figcaption class="device__caption"><b>04</b>今日食谱 · 客户端只读（加载 + 显示 + 点开看大图）<span class="device__note">点任意图片 → 全屏预览；页面上没有上传 / 删除 / 保存入口</span></figcaption>
+   </figure>
+ 
+   <!-- ============================================================
+        手机稿 5 · 食谱管理（管理员端）
+        ============================================================ -->
+   <figure class="device">
+     <div class="shell">
+       <div class="screen screen--menu">
+ 
+         <section class="m-hd" aria-label="食谱管理头部">
+           <div class="status">
+             <span class="status__time">9:41</span>
+             <span class="status__icons" aria-hidden="true">
+               <svg viewBox="0 0 17 11" width="17" height="11" fill="none"><rect x="0" y="7.2" width="3" height="3.8" rx="1.1" fill="#fff"/><rect x="4.6" y="5.2" width="3" height="5.8" rx="1.1" fill="#fff"/><rect x="9.2" y="2.9" width="3" height="8.1" rx="1.1" fill="#fff"/><rect x="13.8" y=".6" width="3" height="10.4" rx="1.1" fill="#fff"/></svg>
+               <svg viewBox="0 0 16 11" width="16" height="11" fill="none"><path d="M1.1 3.7a10.4 10.4 0 0 1 13.8 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M3.7 6.4a6.6 6.6 0 0 1 8.6 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="9.5" r="1.35" fill="#fff"/></svg>
+               <svg viewBox="0 0 25 12" width="25" height="12" fill="none"><rect x=".6" y=".6" width="20.8" height="10.8" rx="3.1" stroke="rgba(255,255,255,.6)" stroke-width="1.2"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.9" fill="#fff"/><path d="M23.2 4.3v3.4c.9-.4 1.3-1 1.3-1.7s-.4-1.3-1.3-1.7Z" fill="rgba(255,255,255,.6)"/></svg>
+             </span>
+           </div>
+ 
+           <div class="m-hd__row">
+             <span class="m-back" role="img" aria-label="返回">
+               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+             </span>
+             <h2 class="m-hd__title">食谱管理</h2>
+             <span class="m-back m-back--ghost" aria-hidden="true"></span>
+           </div>
+ 
+           <p class="m-hd__sub">上传后家长端「今日食谱」立即可见</p>
+         </section>
+ 
+         <section class="m-body" aria-label="管理员操作区">
+ 
+           <div class="m-card">
+             <div class="m-opt">
+               <span class="m-opt__lbl">日期</span>
+               <span class="m-opt__val">2026-04-16 周四
+                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#C3CAD6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+               </span>
+             </div>
+             <div class="m-hair"></div>
+             <div class="m-opt">
+               <span class="m-opt__lbl">餐次</span>
+               <div class="m-pills" role="group" aria-label="选择餐次">
+                 <span class="m-pill">早餐</span>
+                 <span class="m-pill">早点</span>
+                 <span class="m-pill m-pill--on">午餐</span>
+                 <span class="m-pill">午点</span>
+                 <span class="m-pill">晚餐</span>
+               </div>
+             </div>
+           </div>
+ 
+           <div class="m-card">
+             <div class="m-up">
+               <span class="m-up__plus" aria-hidden="true"></span>
+               <p class="m-up__t1">从相册或拍照添加图片</p>
+               <p class="m-up__t2">单张建议 2MB 以内，最多 9 张</p>
+             </div>
+           </div>
+ 
+           <div class="m-card">
+             <div class="card__head">
+               <h3 class="card__title card__title--orange">已上传</h3>
+               <span class="card__more">午餐 · 3 张</span>
+             </div>
+             <div class="m-grid m-grid--3">
+               <span class="m-ph" role="img" aria-label="已上传 照片 1（演示占位）"><span class="m-ph__txt">照片</span><span class="m-ph__del" aria-hidden="true"></span></span>
+               <span class="m-ph" role="img" aria-label="已上传 照片 2（演示占位）"><span class="m-ph__txt">照片</span><span class="m-ph__del" aria-hidden="true"></span></span>
+               <span class="m-ph" role="img" aria-label="已上传 照片 3（演示占位）"><span class="m-ph__txt">照片</span><span class="m-ph__del" aria-hidden="true"></span></span>
+             </div>
+             <p class="m-note">删除会同时删除云存储中的文件</p>
+           </div>
+ 
+           <div class="m-card">
+             <div class="card__head">
+               <h3 class="card__title card__title--orange">今日概览</h3>
+               <span class="card__more">共 7 张</span>
+             </div>
+             <div class="m-ovs">
+               <div class="m-ov"><span class="m-ov__name">早餐</span><span class="m-ov__val">2 张</span></div>
+               <div class="m-ov"><span class="m-ov__name">早点</span><span class="m-ov__val">1 张</span></div>
+               <div class="m-ov"><span class="m-ov__name">午餐</span><span class="m-ov__val">3 张</span></div>
+               <div class="m-ov"><span class="m-ov__name">午点</span><span class="m-ov__val">1 张</span></div>
+               <div class="m-ov"><span class="m-ov__name">晚餐</span><span class="m-ov__val m-ov__val--zero">0 张</span></div>
+             </div>
+           </div>
+ 
+           <p class="m-foot">当前 openid：oXy…8f2（仅供首次配置管理员时复制）</p>
+         </section>
+ 
+       </div>
+     </div>
+     <figcaption class="device__caption"><b>05</b>食谱管理 · 仅管理员可进入<span class="device__note">入口只在「我的」页对管理员显示</span><span class="device__note">非管理员打开只会看到「没有管理权限」</span></figcaption>
+ 
+     <div class="state-card">
+       <p class="state-card__label">非管理员视图 · 状态示意</p>
+       <div class="state-card__box">
+         <span class="state-card__lock" aria-hidden="true"></span>
+         <p class="state-card__title">没有管理权限</p>
+         <p class="state-card__sub">本页面仅幼儿园管理员可操作</p>
+         <p class="state-card__id">当前 openid：oXy…8f2</p>
+         <span class="state-card__btn">返回</span>
+       </div>
+     </div>
+   </figure>
+ 
 </main>
 
 <script>

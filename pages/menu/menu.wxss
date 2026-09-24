@@ -1,0 +1,275 @@
+/* pages/menu/menu.wxss —— 今日食谱（只读展示页，暖橙色主题） */
+
+.page {
+  padding-bottom: 60rpx;
+  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 顶部 ---------- */
+.hd-menu {
+  padding-bottom: 56rpx;
+  background: linear-gradient(135deg, #FFB020, #F08A00);
+  box-shadow: 0 14rpx 34rpx rgba(240, 138, 0, 0.24);
+}
+
+.hd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 0 8rpx;
+}
+
+.hd-menu .hd-title {
+  padding-top: 0;
+  font-size: 38rpx;
+}
+
+.hd-back {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hd-back.ghost {
+  visibility: hidden;
+}
+
+.hd-back-hover {
+  background: rgba(255, 255, 255, 0.36);
+}
+
+.ico-back {
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: -4rpx;
+  border-left: 4rpx solid #ffffff;
+  border-bottom: 4rpx solid #ffffff;
+  transform: rotate(45deg);
+}
+
+/* ---------- 日期胶囊 ---------- */
+.day-bar {
+  margin-top: 26rpx;
+  white-space: nowrap;
+}
+
+.day {
+  display: inline-block;
+  vertical-align: top;
+  min-width: 104rpx;
+  margin-right: 16rpx;
+  padding: 12rpx 18rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.2);
+  text-align: center;
+}
+
+.day.on {
+  background: #ffffff;
+}
+
+.day-week {
+  font-size: 22rpx;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.day-date {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #ffffff;
+}
+
+.day.on .day-week {
+  color: #E07B00;
+}
+
+.day.on .day-date {
+  color: #F08A00;
+}
+
+/* ---------- 内容区 ---------- */
+.body {
+  margin-top: -32rpx;
+}
+
+.card-title::before {
+  background: linear-gradient(180deg, #FFB020, #F08A00);
+}
+
+.meal-time {
+  margin-left: 14rpx;
+  font-size: 22rpx;
+  font-weight: 400;
+  color: #8A93A3;
+}
+
+/* ---------- 图片网格 ---------- */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.cell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20rpx;
+  background: #F1F4FA;
+}
+
+.cell-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cell-hover {
+  opacity: 0.86;
+}
+
+.grid.n1 .cell {
+  width: 100%;
+  height: 420rpx;
+}
+
+.grid.n2 .cell {
+  width: calc(50% - 10rpx);
+  height: 280rpx;
+  margin-right: 20rpx;
+}
+
+.grid.n2 .cell:nth-child(2n) {
+  margin-right: 0;
+}
+
+.grid.n3 .cell {
+  width: calc(33.33% - 14rpx);
+  height: 200rpx;
+  margin-right: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.grid.n3 .cell:nth-child(3n) {
+  margin-right: 0;
+}
+
+/* ---------- 加载中骨架 ---------- */
+.sk-line {
+  width: 180rpx;
+  height: 30rpx;
+  border-radius: 15rpx;
+  background: #EEF1F7;
+}
+
+.sk-box {
+  margin-top: 24rpx;
+  height: 280rpx;
+  border-radius: 20rpx;
+  background: #F3F5FA;
+}
+
+.sk-line,
+.sk-box {
+  animation: sk-breathe 1.4s ease-in-out infinite;
+}
+
+@keyframes sk-breathe {
+  0% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+
+/* ---------- 空状态 / 提示 ---------- */
+.empty-wrap {
+  padding: 120rpx 60rpx 60rpx;
+  text-align: center;
+}
+
+.empty-ico {
+  position: relative;
+  width: 140rpx;
+  height: 140rpx;
+  margin: 0 auto 32rpx;
+  border-radius: 44rpx;
+  background: linear-gradient(135deg, #FFE7C2, #FFD08A);
+}
+
+.empty-ico::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 72rpx;
+  height: 72rpx;
+  margin: -36rpx 0 0 -36rpx;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.empty-ico::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34rpx;
+  height: 34rpx;
+  margin: -17rpx 0 0 -17rpx;
+  border-radius: 50%;
+  background: #FFD08A;
+}
+
+.empty-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.empty-sub {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+.tip-text {
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #5B6474;
+}
+
+.tip-text.muted {
+  margin-top: 12rpx;
+  font-size: 23rpx;
+  color: #8A93A3;
+}
+
+.btn-ghost {
+  margin-top: 24rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-radius: 44rpx;
+  background: #F1F4FA;
+  color: #2E6BFF;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.foot-tip {
+  padding: 12rpx 0 8rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #B4BBC8;
+  letter-spacing: 1rpx;
+}

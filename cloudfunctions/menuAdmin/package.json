@@ -1,0 +1,9 @@
+{
+  "name": "menuAdmin",
+  "version": "1.0.0",
+  "description": "食谱图片管理：仅管理员可新增/删除",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
