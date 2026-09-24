@@ -8,9 +8,9 @@
 /* =========================================================
    设计契约 / Design contract
    ---------------------------------------------------------
-   使命：把「阳光幼儿园」小程序的首页、底部导航栏规范、相机页
-        三屏放在一个深色画布上，供评审在浏览器里直接看稿并试用
-        已定稿的交互（活动轮播 / 跑马灯 / tab 高亮 / + 按钮 tooltip）。
+  使命：把「阳光幼儿园」小程序六块手机稿放在一个深色画布上，供评审在浏览器
+        里直接看稿并试用已定稿的交互（活动轮播 / 跑马灯 / tab 高亮 /
+        + 按钮 tooltip / 相机页「扫码 ↔ 拍照」分段滑块）。
    比例：小程序 750rpx ≈ 390px 设计宽（2rpx ≈ 1px）。
    间距：只用 4 / 8 / 12 / 16 / 20 的倍数。
    颜色：
@@ -26,7 +26,7 @@
    动效：state change 用 160–200ms 立即反馈；活动卡切换 500ms
         cubic-bezier(.22,.68,0,1)；+ 按钮 180ms 弹性缩放。
         Do：动效只表达状态变化；Don't：transition:all / 匀速线性。
-        降级：prefers-reduced-motion 下位移归零、跑马灯停走。
+      降级：prefers-reduced-motion 下位移归零、跑马灯与扫描线停摆。
    ========================================================= */
 
 :root{
@@ -216,6 +216,7 @@ svg{display:block}
 .nav-add:focus-visible,
 .status__bell:focus-visible,
 .cam__circle:focus-visible,
+.cam__seg-item:focus-visible,
 .cam__shutter:focus-visible{
   outline:2px solid #7FB2FF;
   outline-offset:2px;
@@ -1154,7 +1155,13 @@ svg{display:block}
 }
 
 /* =========================================================
-   手机稿 3 · 相机页
+   手机稿 3 / 4 · 相机页（扫码模式 / 拍照模式）
+   ---------------------------------------------------------
+   纯黑底 #08090C，两种模式共用一条 140 × 36 分段滑块（滑块 67 × 30）。
+   扫码：230 × 230 取景框（四角各两条 3px 白色角线）+ 210 × 1.5 扫描线
+        （2.2s 上下往复），框下 12px 提示。
+   拍照：#12151B 取景区 + 四角 2px 取景角 + 对焦框 + 闪光灯 / 快门 / 相册行。
+   切换只改 [data-mode]：滑块位移 200ms 弹性、标题与取景区即时替换。
    ========================================================= */
 .screen--camera{ background:#08090C; color:#fff; }
 .cam__top{
@@ -1174,6 +1181,9 @@ svg{display:block}
   letter-spacing:.4px;
   color:#fff;
 }
+/* 标题随模式互换：扫码 / 拍照 */
+.screen--camera[data-mode="scan"] .cam__title--shot,
+.screen--camera[data-mode="shot"] .cam__title--scan{ display:none; }
  .cam__circle{
    width:32px;
    height:32px;
@@ -1187,9 +1197,10 @@ svg{display:block}
  }
  .cam__circle:hover{ background:rgba(255,255,255,.28); }
  .cam__circle:active{ transform:scale(.9); }
- /* 右上占位：与关闭钮等宽、不可见，仅用于保持「拍照」标题居中（微信胶囊占据该区域） */
+ /* 右上占位：与关闭钮等宽的透明圆，不可见，仅用于保持标题居中（微信胶囊占据该区域） */
  .cam__circle--phantom{
    visibility:hidden;
+   background:transparent;
    cursor:default;
    pointer-events:none;
  }
@@ -1198,7 +1209,20 @@ svg{display:block}
   position:relative;
   flex:1 1 auto;
   min-height:0;
-  background:#12151B;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#08090C;
+}
+.screen--camera[data-mode="shot"] .cam__view{ background:#12151B; }
+/* 两套取景区互斥显示 */
+.screen--camera[data-mode="scan"] .cam__layer--shot,
+.screen--camera[data-mode="shot"] .cam__layer--scan{ display:none; }
+
+/* —— 拍照模式取景区：四角 2px 取景角 + 中央对焦框 —— */
+.cam__layer--shot{
+  position:absolute;
+  inset:0;
 }
 .cam__corner{
   position:absolute;
@@ -1221,34 +1245,160 @@ svg{display:block}
   border-radius:8px;
 }
 
+/* —— 扫码模式取景区：230 × 230 取景框（四条角线各 26 × 3px）+ 扫描线 —— */
+.cam__layer--scan{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+.cam__scan{
+  position:relative;
+  width:230px;
+  height:230px;
+}
+.cam__scancorner{
+  position:absolute;
+  width:26px;
+  height:26px;
+}
+.cam__scancorner::before,
+.cam__scancorner::after{
+  content:"";
+  position:absolute;
+  border-radius:2px;
+  background:#fff;
+}
+.cam__scancorner::before{ width:26px; height:3px; }
+.cam__scancorner::after{ width:3px; height:26px; }
+.cam__scancorner--tl{ top:0; left:0; }
+.cam__scancorner--tl::before,
+.cam__scancorner--tl::after{ top:0; left:0; }
+.cam__scancorner--tr{ top:0; right:0; }
+.cam__scancorner--tr::before,
+.cam__scancorner--tr::after{ top:0; right:0; }
+.cam__scancorner--bl{ bottom:0; left:0; }
+.cam__scancorner--bl::before,
+.cam__scancorner--bl::after{ bottom:0; left:0; }
+.cam__scancorner--br{ bottom:0; right:0; }
+.cam__scancorner--br::before,
+.cam__scancorner--br::after{ bottom:0; right:0; }
+.cam__scanline{
+  position:absolute;
+  top:26px;
+  left:50%;
+  width:210px;
+  height:1.5px;
+  margin-left:-105px;
+  border-radius:1px;
+  background:#fff;
+  opacity:.9;
+  animation:cam-scan 2.2s cubic-bezier(.45,0,.55,1) infinite;
+}
+@keyframes cam-scan{
+  0%,100%{ transform:translateY(0); }
+  50%{ transform:translateY(164px); }
+}
+.cam__viewhint{
+  font-size:12px;
+  line-height:17px;
+  letter-spacing:.2px;
+  color:#fff;
+}
+
+/* —— 底部：分段滑块 + 扫码提示 / 拍照控制行 —— */
 .cam__bottom{
   flex:0 0 auto;
-  padding:20px 46px 30px;
+  padding:16px 0 40px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+.cam__seg{
+  position:relative;
+  flex:0 0 auto;
+  width:140px;
+  height:36px;
+  padding:3px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  border-radius:18px;
+  background:rgba(255,255,255,.16);
+}
+.cam__seg-knob{
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:67px;
+  height:30px;
+  border-radius:15px;
+  background:#fff;
+  transition:transform var(--t-base) var(--ease-spring);
+}
+.screen--camera[data-mode="shot"] .cam__seg-knob{ transform:translateX(67px); }
+.cam__seg-item{
+  position:relative;
+  z-index:1;
+  min-width:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:rgba(255,255,255,.85);
+  font-size:13px;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:color var(--t-fast) var(--ease-out);
+}
+.cam__seg-item:hover{ color:#fff; }
+.cam__seg-item:active{ opacity:.72; }
+/* 选中格：深色 600 字重；另一格半透明白 */
+.screen--camera[data-mode="scan"] .cam__seg-item--scan,
+.screen--camera[data-mode="shot"] .cam__seg-item--shot{
+  color:#1B1F27;
+  font-weight:600;
+}
+.cam__seghint{
+  font-size:11px;
+  line-height:15px;
+  letter-spacing:.2px;
+  color:rgba(255,255,255,.6);
+}
+.screen--camera[data-mode="shot"] .cam__seghint{ display:none; }
+
+.cam__ctls{
+  width:100%;
+  margin-top:12px;
+  padding:0 40px;
   display:flex;
   align-items:center;
   justify-content:space-between;
 }
-.cam__ctl{
-  width:64px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:6px;
-  color:#fff;
-}
-.cam__ctl-icon{
-  width:44px;
-  height:44px;
-  border-radius:50%;
-  background:rgba(255,255,255,.1);
-  display:grid;
-  place-items:center;
-}
-.cam__ctl-label{
-  font-size:12px;
-  line-height:15px;
-  color:rgba(255,255,255,.9);
-}
+.screen--camera[data-mode="scan"] .cam__ctls{ display:none; }
+ .cam__ctl{
+   width:64px;
+   display:flex;
+   flex-direction:column;
+   align-items:center;
+   gap:6px;
+   color:#fff;
+ }
+ .cam__ctl-icon{
+   width:44px;
+   height:44px;
+   border-radius:50%;
+   background:rgba(255,255,255,.1);
+   display:grid;
+   place-items:center;
+ }
+ .cam__ctl-label{
+   font-size:11px;
+   line-height:15px;
+   color:rgba(255,255,255,.9);
+ }
 .cam__shutter{
   flex:0 0 auto;
   width:76px;
@@ -1275,7 +1425,7 @@ svg{display:block}
 
 /* =========================================================
  /* =========================================================
-    手机稿 4 / 5 · 今日食谱（客户端） · 食谱管理（管理员端）
+   手机稿 5 / 6 · 今日食谱（客户端） · 食谱管理（管理员端）
     ---------------------------------------------------------
     主题：暖橙 linear-gradient(135deg,#FFB020,#F08A00)
     图片一律用「照片」占位块表示，不含真实食物照片
@@ -1411,7 +1561,7 @@ svg{display:block}
  .m-ph__del::before{ transform:translate(-50%,-50%) rotate(45deg); }
  .m-ph__del::after{ transform:translate(-50%,-50%) rotate(-45deg); }
  
- /* ---------- 手机稿 5：选择日期与餐次 ---------- */
+/* ---------- 手机稿 6：选择日期与餐次 ---------- */
  .m-opt{
    display:flex;
    align-items:center;
@@ -1455,7 +1605,7 @@ svg{display:block}
  }
  .m-hair{ height:1px; background:var(--line); }
  
- /* ---------- 手机稿 5：上传区块 ---------- */
+/* ---------- 手机稿 6：上传区块 ---------- */
  .m-up{
    padding:18px;
    border:1.5px dashed var(--orange-dash);
@@ -1483,7 +1633,7 @@ svg{display:block}
   .m-up__t1{ margin-top:6px; font-size:13px; line-height:18px; color:var(--ink-3); }
   .m-up__t2{ margin-top:4px; font-size:11px; line-height:15px; color:var(--ink-2); }
  
- /* ---------- 手机稿 5：已上传说明 + 当日概览 ---------- */
+/* ---------- 手机稿 6：已上传说明 + 当日概览 ---------- */
  .m-note{
     margin-top:10px;
     padding-top:8px;
@@ -1505,7 +1655,7 @@ svg{display:block}
  .m-ov__val{ font-size:13px; font-weight:600; line-height:18px; color:var(--ink); }
  .m-ov__val--zero{ font-weight:400; color:var(--ink-idle); }
  
- /* ---------- 手机稿 4：页脚 ---------- */
+/* ---------- 手机稿 5 / 6：页脚 ---------- */
  .m-foot{
     padding:0;
    text-align:center;
@@ -1514,7 +1664,7 @@ svg{display:block}
    color:var(--ink-2);
  }
  
- /* ---------- 手机稿 5 附：非管理员视图示意 ---------- */
+/* ---------- 手机稿 6 附：非管理员视图示意 ---------- */
  .state-card{
    width:100%;
    max-width:308px;
@@ -1608,10 +1758,11 @@ svg{display:block}
   .banner__card{ transition:opacity 120ms linear; }
   .banner__card:not(.is-active){ transform:none; }
   .marquee__track{ animation:none; }
+  .cam__scanline{ animation:none; }
   .nav-add,
   .nav-add:hover,
   .nav-add:active{ transform:translateX(-50%); }
-  .tab,.dot::before,.tip,.cam__shutter,.cam__shutter span,.status__bell,.cam__circle{
+  .tab,.dot::before,.tip,.cam__shutter,.cam__shutter span,.cam__seg-item,.cam__seg-knob,.status__bell,.cam__circle{
     transition-duration:120ms;
   }
 }
@@ -1622,7 +1773,7 @@ svg{display:block}
 <header class="page">
   <h1 class="page__title">阳光幼儿园 · 小程序 UI 预览</h1>
   <p class="page__lede">
-     五块手机稿按 750rpx ≈ 390px（2rpx ≈ 1px）1:1 还原：首页（红色活动滚动屏 + 快捷入口 + 今日安排 + 最新通知 + 底部导航）、底部导航栏 ×2 规范对照、相机页、今日食谱（客户端只读）、食谱管理（管理员端）。
+     六块手机稿按 750rpx ≈ 390px（2rpx ≈ 1px）1:1 还原：首页（红色活动滚动屏 + 快捷入口 + 今日安排 + 最新通知 + 底部导航）、底部导航栏 ×2 规范对照、相机页（扫码模式：230 取景框 + 扫描线）、相机页（拍照模式：对焦框 + 闪光灯 / 快门 / 相册）、今日食谱（客户端只读）、食谱管理（管理员端）。
   </p>
   <p class="page__note"><b>演示数据</b> 页面内的活动、通知、课程、时间均为示意内容，非真实接口数据。</p>
 </header>
@@ -2026,11 +2177,11 @@ svg{display:block}
   </figure>
 
   <!-- ============================================================
-       手机稿 3 · 相机页
+       手机稿 3 / 4 · 相机页：扫码模式（默认） / 拍照模式
        ============================================================ -->
   <figure class="device">
     <div class="shell">
-      <div class="screen screen--camera">
+      <div class="screen screen--camera" data-mode="scan">
 
         <div class="cam__top">
           <div class="status">
@@ -2045,43 +2196,150 @@ svg{display:block}
             <button class="cam__circle" type="button" aria-label="关闭相机">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
             </button>
-             <span class="cam__title">拍照</span>
-             <!-- 右上角留给微信胶囊：不可见等宽占位，保持「拍照」标题居中 -->
-             <span class="cam__circle cam__circle--phantom" aria-hidden="true"></span>
+            <span class="cam__title cam__title--scan">扫码</span>
+            <span class="cam__title cam__title--shot">拍照</span>
+            <!-- 右上角留给微信胶囊：不可见等宽透明占位，保持标题居中 -->
+            <span class="cam__circle cam__circle--phantom" aria-hidden="true"></span>
           </div>
         </div>
 
-        <div class="cam__view" role="img" aria-label="相机取景框示意">
-          <span class="cam__corner cam__corner--tl" aria-hidden="true"></span>
-          <span class="cam__corner cam__corner--tr" aria-hidden="true"></span>
-          <span class="cam__corner cam__corner--bl" aria-hidden="true"></span>
-          <span class="cam__corner cam__corner--br" aria-hidden="true"></span>
-          <span class="cam__focus" aria-hidden="true"></span>
+        <div class="cam__view">
+          <!-- 拍照模式取景区：#12151B + 四角 2px 取景角 + 中央对焦框 -->
+          <div class="cam__layer cam__layer--shot" aria-hidden="true">
+            <span class="cam__corner cam__corner--tl"></span>
+            <span class="cam__corner cam__corner--tr"></span>
+            <span class="cam__corner cam__corner--bl"></span>
+            <span class="cam__corner cam__corner--br"></span>
+            <span class="cam__focus"></span>
+          </div>
+
+          <!-- 扫码模式取景区：230 × 230 取景框（四角各两条 3px 角线）+ 扫描线 -->
+          <div class="cam__layer cam__layer--scan">
+            <div class="cam__scan" role="img" aria-label="二维码取景框 230 × 230，四角 3px 白色角线">
+              <span class="cam__scancorner cam__scancorner--tl" aria-hidden="true"></span>
+              <span class="cam__scancorner cam__scancorner--tr" aria-hidden="true"></span>
+              <span class="cam__scancorner cam__scancorner--bl" aria-hidden="true"></span>
+              <span class="cam__scancorner cam__scancorner--br" aria-hidden="true"></span>
+              <span class="cam__scanline" aria-hidden="true"></span>
+            </div>
+            <p class="cam__viewhint">将二维码 / 条形码放入框内</p>
+          </div>
         </div>
 
         <div class="cam__bottom">
-          <div class="cam__ctl">
-            <span class="cam__ctl-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 2.8 5.6 13.2h5.1l-.9 8 7.6-10.4h-5.1l.9-8Z"/><path d="M3.8 3.8 20.2 20.2"/></svg>
-            </span>
-            <span class="cam__ctl-label">闪光灯关</span>
+          <div class="cam__seg" role="group" aria-label="相机模式：扫码 / 拍照">
+            <span class="cam__seg-knob" aria-hidden="true"></span>
+            <button class="cam__seg-item cam__seg-item--scan" type="button" aria-pressed="true">扫码</button>
+            <button class="cam__seg-item cam__seg-item--shot" type="button" aria-pressed="false">拍照</button>
           </div>
-          <button class="cam__shutter" type="button" aria-label="拍照"><span aria-hidden="true"></span></button>
-          <div class="cam__ctl">
-            <span class="cam__ctl-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3"/><circle cx="8.6" cy="9.6" r="1.6"/><path d="M3.8 16.6l4.6-4.2a2.4 2.4 0 0 1 3.3.1l3.1 3.2 2-1.7a2.4 2.4 0 0 1 3.2.1l1.1 1.1"/></svg>
-            </span>
-            <span class="cam__ctl-label">相册</span>
+
+          <p class="cam__seghint">对准二维码 / 条形码，自动识别</p>
+
+          <div class="cam__ctls">
+            <div class="cam__ctl">
+              <span class="cam__ctl-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 2.8 5.6 13.2h5.1l-.9 8 7.6-10.4h-5.1l.9-8Z"/><path d="M3.8 3.8 20.2 20.2"/></svg>
+              </span>
+              <span class="cam__ctl-label">闪光灯关</span>
+            </div>
+            <button class="cam__shutter" type="button" aria-label="拍照"><span aria-hidden="true"></span></button>
+            <div class="cam__ctl">
+              <span class="cam__ctl-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3"/><circle cx="8.6" cy="9.6" r="1.6"/><path d="M3.8 16.6l4.6-4.2a2.4 2.4 0 0 1 3.3.1l3.1 3.2 2-1.7a2.4 2.4 0 0 1 3.2.1l1.1 1.1"/></svg>
+              </span>
+              <span class="cam__ctl-label">相册</span>
+            </div>
           </div>
         </div>
 
       </div>
     </div>
-    <figcaption class="device__caption"><b>03</b>相机页 · 点击中间 + 进入</figcaption>
+    <figcaption class="device__caption"><b>03</b>相机页 · 扫码模式（默认）<span class="device__note">点滑块或左右滑动画面，即可切换「扫码 / 拍照」</span></figcaption>
+  </figure>
+
+  <!-- ============================================================
+       手机稿 4 · 相机页：拍照模式（同一页面滑到右侧的状态）
+       ============================================================ -->
+  <figure class="device">
+    <div class="shell">
+      <div class="screen screen--camera" data-mode="shot">
+
+        <div class="cam__top">
+          <div class="status">
+            <span class="status__time">9:41</span>
+            <span class="status__icons" aria-hidden="true">
+              <svg viewBox="0 0 17 11" width="17" height="11" fill="none"><rect x="0" y="7.2" width="3" height="3.8" rx="1.1" fill="#fff"/><rect x="4.6" y="5.2" width="3" height="5.8" rx="1.1" fill="#fff"/><rect x="9.2" y="2.9" width="3" height="8.1" rx="1.1" fill="#fff"/><rect x="13.8" y=".6" width="3" height="10.4" rx="1.1" fill="#fff"/></svg>
+              <svg viewBox="0 0 16 11" width="16" height="11" fill="none"><path d="M1.1 3.7a10.4 10.4 0 0 1 13.8 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M3.7 6.4a6.6 6.6 0 0 1 8.6 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="9.5" r="1.35" fill="#fff"/></svg>
+              <svg viewBox="0 0 25 12" width="25" height="12" fill="none"><rect x=".6" y=".6" width="20.8" height="10.8" rx="3.1" stroke="rgba(255,255,255,.6)" stroke-width="1.2"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.9" fill="#fff"/><path d="M23.2 4.3v3.4c.9-.4 1.3-1 1.3-1.7s-.4-1.3-1.3-1.7Z" fill="rgba(255,255,255,.6)"/></svg>
+            </span>
+          </div>
+          <div class="cam__bar">
+            <button class="cam__circle" type="button" aria-label="关闭相机">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+            <span class="cam__title cam__title--scan">扫码</span>
+            <span class="cam__title cam__title--shot">拍照</span>
+            <!-- 右上角留给微信胶囊：不可见等宽透明占位，保持标题居中 -->
+            <span class="cam__circle cam__circle--phantom" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <div class="cam__view">
+          <!-- 拍照模式取景区：#12151B + 四角 2px 取景角 + 中央对焦框 -->
+          <div class="cam__layer cam__layer--shot" aria-hidden="true">
+            <span class="cam__corner cam__corner--tl"></span>
+            <span class="cam__corner cam__corner--tr"></span>
+            <span class="cam__corner cam__corner--bl"></span>
+            <span class="cam__corner cam__corner--br"></span>
+            <span class="cam__focus"></span>
+          </div>
+
+          <!-- 扫码模式取景区：230 × 230 取景框（四角各两条 3px 角线）+ 扫描线 -->
+          <div class="cam__layer cam__layer--scan">
+            <div class="cam__scan" role="img" aria-label="二维码取景框 230 × 230，四角 3px 白色角线">
+              <span class="cam__scancorner cam__scancorner--tl" aria-hidden="true"></span>
+              <span class="cam__scancorner cam__scancorner--tr" aria-hidden="true"></span>
+              <span class="cam__scancorner cam__scancorner--bl" aria-hidden="true"></span>
+              <span class="cam__scancorner cam__scancorner--br" aria-hidden="true"></span>
+              <span class="cam__scanline" aria-hidden="true"></span>
+            </div>
+            <p class="cam__viewhint">将二维码 / 条形码放入框内</p>
+          </div>
+        </div>
+
+        <div class="cam__bottom">
+          <div class="cam__seg" role="group" aria-label="相机模式：扫码 / 拍照">
+            <span class="cam__seg-knob" aria-hidden="true"></span>
+            <button class="cam__seg-item cam__seg-item--scan" type="button" aria-pressed="false">扫码</button>
+            <button class="cam__seg-item cam__seg-item--shot" type="button" aria-pressed="true">拍照</button>
+          </div>
+
+          <p class="cam__seghint">对准二维码 / 条形码，自动识别</p>
+
+          <div class="cam__ctls">
+            <div class="cam__ctl">
+              <span class="cam__ctl-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 2.8 5.6 13.2h5.1l-.9 8 7.6-10.4h-5.1l.9-8Z"/><path d="M3.8 3.8 20.2 20.2"/></svg>
+              </span>
+              <span class="cam__ctl-label">闪光灯关</span>
+            </div>
+            <button class="cam__shutter" type="button" aria-label="拍照"><span aria-hidden="true"></span></button>
+            <div class="cam__ctl">
+              <span class="cam__ctl-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3"/><circle cx="8.6" cy="9.6" r="1.6"/><path d="M3.8 16.6l4.6-4.2a2.4 2.4 0 0 1 3.3.1l3.1 3.2 2-1.7a2.4 2.4 0 0 1 3.2.1l1.1 1.1"/></svg>
+              </span>
+              <span class="cam__ctl-label">相册</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <figcaption class="device__caption"><b>04</b>相机页 · 拍照模式<span class="device__note">滑到「拍照」：闪光灯 / 快门 / 相册</span></figcaption>
   </figure>
 
    <!-- ============================================================
-        手机稿 4 · 今日食谱（客户端，只读）
+       手机稿 5 · 今日食谱（客户端，只读）
         ============================================================ -->
    <figure class="device">
      <div class="shell">
@@ -2157,11 +2415,11 @@ svg{display:block}
  
        </div>
      </div>
-     <figcaption class="device__caption"><b>04</b>今日食谱 · 客户端只读（加载 + 显示 + 点开看大图）<span class="device__note">点任意图片 → 全屏预览；页面上没有上传 / 删除 / 保存入口</span></figcaption>
+    <figcaption class="device__caption"><b>05</b>今日食谱 · 客户端只读（加载 + 显示 + 点开看大图）<span class="device__note">点任意图片 → 全屏预览；页面上没有上传 / 删除 / 保存入口</span></figcaption>
    </figure>
  
    <!-- ============================================================
-        手机稿 5 · 食谱管理（管理员端）
+       手机稿 6 · 食谱管理（管理员端）
         ============================================================ -->
    <figure class="device">
      <div class="shell">
@@ -2250,7 +2508,7 @@ svg{display:block}
  
        </div>
      </div>
-     <figcaption class="device__caption"><b>05</b>食谱管理 · 仅管理员可进入<span class="device__note">入口只在「我的」页对管理员显示</span><span class="device__note">非管理员打开只会看到「没有管理权限」</span></figcaption>
+    <figcaption class="device__caption"><b>06</b>食谱管理 · 仅管理员可进入<span class="device__note">入口只在「我的」页对管理员显示</span><span class="device__note">非管理员打开只会看到「没有管理权限」</span></figcaption>
  
      <div class="state-card">
        <p class="state-card__label">非管理员视图 · 状态示意</p>
@@ -2389,6 +2647,35 @@ svg{display:block}
       if (open && !open.contains(e.target)) { hide(); }
     });
   })();
+  /* ---------------- 4. 相机页：扫码 / 拍照 模式切换 ---------------- */
+  Array.prototype.slice.call(document.querySelectorAll('.screen--camera')).forEach(function (screen) {
+    var items = Array.prototype.slice.call(screen.querySelectorAll('.cam__seg-item'));
+    if (items.length !== 2) { return; }
+
+    var setMode = function (mode) {
+      screen.setAttribute('data-mode', mode);
+      items.forEach(function (item) {
+        item.setAttribute('aria-pressed', item.classList.contains('cam__seg-item--' + mode) ? 'true' : 'false');
+      });
+    };
+
+    items.forEach(function (item, i) {
+      item.addEventListener('click', function () {
+        setMode(item.classList.contains('cam__seg-item--shot') ? 'shot' : 'scan');
+      });
+
+      item.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') { return; }
+        e.preventDefault();
+        var step = e.key === 'ArrowRight' ? 1 : -1;
+        var next = items[(i + step + items.length) % items.length];
+        next.focus();
+        next.click();
+      });
+    });
+
+    setMode(screen.getAttribute('data-mode') === 'shot' ? 'shot' : 'scan');
+  });
 })();
 </script>
 </body>
