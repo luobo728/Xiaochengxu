@@ -1,6 +1,24 @@
 const app = getApp()
 const menu = require('../../utils/menu.js')
 
+// 把云端返回的原始错误翻译成「人话」，方便照着做
+function explainCloudError(err) {
+  const raw = (err && (err.errMsg || err.message)) || '未知错误'
+  let tip = '请把上面这行「原因」截图发给帮你做小程序的人。'
+
+  if (/FunctionName|not exist|不存在|-501000/i.test(raw)) {
+    tip = '看起来云函数还没成功上传。请回去做第 2 件事：右键 cloudfunctions 里面的 menuAdmin 文件夹 →「创建并部署」，并选择带「云端安装依赖」的那个。'
+  } else if (/-504002|Cannot find module|MODULE_NOT_FOUND/i.test(raw)) {
+    tip = '云函数缺少依赖，所以跑不起来。请重新部署一次：右键 menuAdmin →「创建并部署」，这一次一定要选带「云端安装依赖」的那个。'
+  } else if (/env|环境/i.test(raw)) {
+    tip = '云开发环境不对。请确认第 1 件事里已经创建过云环境，并且只创建了一个。'
+  } else if (/timeout|超时|网络|fail to fetch/i.test(raw)) {
+    tip = '网络超时了，不是你做错。请等 10 秒，再长按一次版本号试试。'
+  }
+
+  return '原因：' + raw + '\n\n' + tip
+}
+
 Page({
   data: {
     statusBarHeight: 20,
@@ -170,11 +188,11 @@ Page({
         }
         this.showOpenId(openid, '本园已设置过管理员，请把这段 openid 发给园长添加')
       })
-      .catch(() => {
+      .catch((err) => {
         wx.hideLoading()
         wx.showModal({
           title: '读取失败',
-          content: '请检查云开发是否已开通、云函数是否已上传。',
+          content: explainCloudError(err),
           showCancel: false
         })
       })
@@ -232,11 +250,11 @@ Page({
           }
         })
       })
-      .catch(() => {
+      .catch((err) => {
         wx.hideLoading()
         wx.showModal({
           title: '设置失败',
-          content: '请检查云函数是否已经「上传并部署」。',
+          content: explainCloudError(err),
           showCancel: false
         })
       })
