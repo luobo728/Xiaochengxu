@@ -81,4 +81,7 @@
       <view class="foot-tip">食谱由幼儿园后厨上传 · 仅供家长查看</view>
     </block>
   </view>
+
+  <!-- 底部导航：子页面也能直接切换模块（不选中任何 tab） -->
+  <tab-bar selected="{{0}}" plain="{{true}}" />
 </view>

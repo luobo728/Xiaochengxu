@@ -1,8 +1,9 @@
 /* pages/menu-admin/menu-admin.wxss —— 食谱管理端专有样式（通用 class 见 app.wxss） */
 
-/* 非 tab 页：不需要为底部自定义 tabBar 预留空间 */
+/* 底部有导航栏：为它预留高度 */
 .page {
-  padding-bottom: 60rpx;
+  padding-bottom: 220rpx;
+  padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
 }
 
 /* ---------- 顶部头图（食谱主题橙） ---------- */

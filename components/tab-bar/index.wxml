@@ -1,0 +1,76 @@
+<view class="tabbar">
+  <view class="tabbar-inner">
+    <!-- 首页 -->
+    <view
+      class="tab-item {{selected === 0 ? 'on' : ''}}"
+      data-index="0"
+      data-path="/pages/index/index"
+      bindtap="onTab">
+      <view class="tab-ico ic-home">
+        <view class="roof"></view>
+        <view class="body"></view>
+        <view class="bar"></view>
+      </view>
+      <view class="tab-txt">首页</view>
+    </view>
+
+    <!-- 课时 -->
+    <view
+      class="tab-item {{selected === 1 ? 'on' : ''}}"
+      data-index="1"
+      data-path="/pages/course/course"
+      bindtap="onTab">
+      <view class="tab-ico ic-clock">
+        <view class="dial"></view>
+        <view class="hand-h"></view>
+        <view class="hand-m"></view>
+        <view class="hand-c"></view>
+      </view>
+      <view class="tab-txt">课时</view>
+    </view>
+
+    <!-- 中间占位：凸起的「+」按钮绝对定位在这一格上 -->
+    <!-- 中间占位：凸起的「+」按钮绝对定位在这一格上；整格可点（点偏了也能用） -->
+    <view class="tab-item placeholder" bindtap="onScan"></view>
+
+    <!-- 校园 -->
+    <view
+      class="tab-item {{selected === 2 ? 'on' : ''}}"
+      data-index="2"
+      data-path="/pages/campus/campus"
+      bindtap="onTab">
+      <view class="tab-ico ic-school">
+        <view class="roof"></view>
+        <view class="wall"></view>
+        <view class="win w1"></view>
+        <view class="win w2"></view>
+      </view>
+      <view class="tab-txt">校园</view>
+    </view>
+
+    <!-- 我的 -->
+    <view
+      class="tab-item {{selected === 3 ? 'on' : ''}}"
+      data-index="3"
+      data-path="/pages/mine/mine"
+      bindtap="onTab">
+      <view class="tab-ico ic-me">
+        <view class="head"></view>
+        <view class="shoulder"></view>
+      </view>
+      <view class="tab-txt">我的</view>
+    </view>
+  </view>
+
+  <!-- 中间凸起按钮：点击调起设备相机，长按使用微信扫一扫 -->
+  <view
+    class="tab-center"
+    hover-class="tab-center-hover"
+    hover-start-time="0"
+    hover-stay-time="120"
+    bindtap="onScan"
+    bindlongpress="onScanLongPress">
+    <view class="plus"></view>
+    <view class="tab-center-txt">扫一扫</view>
+  </view>
+</view>

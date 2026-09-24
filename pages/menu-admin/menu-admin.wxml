@@ -137,4 +137,7 @@
       </view>
     </block>
   </view>
+
+  <!-- 底部导航：子页面也能直接切换模块（高亮「我的」） -->
+  <tab-bar selected="{{3}}" plain="{{true}}" />
 </view>
