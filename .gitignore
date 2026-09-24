@@ -1,0 +1,20 @@
+# 依赖
+node_modules/
+miniprogram_npm/
+
+# 微信开发者工具本地私有配置
+project.private.config.json
+.wechatide/
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 构建产物与日志
+dist/
+miniprogram_dist/
+*.log
+npm-debug.log*
+yarn-error.log*
