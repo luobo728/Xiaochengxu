@@ -14,6 +14,7 @@ const COLLECTION = 'menu_photos'
 const ADMINS = 'menu_admins'
 const MEAL_KEYS = ['breakfast', 'morning', 'lunch', 'afternoon', 'dinner']
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const DB_TIMEOUT = 1500 // 数据库查询的内部超时（毫秒），防止云函数被平台判超时
 
 function ok(data) {
   return Object.assign({ ok: true }, data || {})
@@ -29,6 +30,24 @@ function errText(e) {
 }
 
 // 管理员判定
+// 给数据库查询加一个「内部超时」：数据库慢或不可达时，不让整个云函数卡到平台超时
+function withTimeout(promise, ms, fallback) {
+  return Promise.race([
+    promise
+      .then(function (value) {
+        return value
+      })
+      .catch(function () {
+        return fallback
+      }),
+    new Promise(function (resolve) {
+      setTimeout(function () {
+        resolve(fallback)
+      }, ms)
+    })
+  ])
+}
+
 async function isAdmin(openid) {
   if (!openid) return false
 
@@ -41,22 +60,14 @@ async function isAdmin(openid) {
     .filter(Boolean)
   if (list.indexOf(openid) > -1) return true
 
-  try {
-    const res = await db.collection(ADMINS).doc(openid).get()
-    return !!(res && res.data)
-  } catch (e) {
-    return false
-  }
+  const res = await withTimeout(db.collection(ADMINS).doc(openid).get(), DB_TIMEOUT, null)
+  return !!(res && res.data)
 }
 
 // 是否已经有管理员（首次初始化时用来防止重复认领）
 async function hasAdmin() {
-  try {
-    const res = await db.collection(ADMINS).count()
-    return !!(res && res.total > 0)
-  } catch (e) {
-    return false
-  }
+  const res = await withTimeout(db.collection(ADMINS).count(), DB_TIMEOUT, null)
+  return !!(res && res.total > 0)
 }
 
 exports.main = async (event) => {
@@ -66,10 +77,12 @@ exports.main = async (event) => {
 
   // 我是谁（任何用户都可调用，用于决定是否展示管理入口）
   if (action === 'whoami') {
+    // 两个查询并行，且各自最多等 DB_TIMEOUT，保证整体能在平台默认 3 秒超时内返回
+    const both = await Promise.all([isAdmin(openid), hasAdmin()])
     return ok({
       openid: openid,
-      isAdmin: await isAdmin(openid),
-      initialized: await hasAdmin()
+      isAdmin: both[0],
+      initialized: both[1]
     })
   }
 

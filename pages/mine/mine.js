@@ -12,6 +12,8 @@ function explainCloudError(err) {
     tip = '云函数缺少依赖，所以跑不起来。请重新部署一次：右键 menuAdmin →「创建并部署」，这一次一定要选带「云端安装依赖」的那个。'
   } else if (/env|环境/i.test(raw)) {
     tip = '云开发环境不对。请确认第 1 件事里已经创建过云环境，并且只创建了一个。'
+  } else if (/-501002|ESOCKETTIMEDOUT|resource server timeout/i.test(raw)) {
+    tip = '云函数响应超时。按顺序试：① 云函数刚部署时第一次调用会比较慢，等 10 秒再长按一次；② 到云开发控制台 → 云函数 → menuAdmin → 配置，把「超时时间」改大（比如 20 秒）；③ 如果正开着 VPN 或代理软件（例如 nano），先关掉再试——云开发是腾讯云域名，走国外代理很容易超时。'
   } else if (/timeout|超时|网络|fail to fetch/i.test(raw)) {
     tip = '网络超时了，不是你做错。请等 10 秒，再长按一次版本号试试。'
   }
