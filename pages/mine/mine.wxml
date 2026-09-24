@@ -5,25 +5,41 @@
   </view>
 
   <view class="body">
-    <!-- 家长登录：未登录显示表单，登录后显示账号卡片 -->
+    <!-- 家长登录：未登录时主推微信一键登录，备用表单按需展开 -->
     <view class="card" wx:if="{{!logged}}">
       <view class="card-head">
         <view class="card-title">家长登录</view>
-        <view class="card-more">演示账号：姓名 {{demoName}} / 手机号 {{demoPhone}}</view>
+        <view class="card-more">无需注册</view>
       </view>
-      <input class="lg-input" placeholder="请输入姓名" value="{{loginName}}" bindinput="onNameInput" maxlength="20" confirm-type="done" />
-      <input class="lg-input" type="number" placeholder="请输入手机号" value="{{loginPhone}}" bindinput="onPhoneInput" maxlength="11" confirm-type="done" />
-      <view class="btn-primary lg-btn {{logging ? 'is-busy' : ''}}" bindtap="onLogin">{{logging ? '登录中…' : '登 录'}}</view>
-      <view class="lg-tip">登录后可使用课时余额、账单明细等功能；手机号仅用于关联孩子的课时与账单</view>
+
+      <!-- 主入口：微信一键登录（左侧图标为纯 CSS 绘制） -->
+      <view class="wx-btn {{wxLogging ? 'is-busy' : ''}}" bindtap="onWxLogin">
+        <view class="wx-ico">
+          <view class="wx-dot wx-dot-a"></view>
+          <view class="wx-dot wx-dot-b"></view>
+        </view>
+        <view>{{wxLogging ? '登录中…' : '微信一键登录'}}</view>
+      </view>
+      <view class="wx-tip">一键登录，无需注册；登录后可使用课时余额、账单明细等功能</view>
+
+      <!-- 次要入口：展开 / 收起「姓名 + 手机号」备用表单 -->
+      <view class="wx-alt" bindtap="onToggleForm">用姓名·手机号登录 ›</view>
+
+      <view class="lg-form" wx:if="{{formOpen}}">
+        <input class="lg-input" placeholder="请输入姓名" value="{{loginName}}" bindinput="onNameInput" maxlength="20" confirm-type="done" />
+        <input class="lg-input" type="number" placeholder="请输入手机号" value="{{loginPhone}}" bindinput="onPhoneInput" maxlength="11" confirm-type="done" />
+        <view class="btn-primary lg-btn {{logging ? 'is-busy' : ''}}" bindtap="onLogin">{{logging ? '登录中…' : '登 录'}}</view>
+        <view class="lg-tip">演示账号：姓名 {{demoName}} / 手机号 {{demoPhone}}</view>
+      </view>
     </view>
 
-    <!-- 已登录：账号卡片 -->
+    <!-- 已登录：账号卡片（微信一键登录可能还没填姓名 / 手机号） -->
     <view class="card" wx:else>
       <view class="acct-row">
         <view class="acct-avatar">{{userInitial}}</view>
         <view class="row-main">
-          <view class="acct-name">{{userName}}</view>
-          <view class="row-sub">{{userPhone}}</view>
+          <view class="acct-name">{{userName || '微信用户'}}</view>
+          <view class="row-sub {{userPhone ? '' : 'is-empty'}}">{{userPhone || '未绑定手机号'}}</view>
         </view>
         <view class="tag tag-green">已登录</view>
       </view>
@@ -31,6 +47,8 @@
         <view class="acct-time">登录时间：{{loginAtText}}</view>
         <view class="acct-switch" bindtap="onSwitchAccount">切换账号 ›</view>
       </view>
+      <!-- 缺姓名或手机号时才出现的补充入口 -->
+      <view class="acct-extra" wx:if="{{!userName || !userPhone}}" bindtap="onEditProfile">完善资料（姓名与手机号）›</view>
     </view>
 
     <!-- 孩子档案：需要账号，未登录时整卡隐藏 -->

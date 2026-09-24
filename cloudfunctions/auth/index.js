@@ -8,9 +8,11 @@
 //   · enabled  false 表示停用，登录时会被拒
 //
 // action：
-//   login  { name, phone }  -> { ok, user, token }
-//   me     { token }        -> { ok, user }
-//   logout { token }        -> { ok }
+//   wxlogin                      -> { ok, user, token, isNew }  微信一键登录（按 openid 自动注册/登录）
+//   login   { name, phone }      -> { ok, user, token }          备用：姓名 + 手机号
+//   profile { token, name, phone } -> { ok, user }               补充资料（姓名 / 手机号）
+//   me      { token }            -> { ok, user }
+//   logout  { token }            -> { ok }
 //
 // 开发用账号：姓名 1 / 手机号 1（生产前把本函数的环境变量 ALLOW_DEV_ACCOUNT 设为 0 关掉）
 const cloud = require('wx-server-sdk')
@@ -59,6 +61,55 @@ exports.main = async (event) => {
   const openid = cloud.getWXContext().OPENID || ''
   const action = (event && event.action) || ''
 
+  /* ---------- 微信一键登录 ---------- */
+  // 云开发能直接拿到调用者的微信身份（openid）：首次进入自动建账号，之后点一下按钮就是登录
+  if (action === 'wxlogin') {
+    if (!openid) return fail('拿不到微信身份，请在微信里打开小程序')
+
+    const found = await withTimeout(
+      db.collection(USERS).where({ openid: openid }).limit(1).get(),
+      DB_TIMEOUT,
+      null
+    )
+    let user = ((found && found.data) || [])[0]
+    let isNew = false
+
+    if (!user) {
+      isNew = true
+      const doc = {
+        openid: openid,
+        name: '',
+        phone: '',
+        role: '家长',
+        enabled: true,
+        createTime: db.serverDate()
+      }
+      const added = await withTimeout(db.collection(USERS).add({ data: doc }), DB_TIMEOUT, null)
+      if (!added || !added._id) return fail('账号创建失败，请稍后重试')
+      user = Object.assign({ _id: added._id }, doc)
+    }
+    if (user.enabled === false) return fail('账号已停用，请联系老师')
+
+    const token = randomToken()
+    try {
+      await withTimeout(
+        db.collection(USERS).doc(user._id).update({
+          data: { lastToken: token, lastLoginAt: db.serverDate(), lastOpenid: openid }
+        }),
+        DB_TIMEOUT,
+        null
+      )
+    } catch (e) {
+      // 记录登录痕迹失败不影响登录本身
+    }
+
+    return ok({
+      user: { name: user.name || '', phone: user.phone || '', role: user.role || '家长' },
+      token: token,
+      isNew: isNew
+    })
+  }
+
   /* ---------- 登录 ---------- */
   if (action === 'login') {
     const name = String(event.name || '').trim()
@@ -103,6 +154,35 @@ exports.main = async (event) => {
       user: { name: user.name, phone: user.phone, role: user.role || '家长' },
       token: token
     })
+  }
+
+  /* ---------- 补充资料（一键登录后填姓名 / 手机号） ---------- */
+  if (action === 'profile') {
+    const token = String(event.token || '')
+    const name = String(event.name || '').trim()
+    const phone = String(event.phone || '').trim()
+    if (!token) return fail('请先登录')
+    if (!name || !phone) return fail('姓名和手机号都要填')
+
+    // 开发账号发的 token 以 dev- 开头，直接放行（受 ALLOW_DEV_ACCOUNT 控制）
+    if (devAllowed() && token.indexOf('dev-') === 0) {
+      return ok({ user: { name: name, phone: phone, role: '管理员', dev: true } })
+    }
+
+    const found = await withTimeout(db.collection(USERS).where({ lastToken: token }).limit(1).get(), DB_TIMEOUT, null)
+    const user = ((found && found.data) || [])[0]
+    if (!user) return fail('登录已失效，请重新登录')
+
+    try {
+      await withTimeout(
+        db.collection(USERS).doc(user._id).update({ data: { name: name, phone: phone } }),
+        DB_TIMEOUT,
+        null
+      )
+    } catch (e) {
+      return fail('保存失败，请稍后重试')
+    }
+    return ok({ user: { name: name, phone: phone, role: user.role || '家长' } })
   }
 
   /* ---------- 校验登录态 / 退出 ---------- */

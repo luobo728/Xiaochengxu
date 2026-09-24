@@ -101,7 +101,11 @@ Page({
     logging: false,
     // 演示账号文案（取自数据层，避免把账号写死在页面）
     demoName: '',
-    demoPhone: ''
+    demoPhone: '',
+    // 微信一键登录中：防连点 + 按钮文案
+    wxLogging: false,
+    // 「姓名 + 手机号」备用表单是否展开
+    formOpen: false
   },
 
   onLoad() {
@@ -147,16 +151,49 @@ Page({
       })
       return
     }
-    const name = user.name || ''
+    // 微信一键登录可能还没有姓名 / 手机号：这里留空，界面用兜底文案展示
+    const name = String(user.name || '').trim()
     this.setData({
       logged: true,
       userName: name,
-      userPhone: user.phone || '',
-      userInitial: name.trim().charAt(0),
+      userPhone: String(user.phone || '').trim(),
+      // 没有姓名时头像方块显示「微」
+      userInitial: name ? name.charAt(0) : '微',
       loginAtText: user.loginAtText || '',
       demoName: base.demoName,
       demoPhone: base.demoPhone
     })
+  },
+
+  // 微信一键登录：本地模式用设备标识，云端模式由云函数按 openid 自动注册 / 登录
+  onWxLogin() {
+    if (this.data.wxLogging) return
+    this.setData({ wxLogging: true })
+    auth
+      .wxLogin()
+      .then((res) => {
+        if (res && res.ok) {
+          wx.showToast({ title: '登录成功', icon: 'success' })
+          // 登录成功后不需要再展开备用表单
+          this.setData({ wxLogging: false, formOpen: false })
+          // 用数据层的返回值回填账号信息
+          this.syncLoginState()
+          // 课时与余额卡片刚显示出来，顺手拉一次最新数值
+          this.refreshBilling()
+          return
+        }
+        wx.showToast({ title: (res && res.msg) || '登录失败，请重试', icon: 'none' })
+        this.setData({ wxLogging: false })
+      })
+      .catch(() => {
+        wx.showToast({ title: '登录失败，请重试', icon: 'none' })
+        this.setData({ wxLogging: false })
+      })
+  },
+
+  // 展开 / 收起「姓名 + 手机号」备用登录表单
+  onToggleForm() {
+    this.setData({ formOpen: !this.data.formOpen })
   },
 
   onNameInput(e) {
@@ -203,6 +240,67 @@ Page({
       })
   },
 
+  // 完善资料：一键登录后补姓名与手机号（两步可输入弹窗）
+  onEditProfile() {
+    wx.showModal({
+      title: '完善资料',
+      editable: true,
+      placeholderText: '请输入姓名',
+      confirmText: '下一步',
+      success: (res) => {
+        if (!res.confirm) return
+        const name = String(res.content || '').trim()
+        if (!name) {
+          wx.showToast({ title: '姓名不能为空', icon: 'none' })
+          return
+        }
+        this.askProfilePhone(name)
+      },
+      fail() {
+        // 弹窗没弹出来就没得输入，静默即可
+      }
+    })
+  },
+
+  // 第二步收手机号：最轻的校验，非空即可；填了就必须是 1~11 位数字
+  askProfilePhone(name) {
+    wx.showModal({
+      title: '完善资料',
+      editable: true,
+      placeholderText: '请输入手机号',
+      confirmText: '保存',
+      success: (res) => {
+        if (!res.confirm) return
+        const phone = String(res.content || '').trim()
+        if (phone && !/^\d{1,11}$/.test(phone)) {
+          wx.showToast({ title: '手机号格式好像不对', icon: 'none' })
+          return
+        }
+        this.saveProfile(name, phone)
+      },
+      fail() {
+        // 弹窗没弹出来就没得输入，静默即可
+      }
+    })
+  },
+
+  // 姓名与手机号都拿到后交给数据层保存，成功刷新登录态
+  saveProfile(name, phone) {
+    auth
+      .updateProfile(name, phone)
+      .then((res) => {
+        if (res && res.ok) {
+          wx.showToast({ title: '资料已保存', icon: 'success' })
+          this.syncLoginState()
+          return
+        }
+        wx.showToast({ title: (res && res.msg) || '保存失败，请重试', icon: 'none' })
+      })
+      .catch(() => {
+        wx.showToast({ title: '保存失败，请重试', icon: 'none' })
+      })
+  },
+
   // 已登录卡片里的「切换账号 ›」
   onSwitchAccount() {
     wx.showModal({
@@ -228,7 +326,9 @@ Page({
           userName: '',
           userPhone: '',
           userInitial: '',
-          loginAtText: ''
+          loginAtText: '',
+          // 退出后回到默认状态：主推微信一键登录，备用表单收起
+          formOpen: false
         })
         wx.showToast({ title: '已退出登录', icon: 'none' })
       })

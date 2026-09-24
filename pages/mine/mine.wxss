@@ -182,6 +182,73 @@
   line-height: 1.6;
   color: #8A93A3;
 }
+/* ---------- 微信一键登录 ---------- */
+
+/* 主按钮：微信绿渐变，高 96rpx / 圆角 48rpx */
+.wx-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96rpx;
+  border-radius: 48rpx;
+  background: linear-gradient(135deg, #3ED39A, #07C160);
+  color: #FFFFFF;
+  font-size: 30rpx;
+  font-weight: 600;
+  box-shadow: 0 12rpx 24rpx rgba(7, 193, 96, 0.24);
+}
+
+/* 登录中：变淡，配合 JS 里的 wxLogging 防连点 */
+.wx-btn.is-busy {
+  opacity: 0.6;
+}
+
+/* 纯 CSS 图标：白色圆角方块，像聊天气泡（不使用任何图片 / 官方 logo） */
+.wx-ico {
+  position: relative;
+  width: 44rpx;
+  height: 44rpx;
+  margin-right: 14rpx;
+  border-radius: 14rpx;
+  background: #FFFFFF;
+}
+
+/* 方块上的两个小点：取按钮主色，白底上才看得见（纯白会糊成一片） */
+.wx-dot {
+  position: absolute;
+  top: 18rpx;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: #23CA7D;
+}
+
+.wx-dot-a {
+  left: 10rpx;
+}
+
+.wx-dot-b {
+  right: 10rpx;
+}
+
+.wx-tip {
+  margin-top: 18rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #8A93A3;
+}
+
+/* 备用入口：展开 / 收起「姓名 + 手机号」表单 */
+.wx-alt {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+/* 展开后的备用登录表单 */
+.lg-form {
+  margin-top: 20rpx;
+}
 
 /* 已登录：左头像方块 + 中间姓名手机号 + 右标签 */
 .acct-row {
@@ -228,4 +295,16 @@
 .acct-switch {
   font-size: 24rpx;
   color: #8A93A3;
+}
+
+/* 资料不完整（缺姓名 / 手机号）时卡片底部的补充入口 */
+.acct-extra {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #2E6BFF;
+}
+
+/* 手机号为空：用更浅的灰字提示 */
+.row-sub.is-empty {
+  color: #A9B2C0;
 }
