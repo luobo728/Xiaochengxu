@@ -41,3 +41,35 @@
   width: 110rpx;
   flex-shrink: 0;
 }
+
+/* 园区监控：深色渐变图标 + 在线 / 离线 */
+.mon-ico {
+  background: linear-gradient(135deg, #3C4657, #1B2231);
+}
+
+.mon-on {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.mon-dot {
+  width: 12rpx;
+  height: 12rpx;
+  margin-right: 8rpx;
+  border-radius: 50%;
+  background: #12A182;
+}
+
+.mon-on-txt {
+  font-size: 22rpx;
+  color: #8A93A3;
+}
+
+.mon-off {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  font-size: 22rpx;
+  color: #A6AEBE;
+}

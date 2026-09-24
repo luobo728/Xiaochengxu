@@ -15,6 +15,52 @@
   </view>
 
   <view class="body">
+
+    <!-- 园区监控：最想被家长看到的入口，放在第一张卡片 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">园区监控</view>
+        <view wx:if="{{monitorReady}}" class="card-more" bindtap="onCamTap">{{camTotal ? camTotal + ' 路画面' : '查看全部 ›'}}</view>
+        <view wx:else class="card-more tag tag-gray" bindtap="onCamTap">即将开放</view>
+      </view>
+
+      <!-- 已接入：最多前 3 路，右侧显示在线 / 离线 -->
+      <view class="row" wx:for="{{cameras}}" wx:key="id" data-id="{{item.id}}" bindtap="onCamTap">
+        <view class="row-ico mon-ico">监</view>
+        <view class="row-main">
+          <view class="row-name">{{item.name}}</view>
+          <view class="row-sub">{{item.place}}{{windowText ? ' · ' + windowText : ''}}</view>
+        </view>
+        <view wx:if="{{item.online}}" class="mon-on">
+          <view class="mon-dot"></view>
+          <view class="mon-on-txt">在线</view>
+        </view>
+        <view wx:else class="mon-off">离线</view>
+        <view class="arrow"></view>
+      </view>
+
+      <!-- 已接入但确实没有可用画面 -->
+      <view wx:if="{{monitorReady && camLoaded && cameras.length === 0}}" class="row">
+        <view class="row-main">
+          <view class="row-sub">暂无可用画面</view>
+        </view>
+      </view>
+
+      <!-- 未接入：整行只显示一条灰字提示 -->
+      <view wx:if="{{!monitorReady}}" class="row" bindtap="onCamTap">
+        <view class="row-main">
+          <view class="row-sub">监控正在对接中，敬请期待</view>
+        </view>
+      </view>
+
+      <!-- 超过 3 路时给出「查看全部」入口 -->
+      <view wx:if="{{monitorReady && camTotal > 3}}" class="row" bindtap="onCamTap">
+        <view class="row-main">
+          <view class="row-sub">查看全部 {{camTotal}} 路 ›</view>
+        </view>
+      </view>
+    </view>
+
     <!-- 校园快讯 -->
     <view class="card">
       <view class="card-head">

@@ -1,4 +1,8 @@
 const app = getApp()
+const monitor = require('../../utils/monitor.js')
+
+// 校园页监控分区最多展示几路画面
+const MAX_CAM_ROWS = 3
 
 Page({
   data: {
@@ -84,13 +88,23 @@ Page({
       { day: '周三', dish: '土豆烧肉 · 蒜蓉青菜 · 玉米排骨汤' },
       { day: '周四', dish: '虾仁蒸蛋 · 手撕包菜 · 番茄豆腐汤' },
       { day: '周五', dish: '红烧鸡翅 · 上汤娃娃菜 · 罗宋汤' }
-    ]
+    ],
+    // 园区监控
+    monitorReady: false, // 是否已接入监控后端
+    camLoaded: false,    // 列表是否已成功拉到（区分「还没拉到」与「确实没有」）
+    windowText: '',      // 开放时段说明
+    cameras: [],         // 已接入时展示的摄像头（最多前 MAX_CAM_ROWS 路）
+    camTotal: 0          // 摄像头总数
   },
 
   onLoad() {
     this.setData({
       statusBarHeight: (app.globalData && app.globalData.statusBarHeight) || 20
     })
+    // 园区监控：未接入时只显示占位状态，不去请求接口
+    const monitorReady = monitor.isReady()
+    this.setData({ monitorReady: monitorReady, windowText: monitor.openWindowText() || '' })
+    if (monitorReady) this.loadCameras()
   },
 
   onShow() {
@@ -103,5 +117,37 @@ Page({
   // 统一轻量交互
   onMoreTap() {
     wx.showToast({ title: '功能开发中', icon: 'none' })
+  },
+
+  // ---------- 园区监控 ----------
+
+  // 拉取摄像头列表；失败静默，卡片保持未接入占位状态
+  loadCameras() {
+    monitor
+      .getCameras()
+      .then((list) => {
+        const all = list || []
+        this.setData({
+          cameras: all.slice(0, MAX_CAM_ROWS),
+          camTotal: all.length,
+          camLoaded: true
+        })
+      })
+      .catch(() => {})
+  },
+
+  // 点击某一路画面 / 查看全部：已接入进监控页，未接入只提示
+  onCamTap(e) {
+    if (!this.data.monitorReady) {
+      wx.showToast({ title: '监控正在对接中', icon: 'none' })
+      return
+    }
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {}
+    wx.navigateTo({
+      url: '/pages/monitor/monitor' + (ds.id ? '?id=' + encodeURIComponent(ds.id) : ''),
+      fail: () => {
+        wx.showToast({ title: '监控页暂时打不开', icon: 'none' })
+      }
+    })
   }
 })

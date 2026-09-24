@@ -1,0 +1,67 @@
+<view class="page">
+  <!-- 顶部操作条：返回 + 居中标题（右侧透明占位保持居中） -->
+  <view class="mon-top" style="padding-top:{{statusBarHeight}}px">
+    <view class="mon-back" hover-class="mon-hover" bindtap="goBack">
+      <view class="mon-arrow"></view>
+    </view>
+    <view class="mon-top-title">园区监控</view>
+    <view class="mon-back phantom"></view>
+  </view>
+
+  <!-- 播放区：16:9 黑底，有流播放，无流走占位层 -->
+  <view class="mon-player">
+    <video
+      wx:if="{{playUrl}}"
+      class="mon-video"
+      src="{{playUrl}}"
+      autoplay
+      muted
+      controls
+      object-fit="contain"
+      show-center-play-btn="{{false}}"
+      binderror="onVideoError"></video>
+    <view wx:else class="mon-ph">
+      <view wx:if="{{!loading}}" class="mon-ph-ico">
+        <view class="mon-cam-ico"></view>
+      </view>
+      <view wx:else class="mon-spin"></view>
+      <view class="mon-ph-title">{{ready ? (loading ? '正在获取画面…' : '暂时拿不到画面') : '监控尚未接入'}}</view>
+      <view class="mon-ph-sub">{{tip || windowText || '请稍后重试'}}</view>
+      <view class="mon-btn" hover-class="mon-hover" bindtap="reload">重新获取</view>
+    </view>
+  </view>
+
+  <!-- 当前画面：名称 + 在线状态 -->
+  <view wx:if="{{cameras.length}}" class="mon-now">
+    <view class="mon-now-name">{{camName}}</view>
+    <view wx:if="{{camOnline}}" class="mon-on">
+      <view class="mon-dot"></view>
+      <view class="mon-on-txt">在线</view>
+    </view>
+    <view wx:else class="mon-off">离线</view>
+  </view>
+
+  <!-- 摄像头切换：只有多路时出现 -->
+  <scroll-view wx:if="{{cameras.length > 1}}" class="mon-cams" scroll-x="true">
+    <view
+      class="mon-cam {{item.id === current ? 'on' : ''}}"
+      wx:for="{{cameras}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onCamTap">{{item.name}}</view>
+  </scroll-view>
+
+  <!-- 信息卡 -->
+  <view class="mon-card">
+    <view class="mon-card-row">
+      <view class="mon-card-lbl">开放时间</view>
+      <view class="mon-card-val">{{windowText || '以园方通知为准'}}</view>
+    </view>
+    <view class="mon-card-row">
+      <view class="mon-card-lbl">画面来源</view>
+      <view class="mon-card-val">幼儿园提供</view>
+    </view>
+    <view class="mon-line"></view>
+    <view class="mon-note">监控画面仅供家长了解幼儿在园情况，请勿录屏或转发</view>
+  </view>
+</view>
