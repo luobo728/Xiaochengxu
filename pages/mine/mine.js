@@ -123,5 +123,39 @@ Page({
         wx.showToast({ title: '打开失败', icon: 'none' })
       }
     })
+  },
+
+  // 隐藏入口：长按底部版本号 → 显示并复制当前 openid（首次配置管理员白名单用）
+  onOpenIdLongPress() {
+    wx.showLoading({ title: '读取中', mask: true })
+    menu
+      .whoami()
+      .then((res) => {
+        wx.hideLoading()
+        const openid = (res && res.openid) || ''
+        if (!openid) {
+          wx.showToast({ title: '读取失败：请先部署云函数 menuAdmin', icon: 'none' })
+          return
+        }
+        wx.showModal({
+          title: '当前 openid',
+          content: openid,
+          confirmText: '复制',
+          cancelText: '关闭',
+          success(r) {
+            if (!r.confirm) return
+            wx.setClipboardData({
+              data: openid,
+              success() {
+                wx.showToast({ title: '已复制 openid', icon: 'none' })
+              }
+            })
+          }
+        })
+      })
+      .catch(() => {
+        wx.hideLoading()
+        wx.showToast({ title: '读取失败：请检查云开发与云函数', icon: 'none' })
+      })
   }
 })

@@ -80,6 +80,6 @@
     <view class="logout-box">
       <view class="btn-primary" bindtap="onLogout">退出登录</view>
     </view>
-    <view class="foot-tip">阳光幼儿园 · 家长端 {{version}}</view>
+    <view class="foot-tip" bindlongpress="onOpenIdLongPress">阳光幼儿园 · 家长端 {{version}}</view>
   </view>
 </view>
