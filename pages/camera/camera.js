@@ -1,5 +1,6 @@
 // pages/camera/camera.js —— 底部导航中间「+」进入：扫码 / 拍照 二合一
 const app = getApp()
+const nav = require('../../utils/nav.js')
 
 // 横滑切换模式的位移阈值（px）：小于该值视为点击，交给按钮处理
 const SWIPE_THRESHOLD = 60
@@ -273,11 +274,7 @@ Page({
   },
 
   goBack() {
-    wx.navigateBack({
-      delta: 1,
-      fail: () => {
-        wx.switchTab({ url: '/pages/index/index' })
-      }
-    })
+    // 没有上一页时切回首页，避免"退不出去"
+    nav.back('/pages/index/index')
   }
 })

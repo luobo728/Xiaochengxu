@@ -1,6 +1,7 @@
 const app = getApp()
 // 计费数据层：目前数据存在本机，以后联网只改这一个文件
 const billing = require('../../utils/billing.js')
+const nav = require('../../utils/nav.js')
 
 // 明细类型 → 左侧方块的颜色与单字（数据层只给 type，配色属于展示层）
 const LEDGER_ICONS = {
@@ -94,16 +95,7 @@ Page({
 
   // 返回：没有上一页（比如从分享进入）时退回「我的」
   goBack() {
-    wx.navigateBack({
-      delta: 1,
-      fail: () => {
-        wx.switchTab({
-          url: '/pages/mine/mine',
-          fail() {
-            wx.showToast({ title: '返回失败', icon: 'none' })
-          }
-        })
-      }
-    })
+    // 栈里还有上一页就返回；没有上一页（例如直接扫码进本页）就切回「我的」
+    nav.back('/pages/mine/mine')
   }
 })

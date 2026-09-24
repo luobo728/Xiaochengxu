@@ -138,6 +138,10 @@ Page({
 
   // 「账单明细 ›」入口
   onBillingDetail() {
+    // 防连点：连点两次会压入两个一模一样的页面，用户点一次返回时会以为「退不出去」
+    const now = Date.now()
+    if (now - (this._lastNavAt || 0) < 800) return
+    this._lastNavAt = now
     wx.navigateTo({
       url: '/pages/billing/billing',
       fail() {

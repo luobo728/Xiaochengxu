@@ -61,4 +61,7 @@
 
     <view class="foot-tip">本页数据仅统计本机账户</view>
   </view>
+
+  <!-- 底部导航：账单页也能直接切换模块（高亮「我的」，因为账单属于我的功能区） -->
+  <tab-bar selected="{{3}}" plain="{{true}}" />
 </view>

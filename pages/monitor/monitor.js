@@ -3,6 +3,7 @@
 // 不引入 live-player（需额外类目权限），也不使用任何图片资源，图标全部 CSS 绘制。
 const app = getApp()
 const monitor = require('../../utils/monitor.js')
+const nav = require('../../utils/nav.js')
 
 // 链接剩余有效期小于该值时视为「即将过期」，进页面后自动补取一次流
 const EXPIRE_SOON_MS = 60 * 1000
@@ -165,11 +166,7 @@ Page({
   },
 
   goBack() {
-    wx.navigateBack({
-      delta: 1,
-      fail() {
-        wx.switchTab({ url: '/pages/campus/campus' })
-      }
-    })
+    // 没有上一页时切回「校园」，避免"退不出去"
+    nav.back('/pages/campus/campus')
   }
 })
