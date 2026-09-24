@@ -2,6 +2,8 @@ const app = getApp()
 const menu = require('../../utils/menu.js')
 // 计费数据层：本地版本存在手机里，以后联网只改这一个文件
 const billing = require('../../utils/billing.js')
+// 登录数据层：账号只存在手机本地，页面只负责展示与调用
+const auth = require('../../utils/auth.js')
 
 // 把云端返回的原始错误翻译成「人话」，方便照着做
 function explainCloudError(err) {
@@ -84,7 +86,22 @@ Page({
     claimHours: 0,
     checkinReward: 0,
     // 请求进行中：防连点，并让按钮进入 loading 态
-    billingBusy: false
+    billingBusy: false,
+    // ---------- 登录态 ----------
+    // logged 同时控制「孩子档案」「课时与余额」两张卡片是否显示
+    logged: false,
+    userName: '',
+    userPhone: '',
+    // 头像方块里的姓名首字，WXML 里不做字符串处理，先在这里算好
+    userInitial: '',
+    loginAtText: '',
+    // 登录表单
+    loginName: '',
+    loginPhone: '',
+    logging: false,
+    // 演示账号文案（取自数据层，避免把账号写死在页面）
+    demoName: '',
+    demoPhone: ''
   },
 
   onLoad() {
@@ -104,6 +121,120 @@ Page({
     this.checkAdmin()
     // 打卡 / 领券都会改余额，每次进页面重新同步一次
     this.refreshBilling()
+    // 登录态同步到 data，未登录时收起需要账号的卡片
+    this.syncLoginState()
+  },
+
+  // ---------- 登录 / 账号 ----------
+
+  // 把数据层的登录态同步到 data；未登录时顺手清空账号信息，避免残留
+  syncLoginState() {
+    const demo = auth.demoAccount() || {}
+    const user = auth.getUser()
+    const base = {
+      demoName: demo.name || '',
+      demoPhone: demo.phone || ''
+    }
+    if (!user) {
+      this.setData({
+        logged: false,
+        userName: '',
+        userPhone: '',
+        userInitial: '',
+        loginAtText: '',
+        demoName: base.demoName,
+        demoPhone: base.demoPhone
+      })
+      return
+    }
+    const name = user.name || ''
+    this.setData({
+      logged: true,
+      userName: name,
+      userPhone: user.phone || '',
+      userInitial: name.trim().charAt(0),
+      loginAtText: user.loginAtText || '',
+      demoName: base.demoName,
+      demoPhone: base.demoPhone
+    })
+  },
+
+  onNameInput(e) {
+    this.setData({ loginName: e.detail.value })
+  },
+
+  onPhoneInput(e) {
+    this.setData({ loginPhone: e.detail.value })
+  },
+
+  // 家长登录：姓名 + 手机号，全部交给数据层校验
+  onLogin() {
+    if (this.data.logging) return
+    const name = String(this.data.loginName || '').trim()
+    const phone = String(this.data.loginPhone || '').trim()
+    if (!name || !phone) {
+      wx.showToast({ title: '请填写姓名和手机号', icon: 'none' })
+      return
+    }
+    this.setData({ logging: true })
+    auth
+      .login(name, phone)
+      .then((res) => {
+        if (res && res.ok) {
+          wx.showToast({ title: '登录成功', icon: 'success' })
+          this.setData({
+            logged: true,
+            logging: false,
+            loginName: '',
+            loginPhone: ''
+          })
+          // 用数据层的返回值回填姓名 / 手机号 / 登录时间
+          this.syncLoginState()
+          // 课时与余额卡片刚显示出来，顺手拉一次最新数值
+          this.refreshBilling()
+          return
+        }
+        wx.showToast({ title: (res && res.msg) || '登录失败', icon: 'none' })
+        this.setData({ logging: false })
+      })
+      .catch(() => {
+        this.setData({ logging: false })
+        wx.showToast({ title: '登录失败，请重试', icon: 'none' })
+      })
+  },
+
+  // 已登录卡片里的「切换账号 ›」
+  onSwitchAccount() {
+    wx.showModal({
+      title: '切换账号',
+      content: '切换账号会退出当前登录，确定吗？',
+      confirmColor: '#2E6BFF',
+      success: (res) => {
+        if (res.confirm) this.doLogout()
+      },
+      fail() {
+        // 弹窗没弹出来就没得确认，静默即可
+      }
+    })
+  },
+
+  // 退出登录的唯一出口：底部按钮和「切换账号」都走这里
+  doLogout() {
+    return auth
+      .logout()
+      .then(() => {
+        this.setData({
+          logged: false,
+          userName: '',
+          userPhone: '',
+          userInitial: '',
+          loginAtText: ''
+        })
+        wx.showToast({ title: '已退出登录', icon: 'none' })
+      })
+      .catch(() => {
+        wx.showToast({ title: '退出失败，请重试', icon: 'none' })
+      })
   },
 
   // ---------- 课时与余额 ----------
@@ -270,10 +401,11 @@ Page({
       title: '退出登录',
       content: '确定要退出当前家长账号吗？',
       confirmColor: '#2E6BFF',
-      success(res) {
-        if (res.confirm) {
-          wx.showToast({ title: '已退出登录', icon: 'none' })
-        }
+      success: (res) => {
+        if (res.confirm) this.doLogout()
+      },
+      fail() {
+        // 弹窗没弹出来就没得确认，静默即可
       }
     })
   },

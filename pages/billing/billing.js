@@ -2,6 +2,7 @@ const app = getApp()
 // 计费数据层：目前数据存在本机，以后联网只改这一个文件
 const billing = require('../../utils/billing.js')
 const nav = require('../../utils/nav.js')
+const auth = require('../../utils/auth.js')
 
 // 明细类型 → 左侧方块的颜色与单字（数据层只给 type，配色属于展示层）
 const LEDGER_ICONS = {
@@ -31,6 +32,14 @@ Page({
     this.setData({
       statusBarHeight: (app.globalData && app.globalData.statusBarHeight) || 20
     })
+    // 登录守卫：没登录就退回「我的」，避免绕过登录直接看账单
+    if (!auth.isLoggedIn()) {
+      wx.showToast({ title: '请先登录', icon: 'none' })
+      setTimeout(() => {
+        nav.back('/pages/mine/mine')
+      }, 600)
+      return
+    }
     this.applyRules()
   },
 

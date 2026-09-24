@@ -1,12 +1,40 @@
 <view class="page">
   <view class="hd hd-mine" style="padding-top:{{statusBarHeight}}px">
     <view class="hd-title">我的</view>
-    <view class="hd-sub">家长账号 · 已绑定 1 名幼儿</view>
+    <view class="hd-sub">{{logged ? '家长账号 · 已绑定 1 名幼儿' : '未登录 · 请先登录'}}</view>
   </view>
 
   <view class="body">
-    <!-- 孩子档案 -->
-    <view class="card">
+    <!-- 家长登录：未登录显示表单，登录后显示账号卡片 -->
+    <view class="card" wx:if="{{!logged}}">
+      <view class="card-head">
+        <view class="card-title">家长登录</view>
+        <view class="card-more">演示账号：姓名 {{demoName}} / 手机号 {{demoPhone}}</view>
+      </view>
+      <input class="lg-input" placeholder="请输入姓名" value="{{loginName}}" bindinput="onNameInput" maxlength="20" confirm-type="done" />
+      <input class="lg-input" type="number" placeholder="请输入手机号" value="{{loginPhone}}" bindinput="onPhoneInput" maxlength="11" confirm-type="done" />
+      <view class="btn-primary lg-btn {{logging ? 'is-busy' : ''}}" bindtap="onLogin">{{logging ? '登录中…' : '登 录'}}</view>
+      <view class="lg-tip">登录后可使用课时余额、账单明细等功能；手机号仅用于关联孩子的课时与账单</view>
+    </view>
+
+    <!-- 已登录：账号卡片 -->
+    <view class="card" wx:else>
+      <view class="acct-row">
+        <view class="acct-avatar">{{userInitial}}</view>
+        <view class="row-main">
+          <view class="acct-name">{{userName}}</view>
+          <view class="row-sub">{{userPhone}}</view>
+        </view>
+        <view class="tag tag-green">已登录</view>
+      </view>
+      <view class="acct-foot">
+        <view class="acct-time">登录时间：{{loginAtText}}</view>
+        <view class="acct-switch" bindtap="onSwitchAccount">切换账号 ›</view>
+      </view>
+    </view>
+
+    <!-- 孩子档案：需要账号，未登录时整卡隐藏 -->
+    <view class="card" wx:if="{{logged}}">
       <view class="card-head">
         <view class="card-title">孩子档案</view>
         <view class="card-more" bindtap="onMoreTap">编辑</view>
@@ -27,8 +55,8 @@
       </view>
     </view>
 
-    <!-- 课时与余额：数值与规则都来自 utils/billing.js，页面只负责展示 -->
-    <view class="card">
+    <!-- 课时与余额：数值与规则都来自 utils/billing.js；需要账号，未登录时整卡隐藏 -->
+    <view class="card" wx:if="{{logged}}">
       <view class="card-head">
         <view class="card-title">课时与余额</view>
         <view class="card-more" bindtap="onBillingDetail">账单明细 ›</view>
