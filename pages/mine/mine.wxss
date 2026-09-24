@@ -1,0 +1,59 @@
+/* 我的页 */
+
+/* 头图主题色 */
+.hd-mine {
+  background: linear-gradient(135deg, #FF6A5B, #F0343C);
+}
+
+/* 孩子头像：88rpx 圆形渐变底 + 白色单字 */
+.avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #59A2FF, #2E6BFF);
+  color: #FFFFFF;
+  font-size: 34rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 20rpx;
+}
+
+/* 三列小统计 */
+.mini-stats {
+  display: flex;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #F0F2F7;
+}
+
+.mini-stat {
+  flex: 1;
+  text-align: center;
+}
+
+.mini-num {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.mini-lbl {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #8A93A3;
+}
+
+/* 退出登录区 */
+.logout-box {
+  margin-top: 8rpx;
+}
+
+.foot-tip {
+  margin-top: 24rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #8A93A3;
+}

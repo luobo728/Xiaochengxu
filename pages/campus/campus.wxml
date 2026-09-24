@@ -1,0 +1,63 @@
+<view class="page">
+  <view class="hd hd-campus" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-title">校园</view>
+    <view class="hd-sub">春晖园 · 大一班 · 今日出勤 {{attendToday}}/{{attendTotal}}</view>
+    <view class="hd-stats">
+      <view class="stat">
+        <view class="stat-num">{{attendToday}}</view>
+        <view class="stat-lbl">今日出勤</view>
+      </view>
+      <view class="stat">
+        <view class="stat-num">{{weekEvents}}</view>
+        <view class="stat-lbl">本周活动</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="body">
+    <!-- 校园快讯 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">校园快讯</view>
+        <view class="card-more" bindtap="onMoreTap">全部</view>
+      </view>
+      <view class="row" wx:for="{{news}}" wx:key="id" bindtap="onMoreTap">
+        <view class="row-ico" style="background:{{item.bg}}">{{item.ico}}</view>
+        <view class="row-main">
+          <view class="row-name">{{item.title}}</view>
+          <view class="row-sub">{{item.time}}</view>
+        </view>
+        <view class="arrow"></view>
+      </view>
+    </view>
+
+    <!-- 班级相册 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">班级相册</view>
+        <view class="card-more" bindtap="onMoreTap">更多</view>
+      </view>
+      <view class="album">
+        <view class="album-item" wx:for="{{album}}" wx:key="id" bindtap="onMoreTap">
+          <view class="album-thumb" style="background:{{item.bg}}">{{item.word}}</view>
+          <view class="album-cap">{{item.cap}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 本周食谱 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">本周食谱</view>
+        <view class="tag tag-green">每日更新</view>
+      </view>
+      <view class="row" wx:for="{{menu}}" wx:key="day">
+        <view class="row-name menu-day">{{item.day}}</view>
+        <view class="row-main">
+          <view class="row-sub">{{item.dish}}</view>
+        </view>
+        <view class="tag tag-orange">午餐</view>
+      </view>
+    </view>
+  </view>
+</view>

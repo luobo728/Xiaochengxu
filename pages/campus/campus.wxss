@@ -1,0 +1,43 @@
+/* 校园页 */
+
+/* 头图主题色 */
+.hd-campus {
+  background: linear-gradient(135deg, #3FC5A0, #12A182);
+}
+
+/* 班级相册：三列网格（纯 CSS 色块，无图片） */
+.album {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.album-item {
+  width: 200rpx;
+  margin-bottom: 20rpx;
+}
+
+.album-thumb {
+  height: 160rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+}
+
+.album-cap {
+  margin-top: 10rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #8A93A3;
+}
+
+/* 食谱星期列 */
+.menu-day {
+  width: 110rpx;
+  flex-shrink: 0;
+}

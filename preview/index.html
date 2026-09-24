@@ -1,0 +1,1888 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>阳光幼儿园 · 小程序 UI 预览</title>
+<style>
+/* =========================================================
+   设计契约 / Design contract
+   ---------------------------------------------------------
+   使命：把「阳光幼儿园」小程序的首页、底部导航栏规范、相机页
+        三屏放在一个深色画布上，供评审在浏览器里直接看稿并试用
+        已定稿的交互（活动轮播 / 跑马灯 / tab 高亮 / + 按钮 tooltip）。
+   比例：小程序 750rpx ≈ 390px 设计宽（2rpx ≈ 1px）。
+   间距：只用 4 / 8 / 12 / 16 / 20 的倍数。
+   颜色：
+     页面底 #0F1319 · 手机壳描边 #232A36
+     品牌蓝 #2E6BFF · 渐变蓝 linear-gradient(135deg,#59A2FF,#2E6BFF)
+     正文 #1B1F27 · 次要 #8A93A3 · 未选中 #9AA1AD
+     页面底（小程序内）#F4F6FA · 白卡 #FFF · 分割线 #F0F2F7
+     状态胶囊底 #F1F3F8 · 红色 #F5333F
+   圆角：卡片 14px · 屏幕 36px · 手机壳 44px
+   阴影：白卡 0 10px 30px rgba(24,40,80,.06)
+        活动卡 0 12px 30px rgba(0,0,0,.18)
+        底部导航 0 -3px 12px rgba(24,40,80,.06)
+   动效：state change 用 160–200ms 立即反馈；活动卡切换 500ms
+        cubic-bezier(.22,.68,0,1)；+ 按钮 180ms 弹性缩放。
+        Do：动效只表达状态变化；Don't：transition:all / 匀速线性。
+        降级：prefers-reduced-motion 下位移归零、跑马灯停走。
+   ========================================================= */
+
+:root{
+  --font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+
+  --page-bg:#0F1319;
+  --page-ink:#EDF1F8;
+  --page-ink-2:#8F9BAE;
+  --bezel:#232A36;
+
+  --brand:#2E6BFF;
+  --brand-grad:linear-gradient(135deg,#59A2FF 0%,#2E6BFF 100%);
+  --brand-soft:rgba(46,107,255,.1);
+  --red:#F5333F;
+  --hero-grad:linear-gradient(160deg,#FF6A5B 0%,#F5333F 46%,#D81E2E 100%);
+
+  --surface:#FFFFFF;
+  --page:#F4F6FA;
+  --ink:#1B1F27;
+  --ink-2:#8A93A3;
+  --ink-idle:#9AA1AD;
+  --line:#F0F2F7;
+  --chip:#F1F3F8;
+
+  --r-card:14px;
+  --r-screen:36px;
+  --r-shell:44px;
+  --shadow-card:0 10px 30px rgba(24,40,80,.06);
+  --shadow-banner:0 12px 30px rgba(0,0,0,.18);
+  --shadow-tabbar:0 -3px 12px rgba(24,40,80,.06);
+
+  --ease-out:cubic-bezier(.22,.68,0,1);
+  --ease-spring:cubic-bezier(.16,1.02,.3,1);
+  --t-fast:160ms;
+  --t-base:200ms;
+  --t-banner:500ms;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+html{ -webkit-text-size-adjust:100%; }
+body{
+  margin:0;
+  min-height:100vh;
+  padding:0 0 56px;
+  background:radial-gradient(1100px 520px at 50% -8%, #17202E 0%, #0F1319 58%) no-repeat, var(--page-bg);
+  color:var(--page-ink);
+  font-family:var(--font);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+h1,h2,h3,p,figure,ul{margin:0}
+ul{padding:0;list-style:none}
+button{font-family:inherit}
+svg{display:block}
+
+/* ---------- 页面头部 ---------- */
+.page{
+  max-width:1320px;
+  margin:0 auto;
+  padding:40px 20px 8px;
+}
+.page__title{
+  font-size:26px;
+  font-weight:650;
+  letter-spacing:.4px;
+  line-height:1.3;
+}
+.page__lede{
+  margin-top:8px;
+  font-size:14px;
+  line-height:1.6;
+  color:var(--page-ink-2);
+  max-width:760px;
+}
+.page__note{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-top:12px;
+  padding:6px 12px;
+  border-radius:999px;
+  background:rgba(46,107,255,.1);
+  border:1px solid rgba(93,151,255,.24);
+  color:#A8C2F2;
+  font-size:12px;
+  line-height:1.5;
+}
+.page__note b{
+  color:#CFE0FF;
+  font-weight:600;
+}
+
+/* ---------- 画布 ---------- */
+.stage{
+  max-width:1320px;
+  margin:0 auto;
+  padding:24px 20px 12px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-start;
+  justify-content:center;
+  gap:36px 28px;
+}
+.device{
+  width:406px;                 /* 8px 描边 ×2 + 390 屏幕 */
+  max-width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+}
+ .shell{
+   width:100%;
+   height:844px;
+   padding:8px;
+   border-radius:var(--r-shell);
+   background:linear-gradient(180deg,#2B323E 0%,#1D232D 100%);
+   box-shadow:
+     0 30px 70px rgba(0,0,0,.55),
+     0 6px 18px rgba(0,0,0,.4),
+     inset 0 0 0 1px rgba(255,255,255,.07);
+ }
+.screen{
+  position:relative;
+  width:100%;
+  height:100%;
+  border-radius:var(--r-screen);
+  overflow:hidden;
+  background:var(--page);
+  display:flex;
+  flex-direction:column;
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.4;
+}
+ .device__caption{
+   font-size:12.5px;
+   color:var(--page-ink-2);
+   text-align:center;
+   line-height:1.5;
+   letter-spacing:.2px;
+ }
+ .device__note{
+   display:block;
+   margin-top:6px;
+   font-size:11.5px;
+   line-height:17px;
+   color:#7E8B9E;
+ }
+ .device__note::before{
+   content:"";
+   display:inline-block;
+   width:5px;
+   height:5px;
+   margin-right:6px;
+   border-radius:2px;
+   background:rgba(127,178,255,.75);
+   vertical-align:2px;
+ }
+.device__caption b{
+  display:inline-block;
+  margin-right:6px;
+  padding:1px 6px;
+  border-radius:6px;
+  background:rgba(255,255,255,.08);
+  color:#B9C6DA;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.5px;
+  vertical-align:1px;
+}
+
+/* 键盘焦点：所有可操作元素统一可见焦点环 */
+.tab:focus-visible,
+.dot:focus-visible,
+.nav-add:focus-visible,
+.status__bell:focus-visible,
+.cam__circle:focus-visible,
+.cam__shutter:focus-visible{
+  outline:2px solid #7FB2FF;
+  outline-offset:2px;
+}
+
+/* =========================================================
+   手机稿 1 · 首页
+   ========================================================= */
+
+/* ---------- 1. 顶部红色活动滚动屏 ---------- */
+.hero{
+  position:relative;
+  flex:0 0 auto;
+  padding:8px 0 12px;
+  background:var(--hero-grad);
+  border-radius:0 0 18px 18px;
+  overflow:hidden;
+}
+.hero__glow{
+  position:absolute;
+  border-radius:50%;
+  background:rgba(255,255,255,.14);
+  filter:blur(6px);
+  pointer-events:none;
+}
+.hero__glow--tl{ width:216px; height:216px; top:-86px; left:-72px; }
+.hero__glow--br{ width:244px; height:244px; right:-86px; bottom:-104px; }
+.hero__body{ position:relative; z-index:1; }
+
+.status{
+  height:22px;
+  padding:0 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:#fff;
+}
+.status__time{ font-size:14px; font-weight:600; letter-spacing:.3px; }
+.status__icons{ display:flex; align-items:center; gap:5px; opacity:.95; }
+
+ .apphead{
+   height:38px;
+   margin-top:2px;
+   padding:0 16px;
+   display:flex;
+   align-items:center;
+   justify-content:flex-start;   /* 铃铛紧跟文字块，右上角留空避让微信胶囊 */
+   gap:0;
+ }
+ .apphead__logo{
+   flex:0 0 auto;
+   width:38px;
+   height:38px;
+   margin-right:10px;
+   border-radius:12px;
+   background:rgba(255,255,255,.22);
+   border:1px solid rgba(255,255,255,.26);
+   color:#fff;
+   font-size:17px;
+   font-weight:700;
+   display:grid;
+   place-items:center;
+ }
+ .apphead__text{ flex:0 1 auto; min-width:0; }
+.apphead__title{
+  color:#fff;
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:.3px;
+  line-height:19px;
+}
+.apphead__sub{
+  color:rgba(255,255,255,.82);
+  font-size:11.5px;
+  line-height:16px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+ .status__bell{
+   position:relative;
+   flex:0 0 auto;
+   margin-left:8px;
+   width:32px;
+   height:32px;
+   border-radius:50%;
+   border:0;
+   background:rgba(255,255,255,.22);
+   display:grid;
+   place-items:center;
+   cursor:pointer;
+   transition:background var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
+ }
+.status__bell:hover{ background:rgba(255,255,255,.32); }
+.status__bell:active{ transform:scale(.92); }
+.status__badge{
+  position:absolute;
+  top:1px;
+  right:1px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#FFD233;
+  box-shadow:0 0 0 1.5px rgba(240,60,60,.55);
+}
+
+/* 活动卡 */
+.hero__banner{ margin-top:10px; }
+.banner{
+  position:relative;
+  height:158px;
+  margin:0 16px;
+}
+.banner__card{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:16px;
+  border-radius:var(--r-card);
+  background:var(--card-grad,#3A5BFF);
+  box-shadow:var(--shadow-banner);
+  color:#fff;
+  opacity:0;
+  transform:translateX(16px) scale(.985);
+  pointer-events:none;
+  transition:opacity var(--t-banner) var(--ease-out), transform var(--t-banner) var(--ease-out);
+}
+.banner__card.is-active{
+  opacity:1;
+  transform:none;
+  pointer-events:auto;
+}
+.banner__card--c1{ --card-grad:linear-gradient(135deg,#3A5BFF 0%,#1E2F8F 100%); }
+.banner__card--c2{ --card-grad:linear-gradient(135deg,#FF7A59 0%,#F0432B 100%); }
+.banner__card--c3{ --card-grad:linear-gradient(135deg,#22C1A6 0%,#0E9E8A 100%); }
+.banner__card--c4{ --card-grad:linear-gradient(135deg,#FFB020 0%,#F08A00 100%); }
+.banner__card--c5{ --card-grad:linear-gradient(135deg,#8A6BFF 0%,#5B34E8 100%); }
+
+.banner__text{ flex:1 1 auto; min-width:0; }
+.banner__tag{
+  display:inline-block;
+  padding:3px 9px;
+  border-radius:999px;
+  background:rgba(255,255,255,.24);
+  color:#fff;
+  font-size:11.5px;
+  font-weight:600;
+  line-height:16px;
+  letter-spacing:.4px;
+}
+.banner__title{
+  margin-top:8px;
+  color:#fff;
+  font-size:21px;
+  font-weight:700;
+  line-height:26px;
+  letter-spacing:.3px;
+}
+.banner__sub{
+  margin-top:5px;
+  color:rgba(255,255,255,.8);
+  font-size:12.5px;
+  line-height:17px;
+}
+.banner__art{
+  flex:0 0 auto;
+  width:66px;
+  height:66px;
+  border-radius:16px;
+  background:rgba(255,255,255,.22);
+  border:1px solid rgba(255,255,255,.35);
+  color:#fff;
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:.5px;
+  display:grid;
+  place-items:center;
+}
+
+/* 指示点：可视 6px，命中区 10×16 */
+.banner__dots{
+  height:16px;
+  margin-top:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.dot{
+  position:relative;
+  width:10px;
+  height:16px;
+  margin:0 -2px;
+  padding:0;
+  border:0;
+  background:transparent;
+  cursor:pointer;
+}
+.dot::before{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:rgba(255,255,255,.42);
+  transform:translate(-50%,-50%);
+  transition:width var(--t-base) var(--ease-out), background var(--t-fast) var(--ease-out);
+}
+.dot.is-active::before{
+  width:14px;
+  border-radius:3px;
+  background:#fff;
+}
+.dot:active::before{ background:rgba(255,255,255,.75); }
+.dot.is-active:active::before{ background:#fff; }
+
+/* 跑马灯公告条 */
+.marquee{
+  height:32px;
+  margin:10px 16px 0;
+  padding:0 10px 0 5px;
+  border-radius:16px;
+  background:rgba(255,255,255,.2);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  overflow:hidden;
+}
+.marquee__tag{
+  flex:0 0 auto;
+  padding:3px 8px;
+  border-radius:9px;
+  background:#fff;
+  color:var(--red);
+  font-size:11px;
+  font-weight:700;
+  line-height:14px;
+  letter-spacing:.3px;
+}
+.marquee__viewport{
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 10px),transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 10px),transparent 100%);
+}
+.marquee__track{
+  display:inline-flex;
+  align-items:center;
+  white-space:nowrap;
+  will-change:transform;
+  animation:marquee-scroll 18s linear infinite;
+}
+.marquee__copy{
+  padding-right:14px;
+  color:rgba(255,255,255,.94);
+  font-size:12px;
+  line-height:32px;
+}
+@keyframes marquee-scroll{
+  from{ transform:translateX(0); }
+  to{ transform:translateX(-50%); }
+}
+
+/* ---------- 2. 浅色内容区 ---------- */
+.content{
+  flex:1 1 auto;
+  min-height:0;
+  padding:8px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  overflow-y:auto;
+  scrollbar-width:none;
+}
+.content::-webkit-scrollbar{ width:0; height:0; }
+
+.card{
+  flex:0 0 auto;
+  background:var(--surface);
+  border-radius:var(--r-card);
+  box-shadow:var(--shadow-card);
+}
+.card__head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+ .card__title{
+   position:relative;
+   padding-left:10px;
+   font-size:15px;
+   font-weight:600;
+   line-height:19px;
+   color:var(--ink);
+ }
+ /* 从顶部欢迎语挪到卡片标题旁的日期 */
+ .card__date{
+   margin-left:7px;
+   font-size:12px;
+   font-weight:400;
+   letter-spacing:0;
+   color:var(--ink-2);
+ }
+.card__title::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:50%;
+  width:4px;
+  height:13px;
+  border-radius:2px;
+  background:var(--red);
+  transform:translateY(-50%);
+}
+.card__more{
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  font-size:12px;
+  color:var(--ink-2);
+  line-height:16px;
+}
+
+/* 快捷入口 */
+.quick{
+   padding:16px 8px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:4px;
+}
+.quick__item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  min-width:0;
+}
+.quick__icon{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  color:#fff;
+  font-size:17px;
+  font-weight:600;
+  display:grid;
+  place-items:center;
+  box-shadow:0 6px 14px rgba(24,40,80,.12);
+}
+.quick__icon--food{ background:linear-gradient(135deg,#FFB020,#F08A00); }
+.quick__icon--leave{ background:linear-gradient(135deg,#4C8BFF,#2D5FEF); }
+.quick__icon--notice{ background:linear-gradient(135deg,#3FC5A0,#12A182); }
+.quick__icon--archive{ background:linear-gradient(135deg,#FF7A59,#F0432B); }
+.quick__label{
+  font-size:11px;
+  line-height:14px;
+  color:var(--ink-2);
+  white-space:nowrap;
+}
+
+/* 今日安排 */
+ .sched{ padding:12px 14px; }
+.sched__list{
+   margin-top:8px;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.sched__row{
+  display:grid;
+  grid-template-columns:40px 7px minmax(0,1fr) auto;
+  align-items:center;
+  column-gap:8px;
+   padding:4px 0;
+  min-height:42px;
+}
+.sched__time{
+  font-size:12.5px;
+  font-weight:700;
+  color:var(--brand);
+  letter-spacing:.2px;
+}
+.sched__dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#D7DEEC;
+}
+.sched__dot--live{ background:var(--brand); }
+.sched__text{ min-width:0; }
+.sched__name{
+  display:block;
+  font-size:13.5px;
+  line-height:18px;
+  color:var(--ink);
+  font-weight:500;
+  overflow-wrap:anywhere;
+}
+.sched__meta{
+  display:block;
+  font-size:11.5px;
+  line-height:16px;
+  color:var(--ink-2);
+}
+.pill{
+  flex:0 0 auto;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:11px;
+  line-height:15px;
+  white-space:nowrap;
+  background:var(--chip);
+  color:var(--ink-2);
+}
+.pill--live{
+  background:var(--brand-soft);
+  color:var(--brand);
+  font-weight:600;
+}
+
+/* 最新通知 */
+ .notices{ padding:12px 14px; }
+ .notices__list{ margin-top:6px; }
+ .notice{
+   display:grid;
+   grid-template-columns:6px minmax(0,1fr) 14px;
+   align-items:center;
+   column-gap:10px;
+   padding:7px 0;
+ }
+ .notice + .notice{ border-top:1px solid var(--line); }
+ .notice__dot{
+   width:6px;
+   height:6px;
+   border-radius:50%;
+   background:var(--brand);
+ }
+ .notice__dot--orange{ background:#F58A00; }
+ .notice__dot--teal{ background:#12A182; }
+ .notice__text{ min-width:0; }
+ .notice__title{
+   display:block;
+   font-size:13.5px;
+   line-height:18px;
+   color:var(--ink);
+   overflow-wrap:anywhere;
+ }
+ .notice__time{
+   display:block;
+   font-size:11.5px;
+   line-height:15px;
+   color:var(--ink-idle);
+ }
+
+/* ---------- 3. 底部导航栏 ---------- */
+.tabbar{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:6;
+  background:var(--surface);
+  box-shadow:var(--shadow-tabbar);
+}
+.tabbar__bar{
+  height:54px;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+}
+.tab{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  padding:6px 0 0;
+  border:0;
+  background:transparent;
+  color:var(--ink-idle);
+  cursor:pointer;
+  transition:color var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
+}
+.tab__icon{ width:24px; height:24px; }
+.tab__label{
+  font-size:12px;
+  line-height:14px;
+  letter-spacing:.2px;
+}
+.tab.is-active{ color:var(--brand); }
+.tab.is-active .tab__label{ font-weight:600; }
+.tab:active{ transform:scale(.94); }
+.tab__bar{
+  opacity:0;
+  transition:opacity var(--t-base) var(--ease-out);
+}
+.tab.is-active .tab__bar{ opacity:1; }
+.tabbar__slot{ pointer-events:none; }
+
+.tabbar__home{
+  height:22px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+}
+.tabbar__home span{
+  width:130px;
+  height:5px;
+  border-radius:3px;
+  background:rgba(27,31,39,.32);
+}
+
+/* 中间凸起的「扫一扫」按钮：底边距屏幕底 36px → 顶部高出导航条 22px */
+.nav-add{
+  position:absolute;
+  left:50%;
+  bottom:36px;
+  transform:translateX(-50%);
+  width:62px;
+  height:62px;
+  padding:6px 0 0;
+  border-radius:50%;
+  border:4px solid #fff;
+  background:var(--brand-grad);
+  box-shadow:0 6px 14px rgba(46,107,255,.38);
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  cursor:pointer;
+  transition:transform 180ms var(--ease-spring), box-shadow 180ms var(--ease-out);
+}
+.nav-add:hover{
+  transform:translateX(-50%) translateY(-2px) scale(1.03);
+  box-shadow:0 10px 20px rgba(46,107,255,.44);
+}
+.nav-add:active{
+  transform:translateX(-50%) scale(.95);
+  box-shadow:0 4px 10px rgba(46,107,255,.34);
+}
+.nav-add__plus{
+  position:relative;
+  width:20px;
+  height:20px;
+}
+.nav-add__plus::before,
+.nav-add__plus::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:50%;
+  background:#fff;
+  border-radius:2px;
+  transform:translate(-50%,-50%);
+}
+.nav-add__plus::before{ width:20px; height:3.5px; }
+.nav-add__plus::after{ width:3.5px; height:20px; }
+.nav-add__label{
+  font-size:11px;
+  line-height:13px;
+  letter-spacing:.2px;
+}
+
+/* 深色 tooltip（+ 按钮 / 通知铃铛共用） */
+.tip{
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 10px);
+  transform:translate(-50%,6px) scale(.96);
+  transform-origin:50% 100%;
+  max-width:220px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(22,26,34,.94);
+  color:#fff;
+  font-size:12px;
+  font-weight:500;
+  line-height:1.2;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity var(--t-fast) var(--ease-out), transform var(--t-base) var(--ease-spring);
+  z-index:20;
+}
+.tip::after{
+  content:"";
+  position:absolute;
+  top:100%;
+  left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:rgba(22,26,34,.94);
+}
+ .tip--below{
+   top:calc(100% + 8px);
+   bottom:auto;
+   left:auto;
+   right:-2px;
+   transform:translateY(-6px) scale(.96);
+   transform-origin:100% 0;
+ }
+ .tip--below::after{
+   top:auto;
+   bottom:100%;
+   left:auto;
+   right:14px;
+   transform:none;
+   border-top-color:transparent;
+   border-bottom-color:rgba(22,26,34,.94);
+ }
+ .has-tip .tip{
+   opacity:1;
+   transform:translate(-50%,0) scale(1);
+ }
+ .has-tip .tip--below{ transform:translateY(0) scale(1); }
+
+ .spec__scroll{
+   flex:1 1 auto;
+   min-height:0;
+   padding:16px 16px 18px;
+   display:flex;
+   flex-direction:column;
+   gap:8px;
+   overflow-y:auto;
+   scrollbar-width:none;
+ }
+  overflow-y:auto;
+  scrollbar-width:none;
+}
+.spec__scroll::-webkit-scrollbar{ width:0; height:0; }
+.spec__title{
+   margin-top:0;
+  font-size:19px;
+  font-weight:650;
+  line-height:24px;
+  color:var(--ink);
+}
+.spec__sub{
+   margin-top:6px;
+  font-size:11.5px;
+  line-height:16px;
+  color:var(--ink-2);
+}
+.spec__card{
+   padding:8px 14px;
+  background:var(--surface);
+  border-radius:var(--r-card);
+  box-shadow:var(--shadow-card);
+}
+.spec__label{
+  font-size:13px;
+  font-weight:600;
+  line-height:17px;
+  color:var(--ink);
+}
+.spec__rowlabel{
+  display:flex;
+  align-items:center;
+  gap:6px;
+   margin-top:8px;
+  font-size:11px;
+  line-height:14px;
+  color:var(--ink-2);
+}
+.spec__rowlabel::after{
+  content:"";
+  flex:1 1 auto;
+  height:1px;
+  background:var(--line);
+}
+.spec__row{
+   margin-top:5px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:4px;
+}
+.spec__cell{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+   gap:3px;
+   padding:6px 0 5px;
+  border-radius:10px;
+  background:#F8FAFD;
+  min-width:0;
+}
+.spec__icon{ width:48px; height:48px; }
+.spec__name{
+  font-size:12px;
+  line-height:15px;
+  color:var(--ink);
+}
+.spec__hex{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:10px;
+  line-height:13px;
+  letter-spacing:.2px;
+  color:var(--ink-idle);
+}
+.spec__cell--idle{ color:var(--ink-idle); }
+.spec__cell--active{ color:var(--brand); }
+.spec__cell--active .spec__hex{ color:var(--brand); }
+
+/* + 按钮放大视图 */
+.spec__add{
+  margin-top:10px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.spec__addcircle{
+  position:relative;
+  flex:0 0 auto;
+  width:124px;
+  height:124px;
+  border-radius:50%;
+  border:8px solid #fff;
+  background:var(--brand-grad);
+  box-shadow:0 14px 28px rgba(46,107,255,.32);
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+}
+.spec__addplus{
+  position:relative;
+  width:40px;
+  height:40px;
+}
+.spec__addplus::before,
+.spec__addplus::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:50%;
+  background:#fff;
+  border-radius:3px;
+  transform:translate(-50%,-50%);
+}
+.spec__addplus::before{ width:40px; height:7px; }
+.spec__addplus::after{ width:7px; height:40px; }
+.spec__addlabel{ font-size:20px; line-height:22px; }
+.spec__annot{
+  flex:1 1 auto;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.spec__annot li{
+  font-size:12px;
+  line-height:17px;
+  color:var(--ink-2);
+}
+.spec__annot b{
+  display:block;
+  margin-bottom:1px;
+  color:var(--ink);
+  font-size:12px;
+  font-weight:600;
+}
+.spec__swatch{
+  display:inline-block;
+  vertical-align:-2px;
+  width:44px;
+  height:12px;
+  margin:0 2px;
+  border-radius:6px;
+  background:var(--brand-grad);
+  box-shadow:inset 0 0 0 1px rgba(24,40,80,.08);
+}
+
+/* 凸起关系示意图 */
+.spec__diagram{
+  position:relative;
+  margin-top:10px;
+   height:120px;
+  border-radius:12px;
+  background:
+    linear-gradient(180deg,#FBFCFE 0%,#F5F7FB 100%);
+  overflow:hidden;
+}
+.spec__guide{
+  position:absolute;
+  left:0;
+  right:0;
+  height:0;
+  border-top:1px dashed #CBD6E6;
+}
+.spec__guide--btntop{ top:22px; }
+.spec__guide--bartop{ top:44px; }
+.spec__dim{
+  position:absolute;
+  left:30px;
+  top:22px;
+  width:1px;
+  height:22px;
+  background:#B6C2D6;
+}
+.spec__dim::before,
+.spec__dim::after{
+  content:"";
+  position:absolute;
+  left:-3px;
+  width:7px;
+  height:1px;
+  background:#B6C2D6;
+}
+.spec__dim::before{ top:0; }
+.spec__dim::after{ bottom:0; }
+.spec__dimtext{
+  position:absolute;
+  left:0;
+  top:25px;
+  width:26px;
+  text-align:right;
+  font-size:10.5px;
+  line-height:14px;
+  color:var(--ink-2);
+}
+.spec__bar{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:76px;
+  background:#fff;
+  border-radius:14px 14px 0 0;
+  box-shadow:0 -3px 12px rgba(24,40,80,.06);
+}
+.spec__barbar{
+  height:54px;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  align-items:center;
+  justify-items:center;
+}
+.spec__barbar span{
+  width:16px;
+  height:16px;
+  border-radius:4px;
+  background:#E4E9F2;
+}
+.spec__barhome{
+  height:22px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+}
+.spec__barhome span{
+  width:60px;
+  height:4px;
+  border-radius:2px;
+  background:rgba(27,31,39,.3);
+}
+.spec__mini{
+  position:absolute;
+  left:50%;
+  top:22px;
+  transform:translateX(-50%);
+  width:62px;
+  height:62px;
+  border-radius:50%;
+  border:4px solid #fff;
+  background:var(--brand-grad);
+  box-shadow:0 6px 14px rgba(46,107,255,.34);
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+}
+.spec__miniplus{
+  position:relative;
+  width:20px;
+  height:20px;
+}
+.spec__miniplus::before,
+.spec__miniplus::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:50%;
+  background:#fff;
+  border-radius:2px;
+  transform:translate(-50%,-50%);
+}
+.spec__miniplus::before{ width:20px; height:3.5px; }
+.spec__miniplus::after{ width:3.5px; height:20px; }
+.spec__minilabel{ font-size:11px; line-height:13px; }
+
+/* 注解 */
+.spec__notes{
+  display:flex;
+  flex-direction:column;
+   gap:4px;
+   padding:8px 14px;
+  border-radius:var(--r-card);
+  background:rgba(46,107,255,.06);
+  border:1px solid rgba(46,107,255,.12);
+}
+.spec__notes li{
+  position:relative;
+  padding-left:14px;
+  font-size:12.5px;
+   line-height:17px;
+  color:#3C4657;
+}
+.spec__notes li::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:7px;
+  width:6px;
+  height:6px;
+  border-radius:2px;
+  background:var(--brand);
+}
+.spec__notes code{
+  padding:1px 5px;
+  border-radius:5px;
+  background:rgba(46,107,255,.1);
+  color:#22509E;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11.5px;
+}
+
+/* =========================================================
+   手机稿 3 · 相机页
+   ========================================================= */
+.screen--camera{ background:#08090C; color:#fff; }
+.cam__top{
+  flex:0 0 auto;
+  padding-bottom:8px;
+}
+.cam__bar{
+  height:40px;
+  padding:0 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.cam__title{
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:.4px;
+  color:#fff;
+}
+ .cam__circle{
+   width:32px;
+   height:32px;
+   border:0;
+   border-radius:50%;
+   background:rgba(255,255,255,.16);
+   display:grid;
+   place-items:center;
+   cursor:pointer;
+   transition:background var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
+ }
+ .cam__circle:hover{ background:rgba(255,255,255,.28); }
+ .cam__circle:active{ transform:scale(.9); }
+ /* 右上占位：与关闭钮等宽、不可见，仅用于保持「拍照」标题居中（微信胶囊占据该区域） */
+ .cam__circle--phantom{
+   visibility:hidden;
+   cursor:default;
+   pointer-events:none;
+ }
+
+.cam__view{
+  position:relative;
+  flex:1 1 auto;
+  min-height:0;
+  background:#12151B;
+}
+.cam__corner{
+  position:absolute;
+  width:30px;
+  height:30px;
+  border:0 solid rgba(255,255,255,.85);
+}
+.cam__corner--tl{ top:22px; left:22px; border-top-width:2px; border-left-width:2px; border-top-left-radius:6px; }
+.cam__corner--tr{ top:22px; right:22px; border-top-width:2px; border-right-width:2px; border-top-right-radius:6px; }
+.cam__corner--bl{ bottom:22px; left:22px; border-bottom-width:2px; border-left-width:2px; border-bottom-left-radius:6px; }
+.cam__corner--br{ bottom:22px; right:22px; border-bottom-width:2px; border-right-width:2px; border-bottom-right-radius:6px; }
+.cam__focus{
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:118px;
+  height:118px;
+  margin:-59px 0 0 -59px;
+  border:1px solid rgba(255,255,255,.35);
+  border-radius:8px;
+}
+
+.cam__bottom{
+  flex:0 0 auto;
+  padding:20px 46px 30px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.cam__ctl{
+  width:64px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  color:#fff;
+}
+.cam__ctl-icon{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background:rgba(255,255,255,.1);
+  display:grid;
+  place-items:center;
+}
+.cam__ctl-label{
+  font-size:12px;
+  line-height:15px;
+  color:rgba(255,255,255,.9);
+}
+.cam__shutter{
+  flex:0 0 auto;
+  width:76px;
+  height:76px;
+  padding:0;
+  border:3px solid #fff;
+  border-radius:50%;
+  background:transparent;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:transform var(--t-fast) var(--ease-out);
+}
+.cam__shutter span{
+  width:62px;
+  height:62px;
+  border-radius:50%;
+  background:#fff;
+  transition:transform var(--t-fast) var(--ease-spring), background var(--t-fast) var(--ease-out);
+}
+.cam__shutter:hover span{ background:#F2F4F8; }
+.cam__shutter:active{ transform:scale(.97); }
+.cam__shutter:active span{ transform:scale(.88); }
+
+/* =========================================================
+   响应式 + 动效降级
+   ========================================================= */
+@media (max-width:1400px){
+  .stage{ gap:32px 24px; padding:20px 20px 12px; }
+}
+@media (max-width:900px){
+  .page{ padding-top:32px; }
+  .page__title{ font-size:22px; }
+  .stage{ gap:28px 20px; }
+  .device{ width:100%; max-width:406px; }
+}
+@media (max-width:430px){
+  .stage{ padding:16px 12px 8px; }
+  .page{ padding:24px 16px 4px; }
+  .page__lede{ font-size:13px; }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .banner__card{ transition:opacity 120ms linear; }
+  .banner__card:not(.is-active){ transform:none; }
+  .marquee__track{ animation:none; }
+  .nav-add,
+  .nav-add:hover,
+  .nav-add:active{ transform:translateX(-50%); }
+  .tab,.dot::before,.tip,.cam__shutter,.cam__shutter span,.status__bell,.cam__circle{
+    transition-duration:120ms;
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="page">
+  <h1 class="page__title">阳光幼儿园 · 小程序 UI 预览</h1>
+  <p class="page__lede">
+    三块手机稿按 750rpx ≈ 390px（2rpx ≈ 1px）1:1 还原：首页（红色活动滚动屏 + 快捷入口 + 今日安排 + 最新通知 + 底部导航）、底部导航栏 ×2 规范对照、相机页。
+  </p>
+  <p class="page__note"><b>演示数据</b> 页面内的活动、通知、课程、时间均为示意内容，非真实接口数据。</p>
+</header>
+
+<main class="stage">
+
+  <!-- ============================================================
+       手机稿 1 · 首页
+       ============================================================ -->
+  <figure class="device">
+    <div class="shell">
+      <div class="screen screen--home">
+
+        <!-- 1. 顶部红色活动滚动屏 -->
+        <section class="hero" aria-label="园所头部与活动滚动屏">
+          <span class="hero__glow hero__glow--tl" aria-hidden="true"></span>
+          <span class="hero__glow hero__glow--br" aria-hidden="true"></span>
+
+          <div class="hero__body">
+            <div class="status">
+              <span class="status__time">9:41</span>
+              <span class="status__icons" aria-hidden="true">
+                <svg viewBox="0 0 17 11" width="17" height="11" fill="none"><rect x="0" y="7.2" width="3" height="3.8" rx="1.1" fill="#fff"/><rect x="4.6" y="5.2" width="3" height="5.8" rx="1.1" fill="#fff"/><rect x="9.2" y="2.9" width="3" height="8.1" rx="1.1" fill="#fff"/><rect x="13.8" y=".6" width="3" height="10.4" rx="1.1" fill="#fff"/></svg>
+                <svg viewBox="0 0 16 11" width="16" height="11" fill="none"><path d="M1.1 3.7a10.4 10.4 0 0 1 13.8 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M3.7 6.4a6.6 6.6 0 0 1 8.6 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="9.5" r="1.35" fill="#fff"/></svg>
+                <svg viewBox="0 0 25 12" width="25" height="12" fill="none"><rect x=".6" y=".6" width="20.8" height="10.8" rx="3.1" stroke="rgba(255,255,255,.6)" stroke-width="1.2"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.9" fill="#fff"/><path d="M23.2 4.3v3.4c.9-.4 1.3-1 1.3-1.7s-.4-1.3-1.3-1.7Z" fill="rgba(255,255,255,.6)"/></svg>
+              </span>
+            </div>
+
+            <header class="apphead">
+              <div class="apphead__logo" aria-hidden="true">幼</div>
+              <div class="apphead__text">
+                <p class="apphead__title">阳光幼儿园</p>
+                 <p class="apphead__sub">今天也要开开心心哦</p>
+              </div>
+              <button class="status__bell" type="button" aria-label="查看通知" data-tip="消息通知 · 演示">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18.2 16.4V11a6.2 6.2 0 1 0-12.4 0v5.4L4.2 18.6h15.6l-1.6-2.2Z"/><path d="M10 20.6a2 2 0 0 0 4 0"/></svg>
+                <span class="status__badge" aria-hidden="true"></span>
+                 <span class="tip tip--below" role="status"></span>
+              </button>
+            </header>
+
+            <!-- 活动滚动屏：JS 每 3.6s 切换 -->
+            <div class="hero__banner" data-banner>
+              <div class="banner" aria-live="off">
+                <article class="banner__card banner__card--c1 is-active" aria-hidden="false">
+                  <div class="banner__text">
+                    <span class="banner__tag">大型活动</span>
+                    <h3 class="banner__title">2026 春季亲子运动会</h3>
+                    <p class="banner__sub">4月18日 09:00 · 中心操场 · 全员参与</p>
+                  </div>
+                  <div class="banner__art" aria-hidden="true">运动会</div>
+                </article>
+                <article class="banner__card banner__card--c2" aria-hidden="true">
+                  <div class="banner__text">
+                    <span class="banner__tag">报名中</span>
+                    <h3 class="banner__title">六一文艺汇演报名</h3>
+                    <p class="banner__sub">截止 5月10日 · 每班限 3 个节目</p>
+                  </div>
+                  <div class="banner__art" aria-hidden="true">报名表</div>
+                </article>
+                <article class="banner__card banner__card--c3" aria-hidden="true">
+                  <div class="banner__text">
+                    <span class="banner__tag">保健</span>
+                    <h3 class="banner__title">春季健康体检安排</h3>
+                    <p class="banner__sub">4月22日 · 保健室</p>
+                  </div>
+                  <div class="banner__art" aria-hidden="true">体检表</div>
+                </article>
+                <article class="banner__card banner__card--c4" aria-hidden="true">
+                  <div class="banner__text">
+                    <span class="banner__tag">食谱</span>
+                    <h3 class="banner__title">本周营养食谱已更新</h3>
+                    <p class="banner__sub">周一至周五 · 三餐两点</p>
+                  </div>
+                  <div class="banner__art" aria-hidden="true">食谱</div>
+                </article>
+                <article class="banner__card banner__card--c5" aria-hidden="true">
+                  <div class="banner__text">
+                    <span class="banner__tag">安全</span>
+                    <h3 class="banner__title">消防演练与安全教育周</h3>
+                    <p class="banner__sub">4月25日 · 全园</p>
+                  </div>
+                  <div class="banner__art" aria-hidden="true">演练</div>
+                </article>
+              </div>
+
+              <div class="banner__dots" role="group" aria-label="活动切换">
+                <button class="dot is-active" type="button" aria-label="第 1 张：2026 春季亲子运动会" aria-current="true"></button>
+                <button class="dot" type="button" aria-label="第 2 张：六一文艺汇演报名"></button>
+                <button class="dot" type="button" aria-label="第 3 张：春季健康体检安排"></button>
+                <button class="dot" type="button" aria-label="第 4 张：本周营养食谱已更新"></button>
+                <button class="dot" type="button" aria-label="第 5 张：消防演练与安全教育周"></button>
+              </div>
+            </div>
+
+            <!-- 跑马灯公告条 -->
+            <div class="marquee">
+              <span class="marquee__tag">公告</span>
+              <div class="marquee__viewport">
+                <div class="marquee__track">
+                  <span class="marquee__copy">周六亲子运动会报名截止 4月15日 18:00 • 春季流感高发，请为宝贝准备外套 • 4月20日 家长开放日，欢迎参加 • </span>
+                  <span class="marquee__copy" aria-hidden="true">周六亲子运动会报名截止 4月15日 18:00 • 春季流感高发，请为宝贝准备外套 • 4月20日 家长开放日，欢迎参加 • </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. 浅色内容区 -->
+        <section class="content" aria-label="首页内容区">
+
+          <div class="card quick">
+            <div class="quick__item">
+              <span class="quick__icon quick__icon--food" aria-hidden="true">食</span>
+              <span class="quick__label">今日食谱</span>
+            </div>
+            <div class="quick__item">
+              <span class="quick__icon quick__icon--leave" aria-hidden="true">假</span>
+              <span class="quick__label">请假申请</span>
+            </div>
+            <div class="quick__item">
+              <span class="quick__icon quick__icon--notice" aria-hidden="true">通</span>
+              <span class="quick__label">通知公告</span>
+            </div>
+            <div class="quick__item">
+              <span class="quick__icon quick__icon--archive" aria-hidden="true">档</span>
+              <span class="quick__label">成长档案</span>
+            </div>
+          </div>
+
+          <div class="card sched">
+            <div class="card__head">
+               <h2 class="card__title">今日安排<span class="card__date">4月16日 周三</span></h2>
+              <span class="card__more">全部课时
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#C3CAD6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+              </span>
+            </div>
+            <div class="sched__list">
+              <div class="sched__row">
+                <span class="sched__time">08:30</span>
+                <span class="sched__dot sched__dot--live" aria-hidden="true"></span>
+                <span class="sched__text">
+                  <span class="sched__name">晨间游戏与早操</span>
+                  <span class="sched__meta">李老师 · 中庭</span>
+                </span>
+                <span class="pill">已完成</span>
+              </div>
+              <div class="sched__row">
+                <span class="sched__time">09:20</span>
+                <span class="sched__dot sched__dot--live" aria-hidden="true"></span>
+                <span class="sched__text">
+                  <span class="sched__name">主题课 · 春天的颜色</span>
+                  <span class="sched__meta">王老师 · 大一班</span>
+                </span>
+                <span class="pill">已完成</span>
+              </div>
+              <div class="sched__row">
+                <span class="sched__time">10:30</span>
+                <span class="sched__dot" aria-hidden="true"></span>
+                <span class="sched__text">
+                  <span class="sched__name">户外体能活动</span>
+                  <span class="sched__meta">张老师 · 中心操场</span>
+                </span>
+                <span class="pill pill--live">进行中</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card notices">
+            <div class="card__head">
+              <h2 class="card__title">最新通知</h2>
+              <span class="card__more">更多
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#C3CAD6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+              </span>
+            </div>
+            <div class="notices__list">
+              <div class="notice">
+                 <span class="notice__dot notice__dot--blue" aria-hidden="true"></span>
+                 <span class="notice__text">
+                   <span class="notice__title">周六亲子运动会报名截止</span>
+                   <span class="notice__time">04-14</span>
+                 </span>
+                 <svg class="notice__chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#C3CAD6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+              </div>
+              <div class="notice">
+                 <span class="notice__dot notice__dot--orange" aria-hidden="true"></span>
+                 <span class="notice__text">
+                   <span class="notice__title">春季流感预防通知</span>
+                   <span class="notice__time">04-13</span>
+                 </span>
+                 <svg class="notice__chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#C3CAD6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+              </div>
+              <div class="notice">
+                 <span class="notice__dot notice__dot--teal" aria-hidden="true"></span>
+                 <span class="notice__text">
+                   <span class="notice__title">家长开放日邀请函</span>
+                   <span class="notice__time">04-12</span>
+                 </span>
+                 <svg class="notice__chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#C3CAD6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- 3. 底部导航栏 -->
+        <nav class="tabbar" aria-label="主导航" data-tabs>
+          <div class="tabbar__bar">
+            <button class="tab is-active" type="button" aria-current="page">
+              <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 10.6 12 4l8 6.6V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/>
+                <rect class="tab__bar" x="6" y="13.2" width="12" height="2.4" rx="1.2" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="tab__label">首页</span>
+            </button>
+
+            <button class="tab" type="button">
+              <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.4"/>
+                <path d="M12 7.4v4.9l3.5 2.1"/>
+              </svg>
+              <span class="tab__label">课时</span>
+            </button>
+
+            <span class="tabbar__slot" aria-hidden="true"></span>
+
+            <button class="tab" type="button">
+              <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2.8 10.4 12 4l9.2 6.4"/>
+                <path d="M5.2 10.6V20h13.6v-9.4"/>
+                <path d="M8.6 13.9h2.4v2.4H8.6z"/>
+                <path d="M13 13.9h2.4v2.4H13z"/>
+                <path d="M10.8 20v-3.2h2.4V20"/>
+              </svg>
+              <span class="tab__label">校园</span>
+            </button>
+
+            <button class="tab" type="button">
+              <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8.2" r="3.7"/>
+                <path d="M4.9 20.4c0-3.6 3.2-5.8 7.1-5.8s7.1 2.2 7.1 5.8"/>
+              </svg>
+              <span class="tab__label">我的</span>
+            </button>
+          </div>
+
+          <div class="tabbar__home"><span aria-hidden="true"></span></div>
+
+          <button class="nav-add" type="button" aria-label="扫一扫，调起设备相机" data-tip="调用设备相机 · 拍照">
+            <span class="nav-add__plus" aria-hidden="true"></span>
+            <span class="nav-add__label">扫一扫</span>
+            <span class="tip" role="status"></span>
+          </button>
+        </nav>
+
+      </div>
+    </div>
+     <figcaption class="device__caption"><b>01</b>首页 · 红色活动滚动屏 + 快捷入口 + 底部导航<span class="device__note">右上角留白 = 避让微信胶囊按钮</span></figcaption>
+  </figure>
+
+  <!-- ============================================================
+       手机稿 2 · 底部导航栏规范（×2）
+       ============================================================ -->
+  <figure class="device">
+    <div class="shell">
+      <div class="screen screen--spec">
+        <div class="spec__scroll">
+
+          <header>
+            <h2 class="spec__title">底部导航栏 · 组件规范</h2>
+            <p class="spec__sub">图标与按钮均为 ×2 放大视图（24px 图标 → 48px，62px 圆按钮 → 124px）。</p>
+          </header>
+
+          <section class="spec__card">
+            <h3 class="spec__label">Tab 图标 · 未选中 / 选中两态对照</h3>
+
+            <p class="spec__rowlabel">未选中状态</p>
+            <div class="spec__row">
+              <div class="spec__cell spec__cell--idle">
+                <svg class="spec__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 10.6 12 4l8 6.6V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/>
+                  <rect x="6" y="13.2" width="12" height="2.4" rx="1.2" fill="currentColor" stroke="none" opacity="0"/>
+                </svg>
+                <span class="spec__name">首页</span>
+                <span class="spec__hex">#9AA1AD</span>
+              </div>
+              <div class="spec__cell spec__cell--idle">
+                <svg class="spec__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8.4"/>
+                  <path d="M12 7.4v4.9l3.5 2.1"/>
+                </svg>
+                <span class="spec__name">课时</span>
+                <span class="spec__hex">#9AA1AD</span>
+              </div>
+              <div class="spec__cell spec__cell--idle">
+                <svg class="spec__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.8 10.4 12 4l9.2 6.4"/>
+                  <path d="M5.2 10.6V20h13.6v-9.4"/>
+                  <path d="M8.6 13.9h2.4v2.4H8.6z"/>
+                  <path d="M13 13.9h2.4v2.4H13z"/>
+                  <path d="M10.8 20v-3.2h2.4V20"/>
+                </svg>
+                <span class="spec__name">校园</span>
+                <span class="spec__hex">#9AA1AD</span>
+              </div>
+              <div class="spec__cell spec__cell--idle">
+                <svg class="spec__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="8.2" r="3.7"/>
+                  <path d="M4.9 20.4c0-3.6 3.2-5.8 7.1-5.8s7.1 2.2 7.1 5.8"/>
+                </svg>
+                <span class="spec__name">我的</span>
+                <span class="spec__hex">#9AA1AD</span>
+              </div>
+            </div>
+
+            <p class="spec__rowlabel">选中状态</p>
+            <div class="spec__row">
+              <div class="spec__cell spec__cell--active">
+                <svg class="spec__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 10.6 12 4l8 6.6V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/>
+                  <rect x="6" y="13.2" width="12" height="2.4" rx="1.2" fill="currentColor" stroke="none"/>
+                </svg>
+                <span class="spec__name">首页</span>
+                <span class="spec__hex">#2E6BFF</span>
+              </div>
+              <div class="spec__cell spec__cell--active">
+                <svg class="spec__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8.4"/>
+                  <path d="M12 7.4v4.9l3.5 2.1"/>
+                </svg>
+                <span class="spec__name">课时</span>
+                <span class="spec__hex">#2E6BFF</span>
+              </div>
+              <div class="spec__cell spec__cell--active">
+                <svg class="spec__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.8 10.4 12 4l9.2 6.4"/>
+                  <path d="M5.2 10.6V20h13.6v-9.4"/>
+                  <path d="M8.6 13.9h2.4v2.4H8.6z"/>
+                  <path d="M13 13.9h2.4v2.4H13z"/>
+                  <path d="M10.8 20v-3.2h2.4V20"/>
+                </svg>
+                <span class="spec__name">校园</span>
+                <span class="spec__hex">#2E6BFF</span>
+              </div>
+              <div class="spec__cell spec__cell--active">
+                <svg class="spec__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="8.2" r="3.7"/>
+                  <path d="M4.9 20.4c0-3.6 3.2-5.8 7.1-5.8s7.1 2.2 7.1 5.8"/>
+                </svg>
+                <span class="spec__name">我的</span>
+                <span class="spec__hex">#2E6BFF</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="spec__card">
+            <h3 class="spec__label">中间「+」扫一扫按钮 · 放大视图</h3>
+            <div class="spec__add">
+              <div class="spec__addcircle" role="img" aria-label="扫一扫按钮放大视图：直径 62px，白色 4px 描边，蓝色渐变">
+                <span class="spec__addplus" aria-hidden="true"></span>
+                <span class="spec__addlabel">扫一扫</span>
+              </div>
+              <ul class="spec__annot">
+                <li><b>直径 62px</b>（图为 124px ×2）</li>
+                <li><b>4px 白色外描边</b>外圈描边，直径含描边</li>
+                <li><b>渐变</b><span class="spec__swatch" aria-hidden="true"></span>#59A2FF → #2E6BFF</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="spec__card">
+            <h3 class="spec__label">凸起关系</h3>
+            <div class="spec__diagram" role="img" aria-label="示意图：加号按钮顶部高出导航条顶边 22px">
+              <span class="spec__guide spec__guide--btntop" aria-hidden="true"></span>
+              <span class="spec__guide spec__guide--bartop" aria-hidden="true"></span>
+              <span class="spec__dim" aria-hidden="true"></span>
+              <span class="spec__dimtext" aria-hidden="true">22px</span>
+              <div class="spec__bar" aria-hidden="true">
+                <div class="spec__barbar">
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <div class="spec__barhome"><span></span></div>
+              </div>
+              <div class="spec__mini" aria-hidden="true">
+                <span class="spec__miniplus"></span>
+                <span class="spec__minilabel">扫一扫</span>
+              </div>
+            </div>
+          </section>
+
+          <ul class="spec__notes">
+            <li>中间扫一扫按钮凸起于导航条 22px</li>
+            <li>点击 + 按钮 → 调起设备相机（相机页）</li>
+            <li>长按 + → 扫码 <code>wx.scanCode</code></li>
+          </ul>
+
+        </div>
+      </div>
+    </div>
+    <figcaption class="device__caption"><b>02</b>底部导航栏规范 · 两态对照与「+」按钮 ×2 放大</figcaption>
+  </figure>
+
+  <!-- ============================================================
+       手机稿 3 · 相机页
+       ============================================================ -->
+  <figure class="device">
+    <div class="shell">
+      <div class="screen screen--camera">
+
+        <div class="cam__top">
+          <div class="status">
+            <span class="status__time">9:41</span>
+            <span class="status__icons" aria-hidden="true">
+              <svg viewBox="0 0 17 11" width="17" height="11" fill="none"><rect x="0" y="7.2" width="3" height="3.8" rx="1.1" fill="#fff"/><rect x="4.6" y="5.2" width="3" height="5.8" rx="1.1" fill="#fff"/><rect x="9.2" y="2.9" width="3" height="8.1" rx="1.1" fill="#fff"/><rect x="13.8" y=".6" width="3" height="10.4" rx="1.1" fill="#fff"/></svg>
+              <svg viewBox="0 0 16 11" width="16" height="11" fill="none"><path d="M1.1 3.7a10.4 10.4 0 0 1 13.8 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M3.7 6.4a6.6 6.6 0 0 1 8.6 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="9.5" r="1.35" fill="#fff"/></svg>
+              <svg viewBox="0 0 25 12" width="25" height="12" fill="none"><rect x=".6" y=".6" width="20.8" height="10.8" rx="3.1" stroke="rgba(255,255,255,.6)" stroke-width="1.2"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.9" fill="#fff"/><path d="M23.2 4.3v3.4c.9-.4 1.3-1 1.3-1.7s-.4-1.3-1.3-1.7Z" fill="rgba(255,255,255,.6)"/></svg>
+            </span>
+          </div>
+          <div class="cam__bar">
+            <button class="cam__circle" type="button" aria-label="关闭相机">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+             <span class="cam__title">拍照</span>
+             <!-- 右上角留给微信胶囊：不可见等宽占位，保持「拍照」标题居中 -->
+             <span class="cam__circle cam__circle--phantom" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <div class="cam__view" role="img" aria-label="相机取景框示意">
+          <span class="cam__corner cam__corner--tl" aria-hidden="true"></span>
+          <span class="cam__corner cam__corner--tr" aria-hidden="true"></span>
+          <span class="cam__corner cam__corner--bl" aria-hidden="true"></span>
+          <span class="cam__corner cam__corner--br" aria-hidden="true"></span>
+          <span class="cam__focus" aria-hidden="true"></span>
+        </div>
+
+        <div class="cam__bottom">
+          <div class="cam__ctl">
+            <span class="cam__ctl-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 2.8 5.6 13.2h5.1l-.9 8 7.6-10.4h-5.1l.9-8Z"/><path d="M3.8 3.8 20.2 20.2"/></svg>
+            </span>
+            <span class="cam__ctl-label">闪光灯关</span>
+          </div>
+          <button class="cam__shutter" type="button" aria-label="拍照"><span aria-hidden="true"></span></button>
+          <div class="cam__ctl">
+            <span class="cam__ctl-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3"/><circle cx="8.6" cy="9.6" r="1.6"/><path d="M3.8 16.6l4.6-4.2a2.4 2.4 0 0 1 3.3.1l3.1 3.2 2-1.7a2.4 2.4 0 0 1 3.2.1l1.1 1.1"/></svg>
+            </span>
+            <span class="cam__ctl-label">相册</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <figcaption class="device__caption"><b>03</b>相机页 · 点击中间 + 进入</figcaption>
+  </figure>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------------- 1. 首页活动滚动屏：每 3.6s 切换 ---------------- */
+  var bannerWrap = document.querySelector('[data-banner]');
+
+  if (bannerWrap) {
+    var cards = Array.prototype.slice.call(bannerWrap.querySelectorAll('.banner__card'));
+    var dots = Array.prototype.slice.call(bannerWrap.querySelectorAll('.dot'));
+    var AUTOPLAY = 3600;
+    var current = 0;
+    var timer = null;
+
+    var show = function (next) {
+      current = (next + cards.length) % cards.length;
+      cards.forEach(function (card, i) {
+        var on = i === current;
+        card.classList.toggle('is-active', on);
+        card.setAttribute('aria-hidden', on ? 'false' : 'true');
+      });
+      dots.forEach(function (dot, i) {
+        var on = i === current;
+        dot.classList.toggle('is-active', on);
+        if (on) { dot.setAttribute('aria-current', 'true'); }
+        else { dot.removeAttribute('aria-current'); }
+      });
+    };
+
+    var stopAuto = function () {
+      if (timer) { window.clearInterval(timer); timer = null; }
+    };
+
+    var startAuto = function () {
+      stopAuto();
+      timer = window.setInterval(function () { show(current + 1); }, AUTOPLAY);
+    };
+
+    dots.forEach(function (dot, i) {
+      dot.addEventListener('click', function () {
+        show(i);
+        startAuto();          // 手动选择后从该张重新计时
+      });
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { stopAuto(); } else { startAuto(); }
+    });
+
+    show(0);
+    startAuto();
+  }
+
+  /* ---------------- 2. 底部 tab 高亮切换 ---------------- */
+  Array.prototype.slice.call(document.querySelectorAll('[data-tabs]')).forEach(function (group) {
+    var tabs = Array.prototype.slice.call(group.querySelectorAll('.tab'));
+    if (!tabs.length) { return; }
+
+    var activate = function (tab) {
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.classList.toggle('is-active', on);
+        if (on) { t.setAttribute('aria-current', 'page'); }
+        else { t.removeAttribute('aria-current'); }
+      });
+    };
+
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener('click', function () { activate(tab); });
+      tab.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') { return; }
+        e.preventDefault();
+        var step = e.key === 'ArrowRight' ? 1 : -1;
+        var next = tabs[(i + step + tabs.length) % tabs.length];
+        next.focus();
+        activate(next);
+      });
+    });
+  });
+
+  /* ---------------- 3. 深色 tooltip（+ 按钮 / 通知铃铛） ---------------- */
+  (function () {
+    var triggers = Array.prototype.slice.call(document.querySelectorAll('[data-tip]'));
+    var open = null;
+    var hideTimer = null;
+
+    var hide = function () {
+      if (!open) { return; }
+      window.clearTimeout(hideTimer);
+      var tip = open.querySelector('.tip');
+      open.classList.remove('has-tip');
+      if (tip) { tip.textContent = ''; }
+      open = null;
+    };
+
+    triggers.forEach(function (el) {
+      var tip = el.querySelector('.tip');
+      if (!tip) { return; }
+
+      el.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var wasOpen = open === el;
+        hide();
+        if (wasOpen) { return; }
+        tip.textContent = el.getAttribute('data-tip') || '';
+        el.classList.add('has-tip');
+        open = el;
+        hideTimer = window.setTimeout(hide, 1600);
+      });
+
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { hide(); }
+      });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { hide(); }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (open && !open.contains(e.target)) { hide(); }
+    });
+  })();
+})();
+</script>
+</body>
+</html>

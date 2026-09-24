@@ -1,0 +1,125 @@
+<view class="page">
+  <!-- ================= 顶部红色活动滚动屏 ================= -->
+  <view class="hero" style="padding-top:{{statusBarHeight}}px">
+    <view class="hero-glow g1"></view>
+    <view class="hero-glow g2"></view>
+
+    <view class="hero-head">
+      <view class="hero-head-l">
+        <view class="hero-logo">幼</view>
+        <view class="hero-head-txt">
+          <view class="hero-name">阳光幼儿园</view>
+          <view class="hero-welcome">今天也要开开心心哦</view>
+        </view>
+      </view>
+      <view class="hero-bell" hover-class="hero-bell-hover" bindtap="onBell">
+        <view class="ico-bell"></view>
+        <view class="badge"></view>
+      </view>
+    </view>
+
+    <!-- 活动滚动屏：自动轮播 -->
+    <swiper
+      class="act-swiper"
+      autoplay
+      circular
+      interval="3600"
+      duration="480"
+      current="{{actIndex}}"
+      bindchange="onActChange">
+      <swiper-item wx:for="{{activities}}" wx:key="id">
+        <view
+          class="act-card"
+          style="background:{{item.bg}}"
+          data-title="{{item.title}}"
+          bindtap="onActTap">
+          <image wx:if="{{item.cover}}" class="act-cover" src="{{item.cover}}" mode="aspectFill"></image>
+          <view wx:if="{{item.cover}}" class="act-mask"></view>
+          <view class="act-info">
+            <view class="act-tag">{{item.tag}}</view>
+            <view class="act-title">{{item.title}}</view>
+            <view class="act-desc">{{item.desc}}</view>
+          </view>
+          <view wx:if="{{item.thumbText}}" class="act-thumb">{{item.thumbText}}</view>
+        </view>
+      </swiper-item>
+    </swiper>
+
+    <view class="act-dots">
+      <view wx:for="{{activities}}" wx:key="id" class="dot {{actIndex === index ? 'on' : ''}}"></view>
+    </view>
+
+    <!-- 公告跑马灯（无缝横向滚动） -->
+    <view class="marquee">
+      <view class="marquee-tag">公告</view>
+      <view class="marquee-view">
+        <view class="marquee-track" style="animation-duration:{{marqueeDuration}}s">
+          <text class="marquee-item">{{marqueeText}}</text>
+          <text class="marquee-item">{{marqueeText}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ================= 内容区 ================= -->
+  <view class="body">
+    <view class="sec-head">
+      <view class="sec-title">常用功能</view>
+    </view>
+    <view class="quick">
+      <view
+        class="quick-item"
+        hover-class="quick-item-hover"
+        wx:for="{{quickEntries}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        data-text="{{item.text}}"
+        bindtap="onQuickTap">
+        <view class="quick-ico" style="background:{{item.bg}}">{{item.icon}}</view>
+        <view class="quick-txt">{{item.text}}</view>
+      </view>
+    </view>
+
+    <!-- 今日安排 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">今日安排<text class="card-date">{{today}}</text></view>
+        <view class="card-more" bindtap="goCourse">全部课时 ›</view>
+      </view>
+      <view class="plan {{item.done ? 'done' : ''}}" wx:for="{{todayPlans}}" wx:key="id">
+        <view class="plan-time">{{item.time}}</view>
+        <view class="plan-line">
+          <view class="plan-dot"></view>
+        </view>
+        <view class="plan-main">
+          <view class="plan-name">{{item.name}}</view>
+          <view class="plan-sub">{{item.teacher}} · {{item.room}}</view>
+        </view>
+        <view class="plan-status {{item.done ? '' : 'cur'}}">{{item.done ? '已完成' : '进行中'}}</view>
+      </view>
+    </view>
+
+    <!-- 最新通知 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">最新通知</view>
+        <view class="card-more" bindtap="goCampus">更多 ›</view>
+      </view>
+      <view
+        class="notice"
+        wx:for="{{notices}}"
+        wx:key="id"
+        data-title="{{item.title}}"
+        bindtap="onNoticeTap">
+        <view class="notice-dot"></view>
+        <view class="notice-main">
+          <view class="notice-title">{{item.title}}</view>
+          <view class="notice-time">{{item.time}}</view>
+        </view>
+        <view class="arrow"></view>
+      </view>
+    </view>
+
+    <view class="foot-tip">阳光幼儿园 · 家园共育</view>
+  </view>
+</view>

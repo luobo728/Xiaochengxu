@@ -1,0 +1,24 @@
+/* 课时页 */
+
+/* 头图主题色 */
+.hd-course {
+  background: linear-gradient(135deg, #4C8BFF, #2D5FEF);
+}
+
+/* 进度条与列表间距 */
+.prog-box {
+  margin-bottom: 12rpx;
+}
+
+/* 课时明细日期列（沿用 row-sub 文字风格，抵消其 margin-top 以保持垂直居中） */
+.rec-date {
+  width: 150rpx;
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
+/* 底部「查看全部」行 */
+.more-row {
+  padding-top: 22rpx;
+  text-align: center;
+}

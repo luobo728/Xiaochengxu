@@ -1,0 +1,58 @@
+<view class="cam">
+  <!-- 原生相机：授权通过且未进入照片预览时挂载 -->
+  <camera
+    wx:if="{{authorized && !photo}}"
+    class="cam-view"
+    device-position="{{devicePosition}}"
+    flash="{{flash}}"
+    resolution="high"
+    bindstop="onCameraStop"
+    binderror="onCameraError"></camera>
+
+  <!-- 权限引导 -->
+  <view wx:if="{{ready && !authorized}}" class="cam-tipbox">
+    <view class="cam-tip-ico">
+      <view class="ico-cam"></view>
+    </view>
+    <view class="cam-tip-title">需要相机权限</view>
+    <view class="cam-tip-sub">用于拍照、扫一扫记录园内活动</view>
+    <view class="cam-tip-btn" hover-class="cam-btn-hover" bindtap="openSetting">去开启相机权限</view>
+    <view class="cam-tip-link" bindtap="pickFromAlbum">先用相册选一张</view>
+  </view>
+
+  <!-- 顶部操作条 -->
+  <view class="cam-top" style="padding-top:{{statusBarHeight}}px">
+    <view class="cam-top-btn" hover-class="cam-btn-hover" bindtap="goBack">
+      <view class="ico-close"></view>
+    </view>
+    <view class="cam-top-title">拍照</view>
+    <!-- 右上角留给微信胶囊，这里只放占位以保持标题居中 -->
+    <view class="cam-top-btn phantom"></view>
+  </view>
+
+  <!-- 底部操作区 -->
+  <view wx:if="{{authorized && !photo}}" class="cam-bottom">
+    <view class="cam-side" hover-class="cam-btn-hover" bindtap="toggleFlash">
+      <view class="ico-flash {{flash === 'torch' ? 'on' : ''}}"></view>
+      <view class="cam-side-txt">{{flash === 'torch' ? '闪光灯开' : '闪光灯关'}}</view>
+    </view>
+
+    <view class="cam-shutter" hover-class="cam-shutter-hover" bindtap="takePhoto">
+      <view class="cam-shutter-in"></view>
+    </view>
+
+    <view class="cam-side" hover-class="cam-btn-hover" bindtap="pickFromAlbum">
+      <view class="ico-album"></view>
+      <view class="cam-side-txt">相册</view>
+    </view>
+  </view>
+
+  <!-- 照片预览 -->
+  <view wx:if="{{photo}}" class="cam-preview">
+    <image class="cam-preview-img" src="{{photo}}" mode="aspectFit"></image>
+    <view class="cam-preview-bar">
+      <view class="cam-preview-btn ghost" hover-class="cam-btn-hover" bindtap="retake">重拍</view>
+      <view class="cam-preview-btn solid" hover-class="cam-btn-hover" bindtap="usePhoto">使用照片</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,334 @@
+/* pages/camera/camera.wxss —— 相机页：黑底全屏 + 取景 + 拍照操作条 */
+
+page {
+  background: #000000;
+  height: 100%;
+}
+
+.cam {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: #08090C;
+  overflow: hidden;
+}
+
+.cam-view {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cam-btn-hover {
+  opacity: 0.7;
+}
+
+/* ---------- 顶部操作条 ---------- */
+.cam-top {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 24rpx;
+  padding-right: 24rpx;
+  padding-bottom: 16rpx;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0));
+}
+
+.cam-top-btn {
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cam-top-title {
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+/* 关闭图标 */
+.ico-close {
+  position: relative;
+  width: 26rpx;
+  height: 26rpx;
+}
+
+.ico-close::before,
+.ico-close::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28rpx;
+  height: 4rpx;
+  margin-left: -14rpx;
+  margin-top: -2rpx;
+  border-radius: 2rpx;
+  background: #ffffff;
+}
+
+.ico-close::before {
+  transform: rotate(45deg);
+}
+
+.ico-close::after {
+  transform: rotate(-45deg);
+}
+
+/* 闪光灯图标（闪电） */
+.ico-flash {
+  width: 26rpx;
+  height: 32rpx;
+  background: rgba(255, 255, 255, 0.75);
+  -webkit-clip-path: polygon(52% 0, 12% 56%, 44% 56%, 30% 100%, 88% 40%, 54% 40%);
+  clip-path: polygon(52% 0, 12% 56%, 44% 56%, 30% 100%, 88% 40%, 54% 40%);
+}
+
+.ico-flash.on {
+  background: #FFD75E;
+}
+
+/* 相册图标 */
+.ico-album {
+  position: relative;
+  width: 32rpx;
+  height: 26rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  border-radius: 6rpx;
+}
+
+.ico-album::before {
+  content: '';
+  position: absolute;
+  left: 5rpx;
+  top: 4rpx;
+  width: 7rpx;
+  height: 7rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.ico-album::after {
+  content: '';
+  position: absolute;
+  left: 6rpx;
+  bottom: 2rpx;
+  width: 0;
+  height: 0;
+  border-left: 8rpx solid transparent;
+  border-right: 8rpx solid transparent;
+  border-bottom: 11rpx solid rgba(255, 255, 255, 0.9);
+}
+
+/* ---------- 底部操作区 ---------- */
+.cam-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40rpx 72rpx 80rpx;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+}
+
+.cam-side {
+  width: 140rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.cam-side-txt {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cam-shutter {
+  width: 148rpx;
+  height: 148rpx;
+  border: 6rpx solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cam-shutter-hover {
+  transform: scale(0.94);
+}
+
+.cam-shutter-in {
+  width: 118rpx;
+  height: 118rpx;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+/* ---------- 权限引导 ---------- */
+.cam-tipbox {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 80rpx;
+  background: #0B0D12;
+}
+
+.cam-tip-ico {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 44rpx;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40rpx;
+}
+
+.ico-cam {
+  position: relative;
+  width: 52rpx;
+  height: 40rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.85);
+  border-radius: 10rpx;
+}
+
+.ico-cam::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin-left: -10rpx;
+  margin-top: -10rpx;
+  width: 20rpx;
+  height: 20rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+}
+
+.ico-cam::after {
+  content: '';
+  position: absolute;
+  left: 12rpx;
+  top: -12rpx;
+  width: 18rpx;
+  height: 8rpx;
+  border-radius: 4rpx 4rpx 0 0;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.cam-tip-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cam-tip-sub {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+}
+
+.cam-tip-btn {
+  margin-top: 56rpx;
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-radius: 44rpx;
+  background: linear-gradient(135deg, #59A2FF, #2E6BFF);
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 600;
+  box-shadow: 0 12rpx 24rpx rgba(46, 107, 255, 0.32);
+}
+
+.cam-tip-link {
+  margin-top: 28rpx;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ---------- 照片预览 ---------- */
+.cam-preview {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  background: #000000;
+  display: flex;
+  flex-direction: column;
+}
+
+.cam-preview-img {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.cam-preview-bar {
+  display: flex;
+  align-items: center;
+  padding: 32rpx 48rpx 80rpx;
+}
+
+.cam-preview-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.cam-preview-btn.ghost {
+  margin-right: 24rpx;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 2rpx solid rgba(255, 255, 255, 0.32);
+}
+
+.cam-preview-btn.solid {
+  background: linear-gradient(135deg, #59A2FF, #2E6BFF);
+  color: #ffffff;
+  box-shadow: 0 12rpx 24rpx rgba(46, 107, 255, 0.32);
+}
+
+/* 右上占位：仅为保持标题居中，不可点击（微信胶囊占据该区域） */
+.cam-top-btn.phantom {
+  visibility: hidden;
+}
+
+/* 伪元素不继承 app.wxss 的 box-sizing，带边框的需显式声明 */
+.ico-cam::before,
+.ico-cam::after {
+  box-sizing: border-box;
+}

@@ -1,0 +1,257 @@
+/* app.wxss —— 全局样式与共享 class
+   色板：品牌蓝 #2E6BFF ｜ 渐变蓝 linear-gradient(135deg,#59A2FF,#2E6BFF)
+        主文 #1B1F27 ｜ 次文 #8A93A3 ｜ 页面底 #F4F6FA ｜ 分割线 #F0F2F7 */
+
+page {
+  background: #F4F6FA;
+  color: #1B1F27;
+  font-size: 28rpx;
+  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue",
+    "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+view,
+text,
+image,
+scroll-view,
+swiper,
+swiper-item,
+input,
+textarea,
+button,
+switch {
+  box-sizing: border-box;
+}
+
+/* 页面根容器：为底部自定义 tabBar 留出空间 */
+.page {
+  min-height: 100vh;
+  padding-bottom: 220rpx;
+  padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 顶部渐变头图 ---------- */
+.hd {
+  position: relative;
+  padding: 0 32rpx 104rpx;
+  color: #ffffff;
+  border-radius: 0 0 36rpx 36rpx;
+  overflow: hidden;
+}
+
+.hd-title {
+  padding-top: 24rpx;
+  font-size: 44rpx;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+}
+
+.hd-sub {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.hd-stats {
+  display: flex;
+  margin-top: 32rpx;
+}
+
+.stat {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-num {
+  font-size: 38rpx;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-lbl {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ---------- 内容区 ---------- */
+.body {
+  position: relative;
+  margin-top: -72rpx;
+  padding: 0 24rpx;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 28rpx;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 10rpx 30rpx rgba(24, 40, 80, 0.06);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.card-title {
+  position: relative;
+  padding-left: 22rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.card-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  margin-top: -15rpx;
+  width: 8rpx;
+  height: 30rpx;
+  border-radius: 4rpx;
+  background: #2E6BFF;
+}
+
+.card-more {
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+/* ---------- 列表行 ---------- */
+.row {
+  display: flex;
+  align-items: center;
+  padding: 22rpx 0;
+}
+
+.row-ico {
+  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
+  margin-right: 20rpx;
+  border-radius: 20rpx;
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-name {
+  font-size: 29rpx;
+  font-weight: 500;
+  color: #1B1F27;
+}
+
+.row-sub {
+  margin-top: 6rpx;
+  font-size: 23rpx;
+  color: #8A93A3;
+}
+
+.row-val {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #2E6BFF;
+}
+
+.row-val.gray {
+  color: #8A93A3;
+  font-weight: 400;
+}
+
+/* ---------- 胶囊标签 ---------- */
+.tag {
+  display: inline-block;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  line-height: 1.5;
+}
+
+.tag-blue {
+  color: #2E6BFF;
+  background: rgba(46, 107, 255, 0.1);
+}
+
+.tag-green {
+  color: #12A182;
+  background: rgba(18, 161, 130, 0.12);
+}
+
+.tag-orange {
+  color: #E07B00;
+  background: rgba(240, 138, 0, 0.14);
+}
+
+.tag-gray {
+  color: #8A93A3;
+  background: #F1F4FA;
+}
+
+/* ---------- 进度条 ---------- */
+.progress {
+  height: 12rpx;
+  border-radius: 6rpx;
+  background: #EEF1F7;
+  overflow: hidden;
+}
+
+.progress-inner {
+  height: 100%;
+  border-radius: 6rpx;
+  background: linear-gradient(90deg, #59A2FF, #2E6BFF);
+}
+
+/* ---------- 其它 ---------- */
+.arrow {
+  flex-shrink: 0;
+  width: 14rpx;
+  height: 14rpx;
+  margin-left: 12rpx;
+  border-top: 3rpx solid #C6CDDA;
+  border-right: 3rpx solid #C6CDDA;
+  transform: rotate(45deg);
+}
+
+.btn-primary {
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-radius: 44rpx;
+  background: linear-gradient(135deg, #59A2FF, #2E6BFF);
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 600;
+  box-shadow: 0 12rpx 24rpx rgba(46, 107, 255, 0.24);
+}
+
+.hairline {
+  height: 1rpx;
+  background: #F0F2F7;
+}
+
+.muted {
+  color: #8A93A3;
+}
+
+.empty {
+  padding: 80rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: #A6AEBE;
+}

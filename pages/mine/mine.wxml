@@ -1,0 +1,79 @@
+<view class="page">
+  <view class="hd hd-mine" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-title">我的</view>
+    <view class="hd-sub">家长账号 · 已绑定 1 名幼儿</view>
+  </view>
+
+  <view class="body">
+    <!-- 孩子档案 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">孩子档案</view>
+        <view class="card-more" bindtap="onMoreTap">编辑</view>
+      </view>
+      <view class="row" bindtap="onMoreTap">
+        <view class="row-ico avatar">{{child.avatar}}</view>
+        <view class="row-main">
+          <view class="row-name">{{child.name}}</view>
+          <view class="row-sub">{{child.sub}}</view>
+        </view>
+        <view class="tag tag-green">已认证</view>
+      </view>
+      <view class="mini-stats">
+        <view class="mini-stat" wx:for="{{miniStats}}" wx:key="id">
+          <view class="mini-num">{{item.num}}</view>
+          <view class="mini-lbl">{{item.lbl}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 常用功能 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">常用功能</view>
+      </view>
+      <view class="row" wx:for="{{tools}}" wx:key="id" bindtap="onMoreTap">
+        <view class="row-ico" style="background:{{item.bg}}">{{item.ico}}</view>
+        <view class="row-main">
+          <view class="row-name">{{item.name}}</view>
+          <view class="row-sub">{{item.sub}}</view>
+        </view>
+        <view class="arrow"></view>
+      </view>
+    </view>
+
+    <!-- 设置 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">设置</view>
+      </view>
+      <view class="row">
+        <view class="row-main">
+          <view class="row-name">消息通知</view>
+          <view class="row-sub">接收课表、活动与请假审批提醒</view>
+        </view>
+        <switch checked="{{noticeOn}}" color="#2E6BFF" bindchange="onSwitchChange" />
+      </view>
+      <view class="row" bindtap="onMoreTap">
+        <view class="row-main">
+          <view class="row-name">清除缓存</view>
+        </view>
+        <view class="row-val gray">{{cacheSize}}</view>
+        <view class="arrow"></view>
+      </view>
+      <view class="row" bindtap="onMoreTap">
+        <view class="row-main">
+          <view class="row-name">关于我们</view>
+        </view>
+        <view class="row-val gray">{{version}}</view>
+        <view class="arrow"></view>
+      </view>
+    </view>
+
+    <!-- 退出登录 -->
+    <view class="logout-box">
+      <view class="btn-primary" bindtap="onLogout">退出登录</view>
+    </view>
+    <view class="foot-tip">阳光幼儿园 · 家长端 {{version}}</view>
+  </view>
+</view>
