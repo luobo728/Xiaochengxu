@@ -71,42 +71,59 @@ Component({
     },
 
     onTab(e) {
-      const ds = e.currentTarget.dataset
-      const index = Number(ds.index)
-      const url = ds.path
-      if (!url) return
+      try {
+        const ds = (e && e.currentTarget && e.currentTarget.dataset) || {}
+        const index = Number(ds.index)
+        const url = ds.path
+        if (!url) return
 
-      // 用「当前真实页面」判断，而不是用高亮值判断：
-      // 在同一页上再点一次 → 回到顶部；其它情况一律切换
-      if (this.currentRoute() === url) {
+        // 用「当前真实页面」判断，而不是用高亮值判断：高亮偶尔落后也能切过去
+        if (this.currentRoute() === url) {
+          this.setData({ active: index })
+          wx.pageScrollTo({ scrollTop: 0, duration: 200, fail() {} })
+          return
+        }
+
+        // 先高亮，点击反馈更跟手
         this.setData({ active: index })
-        wx.pageScrollTo({ scrollTop: 0, duration: 200, fail() {} })
-        return
+        this.goTab(url)
+      } catch (err) {
+        // 任何意外都不能让导航栏变成「点不动」
+        wx.showToast({ title: '切换失败，请再点一次', icon: 'none' })
       }
-
-      // 先高亮，点击反馈更跟手
-      this.setData({ active: index })
-      this.safeSwitch(url, false)
     },
 
-    // switchTab 偶发失败（例如上一次跳转还没结束时点击）时自动重试一次，
-    // 避免出现「点了没反应」的感觉
-    safeSwitch(url, isRetry) {
+    // 切换模块，三层保险：
+    //   ① switchTab
+    //   ② 失败后 80ms 自动重试一次
+    //   ③ 900ms 后如果还停在原页面，用 reLaunch 强制打开目标页
+    //      （reLaunch 会清空页面栈，能破掉「卡在某一页、怎么点都切不动」的状态）
+    goTab(url) {
+      const from = this.currentRoute()
+      this._pendingUrl = url
+
       wx.switchTab({
         url,
         fail: () => {
-          if (isRetry) {
-            // 两次都失败：把高亮纠正回真实页面，并提示
-            this.syncActiveFromRoute()
-            wx.showToast({ title: '切换失败，请再点一次', icon: 'none' })
-            return
-          }
-          // 重试等待从 200ms 缩短到 80ms：失败的切换能更快重试，用户少等一截
           setTimeout(() => {
-            this.safeSwitch(url, true)
+            wx.switchTab({ url, fail: () => {} })
           }, 80)
         }
       })
+
+      setTimeout(() => {
+        // 只有「最后一次点的那个 tab」才有资格兜底，避免乱跳
+        if (this._pendingUrl !== url) return
+        if (this.currentRoute() === from && from !== url) {
+          this._pendingUrl = ''
+          wx.reLaunch({
+            url,
+            fail: () => {
+              wx.showToast({ title: '切换失败，请再点一次', icon: 'none' })
+            }
+          })
+        }
+      }, 900)
     },
 
     // 点中间「+」：进入「扫码 / 拍照」二合一页面（默认扫码）

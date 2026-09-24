@@ -31,7 +31,9 @@
 
     <!-- 中间占位：凸起的「+」按钮绝对定位在这一格上 -->
     <!-- 中间占位：凸起的「+」按钮绝对定位在这一格上；整格可点（点偏了也能用） -->
-    <view class="tab-item placeholder" bindtap="onScan"></view>
+    <!-- 中间占位格：只有凸起的圆形「+」按钮可点，这里不能加 bindtap，
+         否则点导航栏中间会误开相机页（相机页没有底部导航，容易被误以为卡住） -->
+    <view class="tab-item placeholder"></view>
 
     <!-- 校园 -->
     <view
