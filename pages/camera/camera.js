@@ -1,5 +1,10 @@
-// pages/camera/camera.js —— 点击底部导航中间的「+」进入，调起设备相机拍照
+// pages/camera/camera.js —— 底部导航中间「+」进入：扫码 / 拍照 二合一
 const app = getApp()
+
+// 横滑切换模式的位移阈值（px）：小于该值视为点击，交给按钮处理
+const SWIPE_THRESHOLD = 60
+// 同一扫码内容在该时间窗内只处理一次（camera scanCode 会重复回调）
+const SCAN_DEDUP_MS = 3000
 
 Page({
   data: {
@@ -9,7 +14,9 @@ Page({
     devicePosition: 'back', // back | front
     flash: 'off',          // off | torch
     shooting: false,
-    photo: ''              // 拍照后的临时文件路径
+    photo: '',             // 拍照后的临时文件路径
+    mode: 'scan',          // scan | photo：入口叫「扫一扫」，默认扫码
+    scanResult: ''         // 最近一次识别到的内容
   },
 
   onLoad() {
@@ -25,6 +32,7 @@ Page({
       clearTimeout(this._toastTimer)
       this._toastTimer = null
     }
+    this._touchStartX = null
   },
 
   // 权限：从未询问过则主动申请；已拒绝则展示引导页（不再挂载相机，避免报错）
@@ -70,7 +78,80 @@ Page({
     wx.showToast({ title: '相机启动失败，请重试', icon: 'none' })
   },
 
-  // 拍照
+  // ---------- 模式切换：扫码 / 拍照 ----------
+
+  // 点击分段控件（wxml 通过 data-mode 传值）
+  onModeChange(e) {
+    const next = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.mode) || ''
+    this.applyMode(next)
+  },
+
+  // 横滑切换：左滑 → 拍照，右滑 → 扫码
+  onTouchStart(e) {
+    const touch = (e && e.changedTouches && e.changedTouches[0]) || null
+    this._touchStartX = touch ? touch.clientX : null
+  },
+
+  onTouchEnd(e) {
+    const startX = this._touchStartX
+    this._touchStartX = null
+    if (startX === null || startX === undefined) return
+    // 权限引导页 / 照片预览时不响应滑动，避免误切
+    if (!this.data.ready || !this.data.authorized || this.data.photo) return
+    const touch = (e && e.changedTouches && e.changedTouches[0]) || null
+    if (!touch) return
+    const dx = touch.clientX - startX
+    if (Math.abs(dx) <= SWIPE_THRESHOLD) return
+    this.applyMode(dx < 0 ? 'photo' : 'scan')
+  },
+
+  // 统一的模式落地：切模式时清掉上次识别结果与去重记录，避免旧卡片残留
+  applyMode(mode) {
+    if (mode !== 'scan' && mode !== 'photo') return
+    if (mode === this.data.mode) return
+    this._lastScan = null
+    // 切模式会重建 <camera> 实例，旧 context 失效，置空以便下次拍照重新创建
+    this.cameraCtx = null
+    this.setData({ mode: mode, scanResult: '' })
+  },
+
+  // ---------- 扫码 ----------
+
+  onScanCode(e) {
+    const text = (e && e.detail && e.detail.result) || ''
+    if (!text) return
+
+    const now = Date.now()
+    const last = this._lastScan
+    // scanCode 模式下码持续在镜头里会反复回调：同内容 3s 内忽略，不同内容立即处理
+    if (last && last.text === text && now - last.time < SCAN_DEDUP_MS) return
+    this._lastScan = { text: text, time: now }
+
+    try {
+      wx.vibrateShort({ type: 'light', fail() {} })
+    } catch (err) {
+      // 忽略：部分机型 / 开发者工具不支持震动
+    }
+    this.setData({ scanResult: text })
+  },
+
+  // 继续扫码：只收起卡片，保留去重记录，避免同一个码立刻又弹出来
+  clearScanResult() {
+    this.setData({ scanResult: '' })
+  },
+
+  copyScanResult() {
+    const text = this.data.scanResult
+    if (!text) return
+    wx.setClipboardData({
+      data: text,
+      success: () => wx.showToast({ title: '已复制', icon: 'none' }),
+      fail: () => wx.showToast({ title: '复制失败，请重试', icon: 'none' })
+    })
+  },
+
+  // ---------- 拍照 ----------
+
   takePhoto() {
     if (this.data.shooting || this.data.photo) return
 

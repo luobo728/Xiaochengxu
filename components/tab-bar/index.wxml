@@ -62,14 +62,13 @@
     </view>
   </view>
 
-  <!-- 中间凸起按钮：点击调起设备相机，长按使用微信扫一扫 -->
+  <!-- 中间凸起按钮：点击进入「扫码 / 拍照」二合一页面 -->
   <view
     class="tab-center"
     hover-class="tab-center-hover"
     hover-start-time="0"
     hover-stay-time="120"
-    bindtap="onScan"
-    bindlongpress="onScanLongPress">
+    bindtap="onScan">
     <view class="plus"></view>
     <view class="tab-center-txt">扫一扫</view>
   </view>

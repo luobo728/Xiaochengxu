@@ -109,32 +109,12 @@ Component({
       })
     },
 
-    // 点中间「+」：调起设备相机
+    // 点中间「+」：进入「扫码 / 拍照」二合一页面（默认扫码）
     onScan() {
-      if (Date.now() - (this._lastLongPress || 0) < 900) return
       wx.navigateTo({
         url: '/pages/camera/camera',
         fail() {
           wx.showToast({ title: '相机页打开失败', icon: 'none' })
-        }
-      })
-    },
-
-    // 长按「+」：使用微信扫一扫
-    onScanLongPress() {
-      this._lastLongPress = Date.now()
-      wx.scanCode({
-        onlyFromCamera: false,
-        scanType: ['barCode', 'qrCode', 'datamatrix', 'pdf417'],
-        success(res) {
-          const text = (res && res.result) || ''
-          wx.showToast({
-            title: text ? '识别成功：' + text.slice(0, 12) : '识别成功',
-            icon: 'none'
-          })
-        },
-        fail() {
-          // 用户取消扫码不提示
         }
       })
     }

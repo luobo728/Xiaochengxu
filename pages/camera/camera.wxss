@@ -332,3 +332,246 @@ page {
 .ico-cam::after {
   box-sizing: border-box;
 }
+
+/* ---------- 模式滑块（分段控件，扫码 / 拍照） ---------- */
+.cam-switch {
+  position: absolute;
+  left: 50%;
+  margin-left: -140rpx;
+  width: 280rpx;
+  height: 72rpx;
+  padding: 6rpx;
+  border-radius: 36rpx;
+  background: rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  z-index: 12;
+}
+
+/* 拍照模式下滑块位于快门排上方；扫码模式没有快门排，整体下移 */
+.cam-switch.photo {
+  bottom: 296rpx;
+}
+
+.cam-switch.scan {
+  bottom: 168rpx;
+}
+
+/* 白色滑块：宽度 calc 让左右各留 6rpx，右移 100% 正好盖住第二格 */
+.cam-switch-thumb {
+  position: absolute;
+  left: 6rpx;
+  top: 6rpx;
+  width: calc(50% - 6rpx);
+  height: 60rpx;
+  border-radius: 30rpx;
+  background: #ffffff;
+  transition: transform 0.22s ease;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.18);
+}
+
+.cam-switch-thumb.right {
+  transform: translateX(100%);
+}
+
+/* 文字压在滑块之上，选中格才能显示深色字 */
+.cam-switch-item {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  height: 60rpx;
+  line-height: 60rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cam-switch-item.on {
+  color: #1B1F27;
+  font-weight: 600;
+}
+
+/* ---------- 扫码取景框（纯 CSS，无图片资源） ---------- */
+.cam-scan {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* 下内边距给滑块与结果卡片留位，取景框自然上移 */
+  padding-bottom: 440rpx;
+}
+
+.cam-scan-box {
+  position: relative;
+  flex: none;
+  width: 460rpx;
+  height: 460rpx;
+}
+
+/* 每个角=两条 6rpx 白线；其余三角用镜像复用同一套线条 */
+.cam-scan-corner {
+  position: absolute;
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.cam-scan-corner::before,
+.cam-scan-corner::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: #ffffff;
+  border-radius: 6rpx;
+}
+
+.cam-scan-corner::before {
+  width: 100%;
+  height: 6rpx;
+}
+
+.cam-scan-corner::after {
+  width: 6rpx;
+  height: 100%;
+}
+
+.cam-scan-corner.tl {
+  left: 0;
+  top: 0;
+}
+
+.cam-scan-corner.tr {
+  right: 0;
+  top: 0;
+  transform: scaleX(-1);
+}
+
+.cam-scan-corner.bl {
+  left: 0;
+  bottom: 0;
+  transform: scaleY(-1);
+}
+
+.cam-scan-corner.br {
+  right: 0;
+  bottom: 0;
+  transform: scale(-1, -1);
+}
+
+/* 扫描线：框内上下往复 */
+.cam-scan-line {
+  position: absolute;
+  left: 16rpx;
+  top: 16rpx;
+  width: 428rpx;
+  height: 4rpx;
+  border-radius: 2rpx;
+  background: #ffffff;
+  opacity: 0.9;
+  box-shadow: 0 0 12rpx rgba(255, 255, 255, 0.85);
+  animation: cam-scan-move 2.2s ease-in-out infinite;
+}
+
+@keyframes cam-scan-move {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(412rpx);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.cam-scan-txt {
+  margin-top: 32rpx;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* 扫码模式底部提示（替代快门排） */
+.cam-scan-tip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 72rpx;
+  z-index: 10;
+  text-align: center;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ---------- 扫码结果卡片 ---------- */
+.cam-card {
+  position: absolute;
+  left: 50%;
+  margin-left: -310rpx;
+  width: 620rpx;
+  padding: 28rpx;
+  border-radius: 24rpx;
+  background: rgba(20, 22, 28, 0.92);
+  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.36);
+  z-index: 12;
+}
+
+.cam-card.photo {
+  bottom: 392rpx;
+}
+
+.cam-card.scan {
+  bottom: 264rpx;
+}
+
+.cam-card-title {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* 正文最多 4 行，超出裁剪 */
+.cam-card-text {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #ffffff;
+  word-break: break-all;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.cam-card-btns {
+  display: flex;
+  align-items: center;
+  margin-top: 24rpx;
+}
+
+.cam-card-btn {
+  flex: 1;
+  height: 72rpx;
+  line-height: 72rpx;
+  text-align: center;
+  border-radius: 36rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.cam-card-btn.ghost {
+  margin-right: 20rpx;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2rpx solid rgba(255, 255, 255, 0.32);
+}
+
+.cam-card-btn.solid {
+  background: linear-gradient(135deg, #59A2FF, #2E6BFF);
+  color: #ffffff;
+  box-shadow: 0 12rpx 24rpx rgba(46, 107, 255, 0.32);
+}
