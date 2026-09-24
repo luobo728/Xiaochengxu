@@ -1,0 +1,47 @@
+<view class="page">
+  <!-- ========== 顶部条：返回 + 「活动详情」 ========== -->
+  <view class="topbar" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="top-back" hover-class="top-back-hover" bindtap="goBack">
+        <view class="ico-back"></view>
+      </view>
+      <view class="top-title">活动详情</view>
+      <view class="top-back ghost"></view>
+    </view>
+  </view>
+  <view class="hairline"></view>
+
+  <!-- 找到活动 → 文章正文；否则 → 空态（wx:if / wx:else 必须相邻，中间不夹注释） -->
+  <view wx:if="{{found}}" class="article">
+    <view class="art-title">{{title}}</view>
+    <view class="art-meta">
+      <view class="art-meta-l">{{source}} · {{dateText}}</view>
+      <view class="art-meta-r">阅读 {{readCount}}</view>
+    </view>
+
+    <!-- 活动横幅：与活动中心置顶卡同款 -->
+    <view class="act-card" style="background:{{bg}}">
+      <view class="act-info">
+        <view class="act-tag">{{tag}}</view>
+        <view class="act-title">{{title}}</view>
+        <view class="act-desc">{{desc}}</view>
+      </view>
+      <view class="act-thumb">{{thumbText}}</view>
+    </view>
+
+    <!-- 正文段落 -->
+    <view class="para" wx:for="{{paragraphs}}" wx:key="*this">{{item}}</view>
+
+    <view class="hairline art-line"></view>
+    <view class="art-end">—— 阳光幼儿园 ——</view>
+  </view>
+  <view wx:else class="empty-state">
+    <view class="empty">活动不存在或已结束</view>
+    <view class="btn-primary back-btn" bindtap="goBack">返回活动中心</view>
+  </view>
+
+  <!-- ========== 底部固定操作条 ========== -->
+  <view wx:if="{{found}}" class="bar">
+    <view class="btn-primary join-btn" bindtap="onJoin">我要报名</view>
+  </view>
+</view>

@@ -1,0 +1,201 @@
+/* pages/activity/detail.wxss —— 活动详情：公众号文章正文风格
+   通用 class（.page/.hairline/.empty/.btn-primary）见 app.wxss */
+
+/* 文章页用白底；正文底部留白 240rpx，避免被固定操作条盖住 */
+.page {
+  background: #FFFFFF;
+  padding-bottom: 240rpx;
+  padding-bottom: calc(240rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 顶部条 ---------- */
+.topbar {
+  background: #FFFFFF;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  padding-bottom: 20rpx;
+}
+
+.hd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8rpx;
+}
+
+.top-back {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: #F1F4FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-back-hover {
+  background: #E6EBF5;
+}
+
+/* 右上占位圆：透明不显示，只为让标题居中 */
+.top-back.ghost {
+  background: transparent;
+  visibility: hidden;
+}
+
+/* 返回箭头：两条边框拼出的左尖括号（纯 CSS，无图片） */
+.ico-back {
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: 6rpx;
+  border-left: 4rpx solid #1B1F27;
+  border-bottom: 4rpx solid #1B1F27;
+  transform: rotate(45deg);
+}
+
+.top-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+/* ---------- 正文 ---------- */
+.article {
+  padding: 36rpx 40rpx 0;
+}
+
+.art-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #1B1F27;
+}
+
+.art-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22rpx;
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+.art-meta-l {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.art-meta-r {
+  flex-shrink: 0;
+  margin-left: 20rpx;
+}
+
+/* ---------- 活动横幅（与活动中心的置顶卡同款，略高一些） ---------- */
+.act-card {
+  height: 280rpx;
+  margin-top: 28rpx;
+  padding: 0 32rpx;
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  box-shadow: 0 12rpx 26rpx rgba(24, 40, 80, 0.14);
+}
+
+.act-info {
+  flex: 1;
+  min-width: 0;
+  padding-right: 20rpx;
+}
+
+.act-tag {
+  display: inline-block;
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.22);
+  border: 2rpx solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-size: 20rpx;
+  line-height: 1.4;
+}
+
+.act-title {
+  margin-top: 18rpx;
+  font-size: 36rpx;
+  font-weight: 700;
+  line-height: 1.32;
+  color: #ffffff;
+}
+
+.act-desc {
+  margin-top: 12rpx;
+  font-size: 23rpx;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.act-thumb {
+  flex-shrink: 0;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.22);
+  border: 2rpx solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- 正文段落 ---------- */
+.para {
+  margin-top: 28rpx;
+  font-size: 30rpx;
+  line-height: 1.85;
+  color: #1B1F27;
+}
+
+.art-line {
+  margin: 56rpx 0 24rpx;
+}
+
+.art-end {
+  padding-bottom: 20rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #B4BBC8;
+  letter-spacing: 2rpx;
+}
+
+/* ---------- 空态 ---------- */
+.empty-state {
+  padding: 140rpx 40rpx 0;
+}
+
+.back-btn {
+  width: 360rpx;
+  margin: 60rpx auto 0;
+}
+
+/* ---------- 底部固定操作条 ---------- */
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 16rpx 0;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: #FFFFFF;
+  border-top: 1rpx solid #F0F2F7;
+}
+
+.join-btn {
+  margin: 0 40rpx;
+}

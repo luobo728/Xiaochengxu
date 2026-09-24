@@ -1,0 +1,58 @@
+<view class="page">
+  <!-- ========== 顶部红色头图：返回 + 标题 + 活动总数 ========== -->
+  <view class="hd hd-act" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack">
+        <view class="ico-back"></view>
+      </view>
+      <view class="hd-title">活动中心</view>
+      <view class="hd-back ghost"></view>
+    </view>
+    <view class="hd-sub">共 {{total}} 个活动 · 点击查看详情</view>
+  </view>
+
+  <view class="body">
+    <!-- ========== 置顶卡：最近查看的那条活动 ========== -->
+    <view
+      wx:if="{{topItem}}"
+      class="card top-card"
+      hover-class="top-card-hover"
+      data-id="{{topItem.id}}"
+      bindtap="onOpenTop">
+      <view class="card-head">
+        <view class="card-title">最近查看</view>
+        <view class="card-more">快速进入 ›</view>
+      </view>
+      <view class="act-card" style="background:{{topItem.bg}}">
+        <view class="act-info">
+          <view class="act-tag">{{topItem.tag}}</view>
+          <view class="act-title">{{topItem.title}}</view>
+          <view class="act-desc">{{topItem.desc}}</view>
+        </view>
+        <view class="act-thumb">{{topItem.thumbText}}</view>
+      </view>
+    </view>
+
+    <!-- ========== 全部活动：公众号消息列表风格 ========== -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">全部活动</view>
+        <view class="card-more">{{total}} 个</view>
+      </view>
+
+      <block wx:if="{{rest.length}}">
+        <view class="msg" wx:for="{{rest}}" wx:key="id" data-id="{{item.id}}" bindtap="onOpenItem">
+          <view class="msg-main">
+            <view class="msg-title">{{item.title}}</view>
+            <view class="msg-meta">{{item.source}} · {{item.dateText}}</view>
+            <view class="msg-desc">{{item.desc}}</view>
+          </view>
+          <view class="msg-thumb" style="background:{{item.bg}}">{{item.thumbText}}</view>
+        </view>
+      </block>
+      <view wx:else class="empty">暂时还没有活动</view>
+    </view>
+
+    <view class="foot-tip">活动由阳光幼儿园发布</view>
+  </view>
+</view>

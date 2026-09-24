@@ -1,6 +1,7 @@
 // pages/index/index.js —— 首页：活动滚动屏 + 常用功能 + 今日安排 + 最新通知
 const app = getApp()
 const menu = require('../../utils/menu.js')
+const activity = require('../../utils/activity.js')
 
 // 常用功能入口（bg 为渐变背景，icon 为中文单字，避免依赖图片资源）
 const QUICK_ENTRIES = [
@@ -85,8 +86,15 @@ Page({
   },
 
   onActTap(e) {
-    const title = e.currentTarget.dataset.title || '活动'
-    wx.showToast({ title: title + ' 详情待接入', icon: 'none' })
+    const id = (e.currentTarget.dataset || {}).id || ''
+    // 记下「最近查看」：活动中心会把它排到最上面，方便快速回到这条
+    if (id) activity.markViewed(id)
+    wx.navigateTo({
+      url: '/pages/activity/activity' + (id ? '?id=' + encodeURIComponent(id) : ''),
+      fail() {
+        wx.showToast({ title: '活动中心打开失败', icon: 'none' })
+      }
+    })
   },
 
   onBell() {

@@ -1,0 +1,190 @@
+/* pages/activity/activity.wxss —— 活动中心：红色头图 + 置顶卡 + 公众号消息式列表
+   通用 class（.page/.hd/.body/.card/.card-head/.card-title/.card-more/.empty）见 app.wxss */
+
+/* ---------- 顶部头图（沿用首页那套红渐变） ---------- */
+.hd-act {
+  background: linear-gradient(160deg, #FF6A5B, #F5333F, #D81E2E);
+  box-shadow: 0 14rpx 34rpx rgba(216, 30, 46, 0.24);
+}
+
+.hd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8rpx;
+}
+
+/* 标题已在 .hd-row 内，去掉 app.wxss 给 .hd-title 的上间距 */
+.hd-act .hd-title {
+  padding-top: 0;
+  font-size: 38rpx;
+}
+
+.hd-back {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hd-back-hover {
+  background: rgba(255, 255, 255, 0.36);
+}
+
+/* 右上占位圆：透明不显示，只为让标题居中 */
+.hd-back.ghost {
+  background: transparent;
+  visibility: hidden;
+}
+
+/* 返回箭头：两条边框拼出的左尖括号（纯 CSS，无图片） */
+.ico-back {
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: 6rpx;
+  border-left: 4rpx solid #ffffff;
+  border-bottom: 4rpx solid #ffffff;
+  transform: rotate(45deg);
+}
+
+/* ---------- 置顶卡（浅红描边以示区别） ---------- */
+.top-card {
+  border: 2rpx solid rgba(245, 51, 63, 0.18);
+}
+
+.top-card-hover {
+  opacity: 0.94;
+}
+
+/* ---------- 活动横幅（与首页活动卡同款：渐变底 + 中文单字缩略图） ---------- */
+.act-card {
+  height: 260rpx;
+  padding: 0 32rpx;
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  box-shadow: 0 12rpx 26rpx rgba(24, 40, 80, 0.14);
+}
+
+.act-info {
+  flex: 1;
+  min-width: 0;
+  padding-right: 20rpx;
+}
+
+.act-tag {
+  display: inline-block;
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.22);
+  border: 2rpx solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-size: 20rpx;
+  line-height: 1.4;
+}
+
+.act-title {
+  margin-top: 18rpx;
+  font-size: 36rpx;
+  font-weight: 700;
+  line-height: 1.32;
+  color: #ffffff;
+}
+
+.act-desc {
+  margin-top: 12rpx;
+  font-size: 23rpx;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.act-thumb {
+  flex-shrink: 0;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.22);
+  border: 2rpx solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- 公众号消息式列表 ---------- */
+.msg {
+  display: flex;
+  align-items: flex-start;
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid #F0F2F7;
+}
+
+.msg:last-child {
+  border-bottom: 0;
+}
+
+.msg-main {
+  flex: 1;
+  min-width: 0;
+  padding-right: 24rpx;
+}
+
+/* 标题最多两行 */
+.msg-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #1B1F27;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.msg-meta {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #8A93A3;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 摘要只留一行，超出省略号 */
+.msg-desc {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #A6AEBE;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.msg-thumb {
+  flex-shrink: 0;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 16rpx;
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- 页脚说明 ---------- */
+.foot-tip {
+  padding: 20rpx 0 8rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #B4BBC8;
+  letter-spacing: 2rpx;
+}

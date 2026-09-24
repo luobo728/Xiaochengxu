@@ -32,6 +32,7 @@
           class="act-card"
           style="background:{{item.bg}}"
           data-title="{{item.title}}"
+          data-id="{{item.id}}"
           bindtap="onActTap">
           <image wx:if="{{item.cover}}" class="act-cover" src="{{item.cover}}" mode="aspectFill"></image>
           <view wx:if="{{item.cover}}" class="act-mask"></view>

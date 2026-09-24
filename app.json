@@ -8,7 +8,9 @@
     "pages/menu/menu",
     "pages/menu-admin/menu-admin",
     "pages/monitor/monitor",
-    "pages/billing/billing"
+    "pages/billing/billing",
+    "pages/activity/activity",
+    "pages/activity/detail"
   ],
   "window": {
     "navigationStyle": "custom",
