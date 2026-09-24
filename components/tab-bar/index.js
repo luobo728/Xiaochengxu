@@ -101,9 +101,10 @@ Component({
             wx.showToast({ title: '切换失败，请再点一次', icon: 'none' })
             return
           }
+          // 重试等待从 200ms 缩短到 80ms：失败的切换能更快重试，用户少等一截
           setTimeout(() => {
             this.safeSwitch(url, true)
-          }, 200)
+          }, 80)
         }
       })
     },

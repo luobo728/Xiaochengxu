@@ -119,11 +119,14 @@ Page({
   loadList() {
     if (!this.data.cloudReady || !this.data.isAdmin) return
     const date = this.data.date
-    const seq = this._seq = (this._seq || 0) + 1
+    const seq = (this._seq = (this._seq || 0) + 1)
 
     let task = null
     try {
-      task = menu.listByDates([date])
+      // 带缓存：有缓存就立刻显示，同时在后台静默刷新（切页不用等网络）
+      task = menu.loadDates([date], (freshRows) => {
+        this.applyList(freshRows, seq)
+      })
     } catch (e) {
       task = null
     }
@@ -131,17 +134,22 @@ Page({
       wx.showToast({ title: '加载失败，请重试', icon: 'none' })
       return
     }
-    task.then((rows) => {
-      if (seq !== this._seq) return        // 已切换日期，丢弃过期结果
-      const list = Array.isArray(rows) ? rows : []
-      this.setData({
-        list: list,
-        current: this.filterByMeal(list, this.data.meal),
-        stats: this.buildStats(list)
-      })
+    task.then((res) => {
+      this.applyList(res && res.rows, seq)
     }).catch(() => {
       if (seq !== this._seq) return
       wx.showToast({ title: '加载失败，请重试', icon: 'none' })
+    })
+  },
+
+  // 把一组记录画到页面上（缓存与刷新共用）
+  applyList(rows, seq) {
+    if (seq !== this._seq) return // 已切换日期，丢弃过期结果
+    const list = Array.isArray(rows) ? rows : []
+    this.setData({
+      list: list,
+      current: this.filterByMeal(list, this.data.meal),
+      stats: this.buildStats(list)
     })
   },
 
@@ -308,6 +316,8 @@ Page({
   finishUpload(items, failed) {
     const finish = () => {
       this.setData({ uploading: false, done: 0, total: 0, percent: 0 })
+      // 刚上传过：先作废缓存，保证列表立刻是最新的
+      menu.clearListCache([this.data.date])
       this.loadList()
     }
 
@@ -370,6 +380,8 @@ Page({
         task.then((r) => {
           if (r && r.ok) {
             wx.showToast({ title: '已删除', icon: 'success' })
+            // 刚删除过：先作废缓存，保证列表立刻是最新的
+            menu.clearListCache([this.data.date])
             this.loadList()
           } else {
             wx.showToast({ title: (r && r.msg) || '删除失败，请重试', icon: 'none' })

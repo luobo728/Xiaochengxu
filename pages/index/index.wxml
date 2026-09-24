@@ -21,7 +21,7 @@
     <!-- 活动滚动屏：自动轮播 -->
     <swiper
       class="act-swiper"
-      autoplay
+      autoplay="{{pageActive}}"
       circular
       interval="3600"
       duration="480"
@@ -53,7 +53,7 @@
     <view class="marquee">
       <view class="marquee-tag">公告</view>
       <view class="marquee-view">
-        <view class="marquee-track" style="animation-duration:{{marqueeDuration}}s">
+        <view class="marquee-track {{pageActive ? '' : 'paused'}}" style="animation-duration:{{marqueeDuration}}s">
           <text class="marquee-item">{{marqueeText}}</text>
           <text class="marquee-item">{{marqueeText}}</text>
         </view>

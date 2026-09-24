@@ -1,5 +1,6 @@
 // pages/index/index.js —— 首页：活动滚动屏 + 常用功能 + 今日安排 + 最新通知
 const app = getApp()
+const menu = require('../../utils/menu.js')
 
 // 常用功能入口（bg 为渐变背景，icon 为中文单字，避免依赖图片资源）
 const QUICK_ENTRIES = [
@@ -25,7 +26,9 @@ Page({
     marqueeDuration: 20,
     quickEntries: QUICK_ENTRIES,
     todayPlans: TODAY_PLANS,
-    notices: []
+    notices: [],
+    // 页面是否在前台，用来暂停动画（隐藏时停掉跑马灯/轮播，省性能）
+    pageActive: true
   },
 
   onLoad() {
@@ -50,6 +53,15 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 })
     }
+    // 回到前台恢复动画
+    this.setData({ pageActive: true })
+    // 后台预热「今日食谱」数据，等用户点进食谱页就不用再等网络
+    menu.prefetchToday()
+  },
+
+  onHide() {
+    // 页面不可见时停掉跑马灯与轮播，避免白耗性能导致切页发卡
+    this.setData({ pageActive: false })
   },
 
   // 日期文案：4月16日 周三

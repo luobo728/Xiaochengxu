@@ -105,19 +105,15 @@ Page({
     const seq = (this._seq = (this._seq || 0) + 1)
 
     menu
-      .listByDate(date)
-      .then((rows) => {
-        if (seq !== this._seq || this.data.date !== date) {
-          if (isPull) wx.stopPullDownRefresh()
-          return
+      .loadDates(
+        [date],
+        // 后台静默刷新回来的新数据（此时页面已经在显示缓存了）
+        (freshRows) => {
+          this.applyRows(freshRows, date, seq)
         }
-        const groups = menu.groupByMeal(rows, mealUtil.MEALS)
-        let total = 0
-        for (let i = 0; i < groups.length; i++) {
-          total += groups[i].photos.length
-        }
-        this.setData({ groups: groups, total: total, loading: false, failed: false })
-        if (isPull) wx.stopPullDownRefresh()
+      )
+      .then((res) => {
+        this.applyRows((res && res.rows) || [], date, seq, isPull)
       })
       .catch(() => {
         if (seq !== this._seq) {
@@ -127,6 +123,21 @@ Page({
         this.setData({ loading: false, failed: true })
         if (isPull) wx.stopPullDownRefresh()
       })
+  },
+
+  // 把一组图片记录画到页面上（缓存与刷新共用）
+  applyRows(rows, date, seq, isPull) {
+    if (seq !== this._seq || this.data.date !== date) {
+      if (isPull) wx.stopPullDownRefresh()
+      return
+    }
+    const groups = menu.groupByMeal(rows, mealUtil.MEALS)
+    let total = 0
+    for (let i = 0; i < groups.length; i++) {
+      total += groups[i].photos.length
+    }
+    this.setData({ groups: groups, total: total, loading: false, failed: false })
+    if (isPull) wx.stopPullDownRefresh()
   },
 
   onRetry() {

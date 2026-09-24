@@ -114,23 +114,23 @@ Page({
     })
   },
 
-  // 管理员身份校验：仅决定入口是否显示，失败静默
+  // 管理员身份校验：优先读本地缓存秒显，缓存缺失才走云端（省掉每次进页面等云函数的几百毫秒）
   checkAdmin() {
-    if (this.data.isAdmin) return
-    let task = null
-    try {
-      task = menu.whoami()
-    } catch (e) {
-      task = null
-    }
-    if (!task || typeof task.then !== 'function') return
-    task.then((res) => {
-      if (res && res.isAdmin && !this.data.isAdmin) {
-        this.setData({ isAdmin: true })
+    const cached = menu.cachedWhoami()
+    if (cached) {
+      if (this.data.isAdmin !== !!cached.isAdmin) {
+        this.setData({ isAdmin: !!cached.isAdmin })
       }
-    }).catch(() => {
-      // 家长端不暴露校验失败
-    })
+      return
+    }
+    menu
+      .whoami()
+      .then((res) => {
+        this.setData({ isAdmin: !!(res && res.isAdmin) })
+      })
+      .catch(() => {
+        // 云端不可用时保持不显示管理入口
+      })
   },
 
   // 管理员入口：食谱管理端
@@ -233,6 +233,8 @@ Page({
           return
         }
         this.setData({ isAdmin: true })
+        // 身份已变更，清掉本地身份缓存，否则下次进「我的」页入口会被旧缓存藏掉
+        menu.clearWhoamiCache()
         wx.showModal({
           title: '设置成功',
           content: '你现在是管理员了。要现在去上传食谱图片吗？',

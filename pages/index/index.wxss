@@ -298,6 +298,11 @@
   animation-iteration-count: infinite;
 }
 
+/* 页面不可见时暂停滚动，省下性能 */
+.marquee-track.paused {
+  animation-play-state: paused;
+}
+
 .marquee-item {
   flex-shrink: 0;
   padding-right: 80rpx;
