@@ -9,6 +9,7 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
+const _ = db.command
 const COLLECTION = 'menu_photos'
 const ADMINS = 'menu_admins'
 const MEAL_KEYS = ['breakfast', 'morning', 'lunch', 'afternoon', 'dinner']
@@ -48,6 +49,16 @@ async function isAdmin(openid) {
   }
 }
 
+// 是否已经有管理员（首次初始化时用来防止重复认领）
+async function hasAdmin() {
+  try {
+    const res = await db.collection(ADMINS).count()
+    return !!(res && res.total > 0)
+  } catch (e) {
+    return false
+  }
+}
+
 exports.main = async (event) => {
   const wxContext = cloud.getWXContext()
   const openid = wxContext.OPENID || ''
@@ -55,7 +66,62 @@ exports.main = async (event) => {
 
   // 我是谁（任何用户都可调用，用于决定是否展示管理入口）
   if (action === 'whoami') {
-    return ok({ openid: openid, isAdmin: await isAdmin(openid) })
+    return ok({
+      openid: openid,
+      isAdmin: await isAdmin(openid),
+      initialized: await hasAdmin()
+    })
+  }
+
+  // 读取图片记录（所有用户可调用：客户端只需要「看」，所以放在管理员校验之前）
+  if (action === 'list') {
+    const rawDates = Array.isArray(event.dates) ? event.dates : []
+    const dates = rawDates
+      .filter(function (d) {
+        return DATE_RE.test(d || '')
+      })
+      .slice(0, 14)
+    if (!dates.length) return ok({ rows: [] })
+    try {
+      const res = await db
+        .collection(COLLECTION)
+        .where({ date: _.in(dates) })
+        .orderBy('sort', 'asc')
+        .limit(100)
+        .get()
+      return ok({ rows: (res && res.data) || [] })
+    } catch (e) {
+      // 集合还不存在时按「还没有图片」处理，不报错
+      return ok({ rows: [] })
+    }
+  }
+
+  // 首次初始化：还没有管理员时，第一个调用者成为管理员
+  // （这样不用去控制台手工建集合、配权限、抄 openid）
+  if (action === 'init') {
+    if (!openid) return fail('拿不到 openid，请在真机小程序里操作')
+    try {
+      await db.createCollection(COLLECTION)
+    } catch (e) {
+      // 集合已存在（或会在写入时自动创建），忽略
+    }
+    try {
+      await db.createCollection(ADMINS)
+    } catch (e) {
+      // 集合已存在（或会在写入时自动创建），忽略
+    }
+    if (await hasAdmin()) return fail('已经设置过管理员了')
+    try {
+      await db.collection(ADMINS).doc(openid).set({
+        data: {
+          createTime: db.serverDate(),
+          note: 'first-admin'
+        }
+      })
+    } catch (e) {
+      return fail('设置失败：' + errText(e))
+    }
+    return ok({ openid: openid, isAdmin: true })
   }
 
   // 以下操作必须是管理员

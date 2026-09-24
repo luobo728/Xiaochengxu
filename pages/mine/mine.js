@@ -125,8 +125,20 @@ Page({
     })
   },
 
-  // 隐藏入口：长按底部版本号 → 显示并复制当前 openid（首次配置管理员白名单用）
+  // 隐藏入口：长按页面底部版本号
+  //   已是管理员 → 显示并复制 openid
+  //   还没有管理员 → 一键把自己设成本园管理员
+  //   已设置过但不是管理员 → 提示把 openid 发给园长
   onOpenIdLongPress() {
+    if (!menu.isCloudReady()) {
+      wx.showModal({
+        title: '还不能使用',
+        content: '云开发还没准备好。请先完成说明里的第 1 步（开通云开发）和第 2 步（上传云函数）。',
+        showCancel: false
+      })
+      return
+    }
+
     wx.showLoading({ title: '读取中', mask: true })
     menu
       .whoami()
@@ -134,28 +146,99 @@ Page({
         wx.hideLoading()
         const openid = (res && res.openid) || ''
         if (!openid) {
-          wx.showToast({ title: '读取失败：请先部署云函数 menuAdmin', icon: 'none' })
+          wx.showModal({
+            title: '读取失败',
+            content: '请确认云函数 menuAdmin 已经「上传并部署」。',
+            showCancel: false
+          })
           return
         }
+        if (res.isAdmin) {
+          this.showOpenId(openid, '你已经是管理员')
+          return
+        }
+        if (!res.initialized) {
+          wx.showModal({
+            title: '还没有设置管理员',
+            content: '要把现在这台微信设置为本园的管理员吗？设置好以后你就可以上传食谱图片了。',
+            confirmText: '确定设置',
+            success: (r) => {
+              if (r.confirm) this.becomeAdmin()
+            }
+          })
+          return
+        }
+        this.showOpenId(openid, '本园已设置过管理员，请把这段 openid 发给园长添加')
+      })
+      .catch(() => {
+        wx.hideLoading()
         wx.showModal({
-          title: '当前 openid',
-          content: openid,
-          confirmText: '复制',
-          cancelText: '关闭',
-          success(r) {
-            if (!r.confirm) return
-            wx.setClipboardData({
-              data: openid,
-              success() {
-                wx.showToast({ title: '已复制 openid', icon: 'none' })
-              }
-            })
+          title: '读取失败',
+          content: '请检查云开发是否已开通、云函数是否已上传。',
+          showCancel: false
+        })
+      })
+  },
+
+  // 显示 openid 并可一键复制
+  showOpenId(openid, title) {
+    wx.showModal({
+      title: title || '当前 openid',
+      content: openid,
+      confirmText: '复制',
+      cancelText: '关闭',
+      success(r) {
+        if (!r.confirm) return
+        wx.setClipboardData({
+          data: openid,
+          success() {
+            wx.showToast({ title: '已复制 openid', icon: 'none' })
+          }
+        })
+      }
+    })
+  },
+
+  // 一键成为管理员
+  becomeAdmin() {
+    wx.showLoading({ title: '设置中', mask: true })
+    menu
+      .initAdmin()
+      .then((res) => {
+        wx.hideLoading()
+        if (!res || !res.ok) {
+          wx.showModal({
+            title: '设置失败',
+            content: (res && res.msg) || '请稍后重试',
+            showCancel: false
+          })
+          return
+        }
+        this.setData({ isAdmin: true })
+        wx.showModal({
+          title: '设置成功',
+          content: '你现在是管理员了。要现在去上传食谱图片吗？',
+          confirmText: '去上传',
+          cancelText: '稍后',
+          success: (r) => {
+            if (r.confirm) {
+              wx.navigateTo({
+                url: '/pages/menu-admin/menu-admin',
+                fail() {
+                  wx.showToast({ title: '打开失败', icon: 'none' })
+                }
+              })
+            }
           }
         })
       })
       .catch(() => {
         wx.hideLoading()
-        wx.showToast({ title: '读取失败：请检查云开发与云函数', icon: 'none' })
+        wx.showModal({
+          title: '设置失败',
+          content: '请检查云函数是否已经「上传并部署」。',
+          showCancel: false
+        })
       })
   }
 })

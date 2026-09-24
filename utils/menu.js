@@ -1,14 +1,11 @@
 // utils/menu.js —— 食谱数据访问层
-// 全项目只有这个文件直接与云开发交互：
-//   读：直接查数据库（集合安全规则为「所有用户可读、客户端不可写」）
-//   写：只能经云函数 menuAdmin（服务端校验管理员 openid）
-// 将来若换成自建后端接口，只需改这一个文件。
+// 全项目只有这个文件与云开发交互，页面只调用这里导出的函数。
+//   读：走云函数（list），所以数据库集合用默认权限即可，不用去控制台配规则
+//   写：走云函数（add / remove），服务端会校验管理员，客户端没有任何直接写库的代码
+// 将来若换成自建后端，只需改这一个文件。
 const env = require('./env.js')
 
-const COLLECTION = env.COLLECTION
 const FUNCTION_NAME = env.FUNCTION_NAME
-const PAGE_SIZE = 20 // 小程序端单次查询上限
-const MAX_LOOP = 5 // 最多翻 5 页（100 条/天），一天 5 个餐次足够
 
 /* ---------------- 云开发状态 ---------------- */
 
@@ -30,57 +27,42 @@ function cloudError() {
   }
 }
 
-function db() {
-  return wx.cloud.database()
-}
+/* ---------------- 云函数调用 ---------------- */
 
-/* ---------------- 读：按日期取图片记录 ---------------- */
-
-// 取某一天的全部记录，按 sort 升序
-function listByDate(date) {
+function call(action, data) {
   return new Promise(function (resolve, reject) {
     if (!isCloudReady()) {
-      reject(new Error('云开发未就绪'))
+      reject(new Error(cloudError() || '云开发未就绪'))
       return
     }
-    const all = []
-    let loop = 0
-
-    const step = function (skip) {
-      db()
-        .collection(COLLECTION)
-        .where({ date: date })
-        .orderBy('sort', 'asc')
-        .skip(skip)
-        .limit(PAGE_SIZE)
-        .get()
-        .then(function (res) {
-          const rows = (res && res.data) || []
-          for (let i = 0; i < rows.length; i++) all.push(rows[i])
-          loop++
-          if (rows.length === PAGE_SIZE && loop < MAX_LOOP) {
-            step(skip + PAGE_SIZE)
-          } else {
-            resolve(all)
-          }
-        })
-        .catch(reject)
-    }
-
-    step(0)
+    wx.cloud.callFunction({
+      name: FUNCTION_NAME,
+      data: Object.assign({ action: action }, data || {}),
+      success: function (res) {
+        resolve((res && res.result) || {})
+      },
+      fail: function (err) {
+        reject(err)
+      }
+    })
   })
 }
 
-// 取多天记录（管理端用）
+/* ---------------- 读 ---------------- */
+
+// 取某一天的图片记录，按 sort 升序
+function listByDate(date) {
+  return listByDates([date])
+}
+
+// 取多天的图片记录
 function listByDates(dates) {
-  const list = dates || []
-  if (!list.length) return Promise.resolve([])
-  return Promise.all(list.map(listByDate)).then(function (groups) {
-    let all = []
-    for (let i = 0; i < groups.length; i++) {
-      all = all.concat(groups[i])
-    }
-    return all
+  const valid = (dates || []).filter(function (d) {
+    return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)
+  })
+  if (!valid.length) return Promise.resolve([])
+  return call('list', { dates: valid }).then(function (res) {
+    return (res && res.rows) || []
   })
 }
 
@@ -116,43 +98,31 @@ function groupByMeal(rows, meals) {
   return result
 }
 
-/* ---------------- 云函数调用 ---------------- */
+/* ---------------- 身份 ---------------- */
 
-function call(action, data) {
-  return new Promise(function (resolve, reject) {
-    if (!isCloudReady()) {
-      reject(new Error(cloudError() || '云开发未就绪'))
-      return
-    }
-    wx.cloud.callFunction({
-      name: FUNCTION_NAME,
-      data: Object.assign({ action: action }, data || {}),
-      success: function (res) {
-        resolve((res && res.result) || {})
-      },
-      fail: function (err) {
-        reject(err)
-      }
-    })
-  })
-}
-
-// 当前用户身份：{ openid, isAdmin }
+// { openid, isAdmin, initialized }
+// initialized 表示「本园是否已经设置过管理员」，用于首次一键初始化
 function whoami() {
   return call('whoami').then(function (res) {
     return {
       openid: (res && res.openid) || '',
-      isAdmin: !!(res && res.isAdmin)
+      isAdmin: !!(res && res.isAdmin),
+      initialized: !!(res && res.initialized)
     }
   })
 }
 
-// 新增图片记录（仅管理员可用，服务端会再校验一次）
+// 首次一键成为管理员（服务端只允许在还没有管理员时执行一次）
+function initAdmin() {
+  return call('init')
+}
+
+/* ---------------- 写（仅管理员） ---------------- */
+
 function addPhotos(items) {
   return call('add', { items: items || [] })
 }
 
-// 删除图片记录（同时删除云存储文件），仅管理员可用
 function removePhoto(id) {
   return call('remove', { id: id })
 }
@@ -192,6 +162,7 @@ module.exports = {
   listByDates: listByDates,
   groupByMeal: groupByMeal,
   whoami: whoami,
+  initAdmin: initAdmin,
   addPhotos: addPhotos,
   removePhoto: removePhoto,
   previewUrls: previewUrls
