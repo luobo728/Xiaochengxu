@@ -34,7 +34,7 @@ function cloudError() {
 
 /* ---------------- 云函数调用 ---------------- */
 
-function call(action, data) {
+function callOnce(action, data) {
   return new Promise(function (resolve, reject) {
     if (!isCloudReady()) {
       reject(new Error(cloudError() || '云开发未就绪'))
@@ -50,6 +50,18 @@ function call(action, data) {
         reject(err)
       }
     })
+  })
+}
+
+// 云函数偶发超时（冷启动、容器抖动）时自动重试一次：
+// 第二次通常能命中已经热好的容器，能救回一部分「第一次必卡」的情况
+function call(action, data) {
+  return callOnce(action, data).catch(function (err) {
+    const msg = (err && (err.errMsg || err.message)) || ''
+    if (!/-501002|ESOCKETTIMEDOUT|timeout|超时|网络|fail to fetch/i.test(msg)) {
+      throw err
+    }
+    return callOnce(action, data)
   })
 }
 
