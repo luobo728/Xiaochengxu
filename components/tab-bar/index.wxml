@@ -2,7 +2,7 @@
   <view class="tabbar-inner">
     <!-- 首页 -->
     <view
-      class="tab-item {{selected === 0 ? 'on' : ''}}"
+      class="tab-item {{active === 0 ? 'on' : ''}}"
       data-index="0"
       data-path="/pages/index/index"
       bindtap="onTab">
@@ -16,7 +16,7 @@
 
     <!-- 课时 -->
     <view
-      class="tab-item {{selected === 1 ? 'on' : ''}}"
+      class="tab-item {{active === 1 ? 'on' : ''}}"
       data-index="1"
       data-path="/pages/course/course"
       bindtap="onTab">
@@ -35,7 +35,7 @@
 
     <!-- 校园 -->
     <view
-      class="tab-item {{selected === 2 ? 'on' : ''}}"
+      class="tab-item {{active === 2 ? 'on' : ''}}"
       data-index="2"
       data-path="/pages/campus/campus"
       bindtap="onTab">
@@ -50,7 +50,7 @@
 
     <!-- 我的 -->
     <view
-      class="tab-item {{selected === 3 ? 'on' : ''}}"
+      class="tab-item {{active === 3 ? 'on' : ''}}"
       data-index="3"
       data-path="/pages/mine/mine"
       bindtap="onTab">
