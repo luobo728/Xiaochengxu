@@ -1,8 +1,8 @@
 // utils/env.js —— 云开发与外部服务配置
-// ENV_ID 留空时会使用当前账号的「默认环境」（第一个创建的环境）；
-// 如果账号下有多个环境，请把目标环境 ID 填进来（形如 cloud1-0gxxxxxx）。
+// ENV_ID：云开发环境的唯一编号（下面已填好本项目的环境）。
+// 填了它，小程序就一定会把请求发到这个环境，不会再去猜「默认环境」。
 module.exports = {
-  ENV_ID: '',
+  ENV_ID: 'cloud1-d8g6wktjobb841cee',
 
   // 食谱管理云函数名（改名时这里同步改，云函数目录名也要一致）
   FUNCTION_NAME: 'menuAdmin',
