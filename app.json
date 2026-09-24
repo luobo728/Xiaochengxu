@@ -7,7 +7,8 @@
     "pages/camera/camera",
     "pages/menu/menu",
     "pages/menu-admin/menu-admin",
-    "pages/monitor/monitor"
+    "pages/monitor/monitor",
+    "pages/billing/billing"
   ],
   "window": {
     "navigationStyle": "custom",

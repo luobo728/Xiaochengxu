@@ -1,0 +1,234 @@
+/* pages/billing/billing.wxss —— 账单明细页专有样式（通用 class 见 app.wxss） */
+
+/* 本页不是 tabBar 页，覆盖 app.wxss 里为 tabBar 预留的底部留白 */
+.page {
+  padding-bottom: 60rpx;
+  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 顶部头图（沿用「我的」页的红色主题） ---------- */
+.hd-bill {
+  background: linear-gradient(135deg, #FF6A5B, #F0343C);
+}
+
+.hd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8rpx;
+}
+
+/* 标题已在 .hd-row 内，去掉 app.wxss 给 .hd-title 的上间距 */
+.hd-bill .hd-title {
+  padding-top: 0;
+  font-size: 38rpx;
+}
+
+.hd-back {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hd-back-hover {
+  opacity: 0.7;
+}
+
+/* 右上占位圆：透明不显示，只为标题居中 */
+.hd-back.ghost {
+  background: transparent;
+  visibility: hidden;
+}
+
+/* 返回箭头：两条边框拼出的左尖括号 */
+.ico-back {
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: 6rpx;
+  border-left: 4rpx solid #FFFFFF;
+  border-bottom: 4rpx solid #FFFFFF;
+  transform: rotate(45deg);
+}
+
+/* ---------- 汇总卡（与「我的」页的课时与余额卡片同款） ---------- */
+.bill-nums {
+  display: flex;
+  align-items: center;
+  padding: 6rpx 0 4rpx;
+}
+
+.bill-num {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.bill-num-v {
+  font-size: 48rpx;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1B1F27;
+}
+
+.bill-num-l {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #8A93A3;
+}
+
+.bill-split {
+  flex-shrink: 0;
+  width: 1rpx;
+  height: 64rpx;
+  background: #F0F2F7;
+}
+
+.bill-state {
+  margin-top: 16rpx;
+  text-align: center;
+  font-size: 23rpx;
+  color: #8A93A3;
+}
+
+/* ---------- 计费规则 ---------- */
+.rule {
+  display: flex;
+  align-items: flex-start;
+  padding: 12rpx 0;
+}
+
+.rule-dot {
+  flex-shrink: 0;
+  width: 36rpx;
+  height: 36rpx;
+  margin: 4rpx 16rpx 0 0;
+  border-radius: 50%;
+  background: #EEF3FF;
+  color: #2E6BFF;
+  font-size: 20rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rule-txt {
+  flex: 1;
+  min-width: 0;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #5A6274;
+}
+
+/* ---------- 收支明细 ---------- */
+.led-row {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #F0F2F7;
+}
+
+.led-row:last-child {
+  border-bottom: none;
+}
+
+/* 左侧方块：颜色与单字由 JS 按 type 给出 */
+.led-ico {
+  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
+  margin-right: 20rpx;
+  border-radius: 20rpx;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.led-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.led-name {
+  font-size: 29rpx;
+  font-weight: 500;
+  color: #1B1F27;
+}
+
+.led-sub {
+  margin-top: 6rpx;
+  font-size: 23rpx;
+  color: #8A93A3;
+}
+
+.led-val {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.led-val.up {
+  color: #12A182;
+}
+
+.led-val.down {
+  color: #F0432C;
+}
+
+/* ---------- 空态 ---------- */
+.none {
+  padding: 60rpx 0 50rpx;
+  text-align: center;
+}
+
+/* 纯 CSS 占位图标：一张圆角「票据」加两条横线 */
+.none-ico {
+  position: relative;
+  width: 96rpx;
+  height: 96rpx;
+  margin: 0 auto 20rpx;
+  border-radius: 24rpx;
+  background: #F1F4FA;
+}
+
+.none-ico::before,
+.none-ico::after {
+  content: '';
+  position: absolute;
+  left: 26rpx;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: #D6DDEA;
+}
+
+.none-ico::before {
+  top: 34rpx;
+  width: 44rpx;
+}
+
+.none-ico::after {
+  top: 56rpx;
+  width: 28rpx;
+}
+
+.none-txt {
+  font-size: 26rpx;
+  color: #A6AEBE;
+}
+
+/* ---------- 底部说明 ---------- */
+.foot-tip {
+  margin-top: 24rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #8A93A3;
+}

@@ -1,5 +1,7 @@
 const app = getApp()
 const menu = require('../../utils/menu.js')
+// 计费数据层：本地版本存在手机里，以后联网只改这一个文件
+const billing = require('../../utils/billing.js')
 
 // 把云端返回的原始错误翻译成「人话」，方便照着做
 function explainCloudError(err) {
@@ -34,7 +36,7 @@ Page({
     },
     // 三列小统计
     miniStats: [
-      { id: 1, num: '52', lbl: '课时余额' },
+      { id: 1, num: '86', lbl: '在园天数' },
       { id: 2, num: '18', lbl: '本月出勤' },
       { id: 3, num: '960', lbl: '成长值' }
     ],
@@ -72,13 +74,25 @@ Page({
     // 设置项
     noticeOn: true,
     cacheSize: '12.6 MB',
-    version: 'v1.0.0'
+    version: 'v1.0.0',
+    // 课时与余额：数值全部来自 utils/billing.js，页面只负责展示
+    hours: 0,
+    balanceText: '0.00',
+    checkinDays: 0,
+    todayChecked: false,
+    // 规则文案里的数值同样取自数据层，避免把奖励写死在页面
+    claimHours: 0,
+    checkinReward: 0,
+    // 请求进行中：防连点，并让按钮进入 loading 态
+    billingBusy: false
   },
 
   onLoad() {
     this.setData({
       statusBarHeight: (app.globalData && app.globalData.statusBarHeight) || 20
     })
+    // 规则数值（课时 / 奖励）由数据层提供，页面只做展示
+    this.applyBillingRules()
   },
 
   onShow() {
@@ -88,6 +102,150 @@ Page({
     }
     // 管理员身份校验：仅用于展示「食谱管理」入口，失败静默
     this.checkAdmin()
+    // 打卡 / 领券都会改余额，每次进页面重新同步一次
+    this.refreshBilling()
+  },
+
+  // ---------- 课时与余额 ----------
+
+  // 从数据层取规则，避免把奖励写死在页面里
+  applyBillingRules() {
+    const rules = billing.rules() || {}
+    this.setData({
+      claimHours: rules.claimHours,
+      checkinReward: rules.checkinReward
+    })
+  },
+
+  // 拉取汇总：失败时保留上一次展示，不打断页面
+  refreshBilling() {
+    return billing
+      .getSummary()
+      .then((s) => {
+        if (!s) return
+        this.setData({
+          hours: s.hours,
+          // WXML 里不做运算，金额先在 JS 里格式化成两位小数字符串
+          balanceText: (Number(s.balance) || 0).toFixed(2),
+          checkinDays: s.checkinDays,
+          todayChecked: !!s.todayChecked
+        })
+      })
+      .catch(() => {
+        // 本地读取失败：保持原值，不弹错打扰家长
+      })
+  },
+
+  // 「账单明细 ›」入口
+  onBillingDetail() {
+    wx.navigateTo({
+      url: '/pages/billing/billing',
+      fail() {
+        wx.showToast({ title: '打开失败', icon: 'none' })
+      }
+    })
+  },
+
+  // 扫码领课时：扫码用不了时退化为手动输入券码
+  onScanClaim() {
+    if (this.data.billingBusy) return
+    wx.scanCode({
+      onlyFromCamera: false,
+      scanType: ['qrCode', 'barCode'],
+      success: (res) => {
+        this.claimWithCode((res && res.result) || '')
+      },
+      fail: () => {
+        // 用户取消，或开发者工具里没有摄像头 → 用输入券码兜底
+        this.askCodeManually()
+      }
+    })
+  },
+
+  // 手动输入券码（演示环境下就是主路径）
+  askCodeManually() {
+    const codes = billing.demoCodes() || []
+    const demo = (codes[0] && codes[0].code) || ''
+    wx.showModal({
+      title: '输入券码',
+      editable: true,
+      placeholderText: demo ? '请输入券码（演示可用：' + demo + '）' : '请输入券码',
+      confirmText: '领取',
+      success: (res) => {
+        if (!res.confirm) return
+        const code = (res.content || '').trim()
+        if (!code) {
+          wx.showToast({ title: '券码不能为空', icon: 'none' })
+          return
+        }
+        this.claimWithCode(code)
+      },
+      fail() {
+        // 弹窗没弹出来就没法输入，静默即可
+      }
+    })
+  },
+
+  // 真正的领取请求：busy 期间防连点，结束一定复位
+  claimWithCode(code) {
+    this.setData({ billingBusy: true })
+    wx.showLoading({ title: '领取中', mask: true })
+    billing
+      .claimByCode(code)
+      .then((res) => {
+        wx.hideLoading()
+        if (res && res.ok) {
+          // 课时变了，刷新后卡片才是新数字
+          this.refreshBilling()
+          const hours = (res.summary && res.summary.hours) || 0
+          wx.showModal({
+            title: '领取成功',
+            content: '+' + res.hours + ' 课时，当前课时 ' + hours,
+            showCancel: false
+          })
+        } else {
+          // 失败不改数据，所以不刷新
+          wx.showToast({ title: (res && res.msg) || '券码无效', icon: 'none' })
+        }
+      })
+      .catch(() => {
+        wx.hideLoading()
+        wx.showToast({ title: '领取失败，请重试', icon: 'none' })
+      })
+      .then(() => this.setData({ billingBusy: false }))
+  },
+
+  // 今日打卡：成功返余额
+  onCheckin() {
+    if (this.data.billingBusy) return
+    if (this.data.todayChecked) {
+      // 今天已打过卡，不再发请求，只提示
+      wx.showToast({ title: '今天已打卡，明天再来', icon: 'none' })
+      return
+    }
+    this.setData({ billingBusy: true })
+    wx.showLoading({ title: '打卡中', mask: true })
+    billing
+      .checkin()
+      .then((res) => {
+        wx.hideLoading()
+        if (res && res.ok) {
+          this.refreshBilling()
+          const days = (res.summary && res.summary.checkinDays) || 0
+          wx.showModal({
+            title: '打卡成功',
+            content: '返 ¥' + Number(res.reward || 0).toFixed(2) + ' 到账户余额，连续打卡 ' + days + ' 天',
+            showCancel: false
+          })
+        } else {
+          wx.showToast({ title: (res && res.msg) || '打卡失败', icon: 'none' })
+        }
+      })
+      .catch(() => {
+        wx.hideLoading()
+        wx.showToast({ title: '打卡失败，请重试', icon: 'none' })
+      })
+      .then(() => this.setData({ billingBusy: false }))
   },
 
   // 统一轻量交互

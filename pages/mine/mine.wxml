@@ -27,6 +27,35 @@
       </view>
     </view>
 
+    <!-- 课时与余额：数值与规则都来自 utils/billing.js，页面只负责展示 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">课时与余额</view>
+        <view class="card-more" bindtap="onBillingDetail">账单明细 ›</view>
+      </view>
+
+      <view class="bill-nums">
+        <view class="bill-num">
+          <view class="bill-num-v">{{hours}}</view>
+          <view class="bill-num-l">课时余额</view>
+        </view>
+        <view class="bill-split"></view>
+        <view class="bill-num">
+          <view class="bill-num-v">¥{{balanceText}}</view>
+          <view class="bill-num-l">账户余额</view>
+        </view>
+      </view>
+
+      <view class="bill-state">连续打卡 {{checkinDays}} 天 · {{todayChecked ? '今日已打卡' : '今日未打卡'}}</view>
+
+      <view class="bill-btns">
+        <view class="bill-btn bill-btn-claim {{billingBusy ? 'is-busy' : ''}}" bindtap="onScanClaim">扫码领课时</view>
+        <view class="bill-btn {{todayChecked ? 'bill-btn-done' : 'bill-btn-checkin'}} {{billingBusy ? 'is-busy' : ''}}" bindtap="onCheckin">{{todayChecked ? '今日已打卡 ✔' : '今日打卡'}}</view>
+      </view>
+
+      <view class="bill-tip">新生扫码领 {{claimHours}} 课时 · 每天打卡返 ¥{{checkinReward}} 余额</view>
+    </view>
+
     <!-- 常用功能 -->
     <view class="card">
       <view class="card-head">

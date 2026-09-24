@@ -1,0 +1,64 @@
+<view class="page">
+  <view class="hd hd-bill" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack"><view class="ico-back"></view></view>
+      <view class="hd-title">账单明细</view>
+      <!-- 右侧透明占位圆：让标题保持在正中 -->
+      <view class="hd-back ghost"></view>
+    </view>
+  </view>
+
+  <view class="body">
+    <!-- 汇总卡：靠 .body 的负上边距压住头图 -->
+    <view class="card">
+      <view class="bill-nums">
+        <view class="bill-num">
+          <view class="bill-num-v">{{hours}}</view>
+          <view class="bill-num-l">课时余额</view>
+        </view>
+        <view class="bill-split"></view>
+        <view class="bill-num">
+          <view class="bill-num-v">¥{{balanceText}}</view>
+          <view class="bill-num-l">账户余额</view>
+        </view>
+      </view>
+      <view class="bill-state">连续打卡 {{checkinDays}} 天 · 累计领取 {{claimCount}} 次</view>
+    </view>
+
+    <!-- 计费规则 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">计费规则</view>
+      </view>
+      <view class="rule" wx:for="{{rules}}" wx:key="id">
+        <view class="rule-dot">{{item.ico}}</view>
+        <view class="rule-txt">{{item.txt}}</view>
+      </view>
+    </view>
+
+    <!-- 收支明细 -->
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title">收支明细</view>
+        <view class="card-more" wx:if="{{ledger.length}}">近 {{ledger.length}} 条</view>
+      </view>
+
+      <view class="led-row" wx:for="{{ledger}}" wx:key="id">
+        <view class="led-ico" style="background:{{item.icoBg}}">{{item.icoTxt}}</view>
+        <view class="led-main">
+          <view class="led-name">{{item.typeName}}</view>
+          <view class="led-sub">{{item.note ? item.note + ' · ' : ''}}{{item.timeText}}</view>
+        </view>
+        <view class="led-val {{item.up ? 'up' : 'down'}}">{{item.amountText}}</view>
+      </view>
+
+      <!-- 空态：纯 CSS 的「票据」占位图标 -->
+      <view class="none" wx:if="{{!ledger.length}}">
+        <view class="none-ico"></view>
+        <view class="none-txt">{{loading ? '加载中…' : '暂无记录'}}</view>
+      </view>
+    </view>
+
+    <view class="foot-tip">本页数据仅统计本机账户</view>
+  </view>
+</view>

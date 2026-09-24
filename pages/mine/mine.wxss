@@ -57,3 +57,93 @@
   font-size: 22rpx;
   color: #8A93A3;
 }
+
+/* ---------- 课时与余额卡片 ---------- */
+.bill-nums {
+  display: flex;
+  align-items: center;
+  padding: 6rpx 0 4rpx;
+}
+
+.bill-num {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.bill-num-v {
+  font-size: 48rpx;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1B1F27;
+}
+
+.bill-num-l {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #8A93A3;
+}
+
+/* 两栏大数字之间的竖分隔线 */
+.bill-split {
+  flex-shrink: 0;
+  width: 1rpx;
+  height: 64rpx;
+  background: #F0F2F7;
+}
+
+.bill-state {
+  margin-top: 16rpx;
+  text-align: center;
+  font-size: 23rpx;
+  color: #8A93A3;
+}
+
+.bill-btns {
+  display: flex;
+  margin-top: 24rpx;
+}
+
+.bill-btn {
+  flex: 1;
+  height: 84rpx;
+  line-height: 84rpx;
+  border-radius: 42rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+/* 两个按钮之间留出间距 */
+.bill-btn + .bill-btn {
+  margin-left: 20rpx;
+}
+
+.bill-btn-claim {
+  background: linear-gradient(135deg, #59A2FF, #2E6BFF);
+  box-shadow: 0 10rpx 20rpx rgba(46, 107, 255, 0.22);
+}
+
+.bill-btn-checkin {
+  background: linear-gradient(135deg, #3FC5A0, #12A182);
+  box-shadow: 0 10rpx 20rpx rgba(18, 161, 130, 0.22);
+}
+
+/* 已打卡：浅灰底灰字，只作状态展示，点击不再请求 */
+.bill-btn-done {
+  background: #F1F4FA;
+  color: #8A93A3;
+}
+
+/* 请求进行中：两个按钮一起变淡，配合 showLoading 提示 */
+.bill-btn.is-busy {
+  opacity: 0.6;
+}
+
+.bill-tip {
+  margin-top: 20rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #8A93A3;
+}
