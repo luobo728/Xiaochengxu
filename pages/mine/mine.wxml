@@ -115,6 +115,15 @@
         </view>
         <view class="arrow"></view>
       </view>
+      <!-- 班级相册：所有家长都能看本班 + 全园的照片 -->
+      <view class="row" bindtap="onAlbumTap">
+        <view class="row-ico" style="background:linear-gradient(135deg,#FFB07C,#F2703F)">册</view>
+        <view class="row-main">
+          <view class="row-name">班级相册</view>
+          <view class="row-sub">{{albumSub}}</view>
+        </view>
+        <view class="arrow"></view>
+      </view>
     </view>
 
     <!-- 设置 -->
@@ -133,6 +142,13 @@
       <view class="row" wx:if="{{isAdmin}}" bindtap="onNoticeAdminTap">
         <view class="row-ico" style="background:linear-gradient(135deg,#4C8BFF,#2E6BFF)">知</view>
         <view class="row-main"><view class="row-name">通知公告管理</view></view>
+        <view class="arrow"></view>
+      </view>
+
+      <!-- 相册管理入口（仅管理员可见） -->
+      <view class="row" wx:if="{{isAdmin}}" bindtap="onAlbumAdminTap">
+        <view class="row-ico" style="background:linear-gradient(135deg,#9B8CFF,#6A5BEF)">册</view>
+        <view class="row-main"><view class="row-name">相册管理</view></view>
         <view class="arrow"></view>
       </view>
       <view class="row">

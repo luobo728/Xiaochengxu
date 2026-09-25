@@ -12,7 +12,9 @@
     "pages/activity/activity",
     "pages/activity/detail",
     "pages/notice/notice",
-    "pages/notice-admin/notice-admin"
+    "pages/notice-admin/notice-admin",
+    "pages/album/album",
+    "pages/album-admin/album-admin"
   ],
   "window": {
     "navigationStyle": "custom",

@@ -6,6 +6,8 @@ const billing = require('../../utils/billing.js')
 const auth = require('../../utils/auth.js')
 // 通知公告数据层：本地模式先跑通，联网只改这一个文件
 const notice = require('../../utils/notice.js')
+// 相册数据层：家长看相册 + 老师传照片共用
+const album = require('../../utils/album.js')
 
 // 把云端返回的原始错误翻译成「人话」，方便照着做
 function explainCloudError(err) {
@@ -81,6 +83,8 @@ Page({
     noticeOn: true,
     cacheSize: '12.6 MB',
     version: 'v1.0.0',
+    // 相册入口副标题（进页面后由数据层刷新）
+    albumSub: '看看孩子在园的日常',
     // 课时与余额：数值全部来自 utils/billing.js，页面只负责展示
     hours: 0,
     balanceText: '0.00',
@@ -131,6 +135,8 @@ Page({
     this.refreshBilling()
     // 登录态同步到 data，未登录时收起需要账号的卡片
     this.syncLoginState()
+    // 相册入口副标题：本班 / 全园各有几本
+    this.refreshAlbumSub()
   },
 
   // ---------- 登录 / 账号 ----------
@@ -552,6 +558,50 @@ Page({
         wx.showToast({ title: '打开失败', icon: 'none' })
       }
     })
+  },
+
+  // 家长入口：班级相册（本班 + 全园，只能看不能改）
+  onAlbumTap() {
+    wx.navigateTo({
+      url: '/pages/album/album',
+      fail() {
+        wx.showToast({ title: '打开失败', icon: 'none' })
+      }
+    })
+  },
+
+  // 管理员入口：相册管理（新建相册、传照片）
+  onAlbumAdminTap() {
+    wx.navigateTo({
+      url: '/pages/album-admin/album-admin',
+      fail() {
+        wx.showToast({ title: '打开失败', icon: 'none' })
+      }
+    })
+  },
+
+  // 相册入口副标题：本班 / 全园各有多少本，拿不到就保持原文案
+  refreshAlbumSub() {
+    const myClass = album.myClassSync()
+    album
+      .listAlbums(myClass)
+      .then((rows) => {
+        const list = rows || []
+        const mineCount = list.filter((r) => myClass && r.className === myClass).length
+        const allCount = list.filter((r) => r.className === album.ALL_CLASS).length
+        let sub = this.data.albumSub
+        if (!list.length) {
+          sub = '还没有相册，等老师上传'
+        } else if (myClass && mineCount) {
+          sub = myClass + ' ' + mineCount + ' 本 · 全园 ' + allCount + ' 本'
+        } else {
+          sub = '全园 ' + allCount + ' 本'
+        }
+        this.setData({ albumSub: sub })
+      })
+      .catch(() => {
+        // 云端拿不到就保持默认文案，不打扰家长
+      })
   },
 
   // 云开发还没通时的兜底：开启「本机体验管理员」，只影响这一台手机

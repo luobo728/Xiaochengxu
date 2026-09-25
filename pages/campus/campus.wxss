@@ -20,6 +20,7 @@
 .album-thumb {
   height: 160rpx;
   border-radius: 20rpx;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,6 +35,27 @@
   text-align: center;
   font-size: 22rpx;
   color: #8A93A3;
+}
+
+/* 有真照片时用照片铺满色块 */
+.album-img {
+  width: 100%;
+  height: 100%;
+}
+
+/* 本班还没有相册 */
+.album-empty {
+  padding: 40rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: #A6AEBC;
+}
+
+.album-tip {
+  margin-top: 4rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #A6AEBC;
 }
 
 /* 食谱星期列 */

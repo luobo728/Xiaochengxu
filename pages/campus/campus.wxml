@@ -81,14 +81,19 @@
     <view class="card">
       <view class="card-head">
         <view class="card-title">班级相册</view>
-        <view class="card-more" bindtap="onMoreTap">更多</view>
+        <view class="card-more" bindtap="onAlbumMore">更多 ›</view>
       </view>
-      <view class="album">
-        <view class="album-item" wx:for="{{album}}" wx:key="id" bindtap="onMoreTap">
-          <view class="album-thumb" style="background:{{item.bg}}">{{item.word}}</view>
+      <view class="album" wx:if="{{albumCards.length}}">
+        <view class="album-item" wx:for="{{albumCards}}" wx:key="id" data-id="{{item.id}}" bindtap="onAlbumTap">
+          <view class="album-thumb" style="background:{{item.bg}}">
+            <image class="album-img" wx:if="{{item.hasCover}}" src="{{item.cover}}" mode="aspectFill" />
+            <text wx:else>{{item.word}}</text>
+          </view>
           <view class="album-cap">{{item.cap}}</view>
         </view>
       </view>
+      <view class="album-empty" wx:else>本班还没有相册，老师传了照片就会出现在这里</view>
+      <view class="album-tip">{{albumClass ? albumClass + ' · 点开看本班和全园的照片' : '点开看本班和全园的照片'}}</view>
     </view>
 
     <!-- 本周食谱 -->

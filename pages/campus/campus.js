@@ -1,8 +1,12 @@
 const app = getApp()
 const monitor = require('../../utils/monitor.js')
+const album = require('../../utils/album.js')
+const albumView = require('../../utils/album-view.js')
 
 // 校园页监控分区最多展示几路画面
 const MAX_CAM_ROWS = 3
+// 校园页「班级相册」最多展示几本（其余去相册页看）
+const MAX_ALBUM_ROWS = 6
 
 Page({
   data: {
@@ -42,45 +46,10 @@ Page({
         bg: 'linear-gradient(135deg,#9B8CFF,#6A5BEF)'
       }
     ],
-    // 班级相册（纯 CSS 绘制，无图片资源）
-    album: [
-      {
-        id: 1,
-        word: '运动会',
-        cap: '大一班 · 04-12',
-        bg: 'linear-gradient(135deg,#FF8A6B,#F0343C)'
-      },
-      {
-        id: 2,
-        word: '手工课',
-        cap: '大一班 · 04-10',
-        bg: 'linear-gradient(135deg,#59A2FF,#2E6BFF)'
-      },
-      {
-        id: 3,
-        word: '春游日',
-        cap: '春晖园 · 04-09',
-        bg: 'linear-gradient(135deg,#4FD1A5,#12A182)'
-      },
-      {
-        id: 4,
-        word: '绘本角',
-        cap: '大一班 · 04-08',
-        bg: 'linear-gradient(135deg,#FFB45B,#F08A24)'
-      },
-      {
-        id: 5,
-        word: '午餐时',
-        cap: '大一班 · 04-08',
-        bg: 'linear-gradient(135deg,#9B8CFF,#6A5BEF)'
-      },
-      {
-        id: 6,
-        word: '音乐课',
-        cap: '大一班 · 04-07',
-        bg: 'linear-gradient(135deg,#4CC5E8,#1A93C8)'
-      }
-    ],
+    // 班级相册：从 utils/album.js 拿真实数据（本班 + 全园），没数据时显示空状态提示
+    albumCards: [],
+    albumClass: '',
+    albumCount: 0,
     // 本周食谱
     menu: [
       { day: '周一', dish: '番茄牛腩 · 时蔬 · 紫菜蛋花汤' },
@@ -112,11 +81,68 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 2 })
     }
+    // 班级相册：每次回到这一页都重新画一次（老师刚传的照片要能立刻看到）
+    this.refreshAlbums()
   },
 
-  // 统一轻量交互
+  // 统一轻量交互（还没做好的入口）
   onMoreTap() {
     wx.showToast({ title: '功能开发中', icon: 'none' })
+  },
+
+  /* ---------------- 班级相册 ---------------- */
+
+  // 先用本机数据把相册块画出来（不等网络），再拉一次最新覆盖
+  refreshAlbums() {
+    const myClass = album.myClassSync()
+    this.setData({ albumClass: myClass })
+    this.paintAlbums(album.listAlbumsSync(myClass))
+    album
+      .listAlbums(myClass)
+      .then((rows) => {
+        this.paintAlbums(rows)
+      })
+      .catch(() => {
+        // 网络不通就继续用本机数据
+      })
+  },
+
+  // 数据行 → 校园页的相册小块（封面字 / 说明 / 底色都用 utils/album-view.js 算好的）
+  paintAlbums(rows) {
+    const cards = albumView.toCards(rows)
+    const list = []
+    for (let i = 0; i < cards.length && i < MAX_ALBUM_ROWS; i++) {
+      const card = cards[i]
+      list.push({
+        id: card.id,
+        word: card.word,
+        cover: card.cover,
+        hasCover: card.hasCover,
+        bg: card.bg,
+        cap: card.className + ' · ' + card.date
+      })
+    }
+    this.setData({ albumCards: list, albumCount: cards.length })
+  },
+
+  // 点某一本：直接进相册页看那一本的照片
+  onAlbumTap(e) {
+    const id = (e.currentTarget.dataset || {}).id || ''
+    this.openAlbum(id)
+  },
+
+  // 点「更多」：进相册页看列表
+  onAlbumMore() {
+    this.openAlbum('')
+  },
+
+  openAlbum(id) {
+    wx.navigateTo({
+      url: '/pages/album/album' + (id ? '?id=' + encodeURIComponent(id) : ''),
+      fail: () => {
+        wx.showToast({ title: '相册页暂时打不开', icon: 'none' })
+      }
+    })
   },
 
   // ---------- 园区监控 ----------

@@ -1,0 +1,98 @@
+<view class="page">
+  <view class="hd hd-album" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack"><view class="ico-back"></view></view>
+      <view class="hd-title">{{view === 'detail' && cur ? cur.title : '班级相册'}}</view>
+      <view class="hd-back ghost"></view>
+    </view>
+    <view class="hd-sub" wx:if="{{view === 'list'}}">
+      {{classPicked ? myClass + ' · 本班与全园的照片' : '先选一个班级，就能看到本班和全园的照片'}}
+    </view>
+    <view class="hd-sub" wx:else>{{cur.classTag}} · {{cur.date}} · {{totalText}}</view>
+  </view>
+
+  <view class="body">
+    <!-- ========== 相册列表 ========== -->
+    <block wx:if="{{view === 'list'}}">
+      <!-- 班级选择：家长点一下就行，选过会记住 -->
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">我的班级</view>
+          <view class="card-more">{{classPicked ? '换一个点这里' : '请选择'}}</view>
+        </view>
+        <view class="pills">
+          <view
+            class="pill {{myClass === item ? 'on' : ''}}"
+            wx:for="{{classes}}"
+            wx:key="*this"
+            data-class="{{item}}"
+            bindtap="onClassTap">{{item}}</view>
+        </view>
+        <view class="cls-tip">选好班级后，这个班和「全园」的相册都会出现在下面；换班随时能改，只看得到本班与全园。</view>
+      </view>
+
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">{{myClass ? myClass + ' 的相册' : '全部相册'}}</view>
+          <view class="tag tag-green">{{albums.length}} 本</view>
+        </view>
+
+        <view class="empty" wx:if="{{!albums.length}}">
+          {{classPicked ? '这个班还没有相册，老师上传后就能看到' : '先在上面选一个班级'}}
+        </view>
+
+        <view class="al-row" wx:for="{{albums}}" wx:key="id" data-id="{{item.id}}" bindtap="onAlbumTap">
+          <view class="al-cover" style="background:{{item.bg}}">
+            <image wx:if="{{item.hasCover}}" class="al-img" src="{{item.cover}}" mode="aspectFill" />
+            <view wx:else class="al-word">{{item.word}}</view>
+          </view>
+          <view class="al-main">
+            <view class="al-title">{{item.title}}</view>
+            <view class="al-sub">{{item.date}} · {{item.countText}}</view>
+            <view class="al-tag"><text class="tag {{item.classTone}}">{{item.classTag}}</text></view>
+          </view>
+          <view class="arrow"></view>
+        </view>
+
+        <view class="row-hint" wx:if="{{albums.length}}">点一本相册就能看照片</view>
+      </view>
+
+      <view class="foot-note" wx:if="{{modeTip}}">{{modeTip}}</view>
+    </block>
+
+    <!-- ========== 某一本相册的照片 ========== -->
+    <block wx:else>
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">相册照片</view>
+          <view class="card-more" bindtap="backToList">‹ 返回相册列表</view>
+        </view>
+
+        <view class="empty" wx:if="{{!photos.length}}">这本相册还没有照片，等老师上传</view>
+
+        <view class="grid" wx:else>
+          <view
+            class="cell"
+            wx:for="{{photos}}"
+            wx:key="id"
+            data-index="{{index}}"
+            bindtap="onPhotoTap">
+            <image wx:if="{{item.hasImg}}" class="cell-img" src="{{item.src}}" mode="aspectFill" />
+            <view wx:else class="cell-ph">{{item.label}}</view>
+          </view>
+        </view>
+
+        <view class="more-btn" wx:if="{{hasMore}}" bindtap="onLoadMore">{{loadingMore ? '加载中…' : '加载更多'}}</view>
+
+        <view class="grid-tip">
+          {{realCount ? '点一张照片可以看大图，左右滑动看下一张' : '现在显示的是占位方块，老师上传真照片后会出现在这里'}}
+        </view>
+      </view>
+
+      <view class="foot-note" wx:if="{{modeTip}}">{{modeTip}}</view>
+    </block>
+  </view>
+
+  <!-- 底部导航：子页面也能直接切换模块（相册从「校园」进，所以高亮校园） -->
+  <tab-bar selected="{{2}}" plain="{{true}}" />
+</view>

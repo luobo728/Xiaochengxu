@@ -1,0 +1,482 @@
+/* pages/album-admin/album-admin.wxss —— 相册管理页样式（通用 class 见 app.wxss） */
+
+/* 底部有导航栏：为它预留高度 */
+.page {
+  padding-bottom: 220rpx;
+  padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 顶部头图（相册主题紫） ---------- */
+.hd-admin {
+  background: linear-gradient(135deg, #9B8CFF, #6A5BEF);
+}
+
+.hd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8rpx;
+}
+
+/* 标题已在 .hd-row 内，去掉 app.wxss 里的上间距 */
+.hd-admin .hd-title {
+  padding-top: 0;
+  font-size: 38rpx;
+}
+
+.hd-back {
+  flex-shrink: 0;
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hd-back-hover {
+  opacity: 0.7;
+}
+
+/* 右上占位：仅为保持标题居中 */
+.hd-back.ghost {
+  visibility: hidden;
+}
+
+/* 返回箭头（两条边框拼出的左尖括号，纯 CSS 无图片） */
+.ico-back {
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: 6rpx;
+  border-left: 4rpx solid #FFFFFF;
+  border-bottom: 4rpx solid #FFFFFF;
+  transform: rotate(45deg);
+}
+
+/* ---------- 演示 / 云端提示条 ---------- */
+.mode-tip {
+  margin-bottom: 24rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 20rpx;
+  background: rgba(240, 138, 0, 0.12);
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #B36A00;
+}
+
+/* ---------- 正在修改提示条 ---------- */
+.editing-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+  padding: 18rpx 24rpx;
+  border-radius: 20rpx;
+  background: rgba(106, 91, 239, 0.1);
+}
+
+.editing-txt {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  color: #6A5BEF;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editing-cancel {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  padding: 8rpx 22rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  color: #6A5BEF;
+  background: #FFFFFF;
+}
+
+/* ---------- 表单 ---------- */
+.fld {
+  margin-bottom: 24rpx;
+}
+
+.fld-lbl {
+  margin-bottom: 12rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #1B1F27;
+}
+
+.fld-req {
+  margin-left: 12rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  color: #E5453D;
+  background: rgba(229, 69, 61, 0.1);
+}
+
+.fld-tip {
+  margin-left: 12rpx;
+  font-size: 22rpx;
+  color: #A6AEBE;
+}
+
+.fld-input {
+  height: 88rpx;
+  padding: 0 24rpx;
+  border-radius: 20rpx;
+  background: #F7F9FD;
+  font-size: 29rpx;
+  color: #1B1F27;
+}
+
+/* 日期选择器里的那行字：竖着居中，右侧画个小三角提示可点 */
+.pick-value {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.pick-value::after {
+  content: '';
+  position: absolute;
+  right: 30rpx;
+  top: 50%;
+  width: 12rpx;
+  height: 12rpx;
+  margin-top: -8rpx;
+  border-right: 3rpx solid #A6AEBE;
+  border-bottom: 3rpx solid #A6AEBE;
+  transform: rotate(45deg);
+}
+
+.ph {
+  color: #A6AEBE;
+  font-size: 27rpx;
+}
+
+.fld-count {
+  margin-top: 10rpx;
+  text-align: right;
+  font-size: 21rpx;
+  color: #A6AEBE;
+}
+
+/* 班级胶囊：单选，选中为紫色实底白字 */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.pill {
+  margin: 6rpx 12rpx 6rpx 0;
+  padding: 10rpx 26rpx;
+  border-radius: 999rpx;
+  font-size: 25rpx;
+  color: #5A6273;
+  background: #F1F4FA;
+}
+
+.pill.on {
+  color: #FFFFFF;
+  font-weight: 600;
+  background: linear-gradient(135deg, #9B8CFF, #6A5BEF);
+  box-shadow: 0 8rpx 16rpx rgba(106, 91, 239, 0.24);
+}
+
+.save-btn {
+  margin-top: 30rpx;
+}
+
+/* ---------- 相册行 ---------- */
+.arow {
+  padding: 24rpx 0;
+}
+
+.arow.on {
+  padding-left: 16rpx;
+  padding-right: 16rpx;
+  border-radius: 20rpx;
+  background: #F7F8FF;
+}
+
+.arow-top {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* 封面：160rpx 见方的小图，没照片时是一块渐变 */
+.arow-cover {
+  flex-shrink: 0;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 18rpx;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arow-img {
+  width: 160rpx;
+  height: 160rpx;
+}
+
+.arow-word {
+  font-size: 30rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.arow-main {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16rpx;
+}
+
+.arow-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #1B1F27;
+}
+
+.arow-sub {
+  display: flex;
+  align-items: center;
+  margin-top: 12rpx;
+}
+
+.arow-date {
+  margin-left: 12rpx;
+  font-size: 22rpx;
+  color: #A6AEBE;
+}
+
+.arow-count {
+  margin-top: 12rpx;
+  font-size: 23rpx;
+  color: #5A6273;
+}
+
+.arow-btns {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.mini {
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  color: #6A5BEF;
+  background: rgba(106, 91, 239, 0.1);
+}
+
+.mini + .mini {
+  margin-top: 12rpx;
+}
+
+.mini.edit {
+  color: #FFFFFF;
+  font-weight: 500;
+  background: linear-gradient(135deg, #9B8CFF, #6A5BEF);
+}
+
+.mini.danger {
+  color: #E5453D;
+  background: rgba(229, 69, 61, 0.1);
+}
+
+/* ---------- 展开的照片区 ---------- */
+.ph-box {
+  margin-top: 22rpx;
+  padding: 20rpx 18rpx 6rpx;
+  border-radius: 20rpx;
+  background: #F7F9FD;
+}
+
+.ph-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+}
+
+.ph-title {
+  font-size: 24rpx;
+  color: #5A6273;
+}
+
+.ph-add {
+  padding: 10rpx 22rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #9B8CFF, #6A5BEF);
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+/* 照片格子：一行 3 个 */
+.cell {
+  position: relative;
+  width: 31.5%;
+  height: 200rpx;
+  margin-bottom: 14rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: #E9EDF6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cell-img {
+  width: 100%;
+  height: 200rpx;
+}
+
+/* 占位方块（演示数据 / 本机临时图片路径失效时） */
+.cell-ph {
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+/* 删照片的小叉：压在格子右上角 */
+.cell-del {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 0 16rpx 0 16rpx;
+  background: rgba(27, 31, 39, 0.55);
+  color: #FFFFFF;
+  font-size: 24rpx;
+  line-height: 48rpx;
+  text-align: center;
+}
+
+.ph-empty {
+  padding: 10rpx 0 24rpx;
+  font-size: 24rpx;
+  color: #A6AEBE;
+}
+
+.more-btn {
+  margin: 4rpx auto 20rpx;
+  padding: 16rpx 0;
+  width: 320rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  border: 2rpx solid #DCE3EF;
+  font-size: 25rpx;
+  color: #5A6273;
+}
+
+/* ---------- 提示 / 底部 ---------- */
+.row-hint {
+  padding: 12rpx 0 20rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #A6AEBE;
+}
+
+.reset-row {
+  margin: 10rpx auto 0;
+  padding: 20rpx 0;
+  width: 420rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  border: 2rpx solid #DCE3EF;
+  font-size: 26rpx;
+  color: #5A6273;
+}
+
+.foot-note {
+  margin: 24rpx 8rpx 40rpx;
+  font-size: 21rpx;
+  line-height: 1.7;
+  color: #A6AEBE;
+}
+
+/* ---------- 非管理员 ---------- */
+.lock-box {
+  padding: 16rpx 0 4rpx;
+  text-align: center;
+}
+
+/* 锁：半圆锁梁 + 方形锁体 */
+.ico-lock {
+  position: relative;
+  width: 84rpx;
+  height: 80rpx;
+  margin: 8rpx auto 26rpx;
+}
+
+.ico-lock::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 54rpx;
+  height: 50rpx;
+  margin-left: -27rpx;
+  box-sizing: border-box;
+  border: 8rpx solid #C6CDDA;
+  border-bottom: none;
+  border-radius: 28rpx 28rpx 0 0;
+}
+
+.ico-lock::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 84rpx;
+  height: 56rpx;
+  border-radius: 16rpx;
+  background: #DCE3EF;
+}
+
+.lock-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.lock-sub {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+.lock-id {
+  margin-top: 18rpx;
+  font-size: 20rpx;
+  color: #A6AEBE;
+  word-break: break-all;
+}
+
+.lock-tip {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #F7F9FD;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #8A93A3;
+  text-align: left;
+}
+
+.btn-back {
+  margin-top: 32rpx;
+}

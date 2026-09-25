@@ -38,6 +38,7 @@ const MAX_BATCH = 30 // 一次最多上传 / 删除多少张（与云函数一�
 const KEY_ALBUMS = 'album_list_v1' // 相册列表（本机缓存）
 const KEY_PHOTOS = 'album_photos_v1' // 照片记录（本机缓存，按 albumId 分组存一个数组）
 const KEY_MY_CLASS = 'album_my_class_v1' // 家长自己选的班级
+const KEY_SEEDED = 'album_seeded_v1' // 演示数据写过的标记（见 listAlbumsSync）
 
 // 演示相册：本机第一次使用时自动写入。照片没有真图（项目不带图片资源），
 // src 为空时页面画一块灰底 + 文字，管理员点「＋」就能换成真照片。
@@ -184,6 +185,23 @@ function writeMyClassRaw(className) {
   }
 }
 
+// 「演示数据已经写过一次」的标记：只写在第一次，之后本机为空就是真的空
+function hasSeeded() {
+  try {
+    return !!wx.getStorageSync(KEY_SEEDED)
+  } catch (e) {
+    return false
+  }
+}
+
+function markSeeded() {
+  try {
+    wx.setStorageSync(KEY_SEEDED, 1)
+  } catch (e) {
+    // 写失败不影响使用，最多下次再写一遍演示数据
+  }
+}
+
 // 演示数据：3 个相册 + 13 张「占位照片」（src 为空，页面画灰块）
 function buildSeedAlbums() {
   const now = Date.now()
@@ -324,13 +342,15 @@ function errText(e) {
 
 /* ---------------- 读：相册 ---------------- */
 
-// 同步读：本机有数据就用本机数据；本机为空且是本地模式时写入演示数据后再返回
+// 同步读：本机有数据就用本机数据；本机为空、而且演示数据还没写过时，才写入演示数据后再返回
+// （老师把相册全删了就保持为空，不再把演示相册塞回来；想找回来用「恢复演示相册」）
 // className 传了就只留「这个班 + 全园」的相册（家长视角）；不传就是全部（管理端视角）
 function listAlbumsSync(className) {
   let rows = readAlbumsRaw()
-  if (!rows.length && MODE === 'local') {
+  if (!rows.length && MODE === 'local' && !hasSeeded()) {
     rows = buildSeedAlbums()
     writeAlbumsRaw(rows)
+    markSeeded()
     if (!readPhotosRaw().length) writePhotosRaw(buildSeedPhotos())
   }
   return filterByClass(sortAlbums(rows), className)
@@ -916,6 +936,7 @@ function resetDemo() {
   if (MODE === 'cloud' && isCloudReady()) {
     return Promise.resolve({ ok: false, msg: '云端模式不提供「恢复演示相册」，请在相册页手动删除' })
   }
+  markSeeded()
   writeAlbumsRaw(buildSeedAlbums())
   writePhotosRaw(buildSeedPhotos())
   return Promise.resolve({ ok: true })

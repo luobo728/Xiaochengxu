@@ -1,0 +1,153 @@
+<!-- pages/album-admin/album-admin.wxml —— 相册管理（老师/管理员：建相册、传照片） -->
+<view class="page">
+  <!-- ========== 顶部（相册主题紫，和「我的」页入口呼应） ========== -->
+  <view class="hd hd-admin" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack">
+        <view class="ico-back"></view>
+      </view>
+      <view class="hd-title">相册管理</view>
+      <!-- 右上占位：仅为保持标题居中 -->
+      <view class="hd-back ghost"></view>
+    </view>
+    <view class="hd-sub">在这里建相册、传照片，家长在「班级相册」里就能看到</view>
+  </view>
+
+  <view class="body">
+    <!-- 三个分支：正在校验 / 不是管理员 / 是管理员；三者必须首尾相接，中间不夹注释，夹了分支会失效 -->
+    <view class="card" wx:if="{{!checked}}">
+      <view class="lock-box">
+        <view class="lock-title">正在校验身份…</view>
+        <view class="lock-sub">马上就好</view>
+      </view>
+    </view>
+    <view class="card" wx:elif="{{!isAdmin}}">
+      <view class="lock-box">
+        <view class="ico-lock"></view>
+        <view class="lock-title">相册管理只有管理员能进</view>
+        <view class="lock-sub">家长端「班级相册」不受影响，照样能看照片</view>
+        <view class="lock-id">你的 openid：{{openid || '暂时拿不到'}}</view>
+        <view class="lock-tip">开通办法：把上面这串 openid 填进云函数白名单（和「通知公告管理」共用一份名单，见 docs/album-cloud-setup.md）；没连云端时，可以长按「我的」页底部的版本号，在这台手机上体验管理员。</view>
+        <view class="btn-primary btn-back" bindtap="goBack">返回「我的」</view>
+      </view>
+    </view>
+    <block wx:else>
+      <view class="mode-tip" wx:if="{{modeTip}}">{{modeTip}}</view>
+
+      <!-- ========== 建 / 改相册 ========== -->
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">{{editId ? '修改相册' : '新建相册'}}</view>
+        </view>
+
+        <view class="editing-bar" wx:if="{{editId}}">
+          <view class="editing-txt">正在修改：{{editTitle}}</view>
+          <view class="editing-cancel" bindtap="onCancelEdit">取消修改</view>
+        </view>
+
+        <view class="fld">
+          <view class="fld-lbl">相册名<text class="fld-req">必填</text></view>
+          <input
+            class="fld-input"
+            value="{{title}}"
+            maxlength="{{maxTitle}}"
+            placeholder="例如：春游留影"
+            placeholder-class="ph"
+            bindinput="onTitleInput" />
+          <view class="fld-count">还能写 {{titleLeft}} 个字</view>
+        </view>
+
+        <view class="fld">
+          <view class="fld-lbl">这本给谁看<text class="fld-tip">选「全园」= 所有班级的家长都能看到</text></view>
+          <view class="pills">
+            <view
+              class="pill {{classIndex === index ? 'on' : ''}}"
+              wx:for="{{classes}}"
+              wx:key="*this"
+              data-index="{{index}}"
+              bindtap="onClassTap">{{item}}</view>
+          </view>
+        </view>
+
+        <view class="fld">
+          <view class="fld-lbl">拍摄日期<text class="fld-tip">最多选到今天</text></view>
+          <picker mode="date" value="{{date}}" end="{{today}}" bindchange="onDateChange">
+            <view class="fld-input pick-value">{{date || today}}</view>
+          </picker>
+        </view>
+
+        <view class="btn-primary save-btn" bindtap="onSave">{{saving ? '正在保存…' : (editId ? '保存修改' : '新建相册')}}</view>
+      </view>
+
+      <!-- ========== 全部相册 ========== -->
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">全部相册</view>
+          <view class="card-more">共 {{total}} 本</view>
+        </view>
+
+        <view class="empty" wx:if="{{!total}}">还没有相册，上面填个名字就能建第一本</view>
+
+        <block wx:for="{{rows}}" wx:key="id">
+          <view class="arow {{item.open ? 'on' : ''}}">
+            <view class="arow-top">
+              <!-- 封面：有真照片就显示照片，否则画一块渐变 + 相册名前几个字 -->
+              <view class="arow-cover" style="background:{{item.bg}}">
+                <image class="arow-img" wx:if="{{item.hasCover}}" src="{{item.cover}}" mode="aspectFill" />
+                <text class="arow-word" wx:else>{{item.word}}</text>
+              </view>
+              <view class="arow-main">
+                <view class="arow-title">{{item.title}}</view>
+                <view class="arow-sub">
+                  <text class="tag {{item.classTone}}">{{item.classTag}}</text>
+                  <text class="arow-date">{{item.date}}</text>
+                </view>
+                <view class="arow-count">{{item.countText}}</view>
+              </view>
+              <view class="arow-btns">
+                <view class="mini edit" data-id="{{item.id}}" bindtap="onOpenTap">{{item.open ? '收起照片' : '管照片'}}</view>
+                <view class="mini" data-id="{{item.id}}" bindtap="onEditTap">改名</view>
+                <view class="mini danger" data-id="{{item.id}}" bindtap="onDelTap">删相册</view>
+              </view>
+            </view>
+
+            <!-- 展开的这本：传照片 + 照片格子 + 删照片 -->
+            <view class="ph-box" wx:if="{{item.open}}">
+              <view class="ph-head">
+                <view class="ph-title">{{openTotalText}}</view>
+                <view class="ph-add" data-id="{{item.id}}" bindtap="onAddPhotos">＋ 添加照片（最多 {{maxPick}} 张）</view>
+              </view>
+
+              <view class="grid" wx:if="{{openPhotos.length}}">
+                <view class="cell" wx:for="{{openPhotos}}" wx:for-item="ph" wx:key="id">
+                  <image
+                    class="cell-img"
+                    wx:if="{{ph.hasImg}}"
+                    src="{{ph.src}}"
+                    mode="aspectFill"
+                    data-id="{{ph.id}}"
+                    bindtap="onPreviewTap" />
+                  <view class="cell-ph" wx:else data-id="{{ph.id}}" bindtap="onPreviewTap">{{ph.label}}</view>
+                  <view class="cell-del" data-id="{{ph.id}}" data-album="{{item.id}}" catchtap="onDelPhoto">✕</view>
+                </view>
+              </view>
+              <view class="ph-empty" wx:else>这本还没有照片，点上面「添加照片」传上去</view>
+
+              <view class="more-btn" wx:if="{{openHasMore}}" bindtap="onLoadMore">加载更多照片</view>
+              <view class="row-hint" wx:if="{{openTotal > openPhotos.length}}">已显示 {{openPhotos.length}} 张，下面还有 {{openTotal - openPhotos.length}} 张</view>
+            </view>
+          </view>
+          <view class="hairline"></view>
+        </block>
+
+        <view class="row-hint" wx:if="{{total}}">点「管照片」展开这本相册，就能传照片、删照片</view>
+      </view>
+
+      <view class="reset-row" bindtap="onReset">恢复演示相册</view>
+      <view class="foot-note">照片存在云存储里（演示模式只存这台手机）。家长端只有「看」，看不到这里的任何管理按钮。单本相册最多 {{maxPhotos}} 张。</view>
+    </block>
+  </view>
+
+  <!-- 底部导航：子页面也能直接切换模块（高亮「我的」） -->
+  <tab-bar selected="{{3}}" plain="{{true}}" />
+</view>
