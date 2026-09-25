@@ -1,0 +1,9 @@
+{
+  "name": "albumAdmin",
+  "version": "1.0.0",
+  "description": "班级相册：家长只读，仅管理员可建相册/传照片/删照片",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
