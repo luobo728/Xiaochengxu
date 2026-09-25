@@ -169,6 +169,16 @@ Page({
     this.setData(patch)
   },
 
+  // 只翻「哪一本展开」这一个开关：照片区显示、按钮文案都看它
+  flagRows(openId) {
+    const rows = this.data.rows || []
+    const next = []
+    for (let i = 0; i < rows.length; i++) {
+      next.push(Object.assign({}, rows[i], { open: rows[i].id === openId }))
+    }
+    this.setData({ rows: next })
+  },
+
   // 从当前列表里找一条卡片
   rowOf(id) {
     const rows = this.data.rows
@@ -312,6 +322,8 @@ Page({
       openTotalText: card ? card.countText : '',
       openHasMore: false
     })
+    // 列表里的展开开关要跟着翻，否则照片区不显示（按钮也不变「收起照片」）
+    this.flagRows(id)
     this.loadPhotos(id, 0)
   },
 
@@ -325,6 +337,7 @@ Page({
       openHasMore: false,
       openLoading: false
     })
+    this.flagRows('')
   },
 
   // 拉照片：skip = 0 时先用本机缓存秒显，再拉最新；skip > 0 是「加载更多」
