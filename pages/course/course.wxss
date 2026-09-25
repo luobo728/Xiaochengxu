@@ -22,3 +22,17 @@
   padding-top: 22rpx;
   text-align: center;
 }
+/* 头图里的「切换孩子」：老师来回看不同孩子时点这里 */
+.hd-pick {
+  display: inline-block;
+  margin-top: 16rpx;
+  padding: 6rpx 20rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.hd-pick-hover {
+  background: rgba(255, 255, 255, 0.34);
+}

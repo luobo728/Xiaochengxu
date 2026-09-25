@@ -12,6 +12,8 @@ const album = require('../../utils/album.js')
 const account = require('../../utils/account.js')
 // 演示账号身份底线：家长端永远不是管理员（判断只有一份，见 utils/demo-role.js）
 const role = require('../../utils/demo-role.js')
+// 孩子档案数据层：档案列表 + 每个孩子的姓名 / 班级；课时按孩子各算各的
+const children = require('../../utils/children.js')
 
 // 把云端返回的原始错误翻译成「人话」，方便照着做
 function explainCloudError(err) {
@@ -51,17 +53,17 @@ Page({
     accountSub: '一键切家长端 / 老师端，看两边区别',
     identitySub: '未登录 · 请先登录',
     identityFoot: '家长端',
-    // 孩子档案
-    child: {
-      avatar: '王',
-      name: '王小明',
-      sub: '大一班 · 学号 20260118'
-    },
+    // 孩子档案：这一页固定看「一个孩子」——家长端看自己孩子，其他身份看档案里第一个
+    kidId: '',
+    kidAvatar: '档',
+    kidName: '还没有孩子档案',
+    kidSub: '老师建档后，点名和课时都按孩子各算各的',
     // 三列小统计
+    // 三列小统计：全部来自这个孩子自己的账本（不再是写死的演示数字）
     miniStats: [
-      { id: 1, num: '86', lbl: '在园天数' },
-      { id: 2, num: '18', lbl: '本月出勤' },
-      { id: 3, num: '960', lbl: '成长值' }
+      { id: 1, num: '0', lbl: '剩余课时' },
+      { id: 2, num: '0', lbl: '已上课时' },
+      { id: 3, num: '0', lbl: '在册孩子' }
     ],
     // 常用功能
     tools: [
@@ -154,6 +156,8 @@ Page({
     this.syncIdentity()
     // 相册入口副标题：本班 / 全园各有几本
     this.refreshAlbumSub()
+    // 孩子档案那一格：看谁、剩几课时，都从档案 + 账本现算
+    this.refreshKid()
   },
 
   // ---------- 登录 / 账号 ----------
@@ -379,6 +383,30 @@ Page({
       accountSub: acc ? acc.desc : '一键切家长端 / 老师端，看两边区别',
       identitySub: account.identityText() || (auth.isLoggedIn() ? '家长账号 · 已绑定 1 名幼儿' : '未登录 · 请先登录'),
       identityFoot: account.sideName()
+    })
+  },
+
+  // 孩子档案：这一页固定看「一个孩子」的档案，以及他自己的课时
+  //   家长端演示账号 —— 看自己孩子（children.OWNER 里那一个）
+  //   其他身份 / 未登录 —— 看档案里第一个（一个都没有就显示「还没有孩子档案」）
+  refreshKid() {
+    const acc = account.current()
+    const accId = acc ? acc.id : ''
+    const total = children.count()
+    const id = children.defaultChildId(accId)
+    const kid = id ? children.get(id) : null
+    // 这个孩子自己的账：剩余 / 已上（不是全园合计）
+    const st = billing.hoursStat(id)
+    this.setData({
+      kidId: id,
+      kidAvatar: kid ? children.avatarOf(kid) : '档',
+      kidName: kid ? kid.name : '还没有孩子档案',
+      kidSub: kid ? children.subOf(kid) : '老师建档后，点名和课时都按孩子各算各的',
+      miniStats: [
+        { id: 1, num: String(st.left), lbl: '剩余课时' },
+        { id: 2, num: String(st.spent), lbl: '已上课时' },
+        { id: 3, num: String(total), lbl: '在册孩子' }
+      ]
     })
   },
 
@@ -630,6 +658,16 @@ Page({
   onAlbumTap() {
     wx.navigateTo({
       url: '/pages/album/album',
+      fail() {
+        wx.showToast({ title: '打开失败', icon: 'none' })
+      }
+    })
+  },
+
+  // 家长 / 老师都从这里进「孩子档案」（建档、改名、看每个孩子各剩几课时）
+  onChildrenTap() {
+    wx.navigateTo({
+      url: '/pages/children/children',
       fail() {
         wx.showToast({ title: '打开失败', icon: 'none' })
       }

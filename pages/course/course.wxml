@@ -1,7 +1,7 @@
 <view class="page">
   <view class="hd hd-course" style="padding-top:{{statusBarHeight}}px">
     <view class="hd-title">课时</view>
-    <view class="hd-sub">本学期共 {{totalHours}} 课时 · 已完成 {{doneHours}} 课时</view>
+    <view class="hd-sub">{{kidName}} · 本学期共 {{totalHours}} 课时 · 已完成 {{doneHours}} 课时</view>
     <view class="hd-stats">
       <view class="stat">
         <view class="stat-num">{{totalHours}}</view>
@@ -16,6 +16,7 @@
         <view class="stat-lbl">剩余</view>
       </view>
     </view>
+    <view class="hd-pick" hover-class="hd-pick-hover" wx:if="{{multiKid && !kidLock}}" bindtap="onPickKid">切换孩子 ›</view>
   </view>
 
   <view class="body">

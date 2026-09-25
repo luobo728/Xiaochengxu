@@ -50,6 +50,13 @@
       <view class="low-tip" wx:if="{{lowTip}}">{{lowTip}}</view>
       <view class="dirty-tip" wx:if="{{dirty}}">有改动还没保存：点每节课下面的「保存点名」才会计入课时</view>
 
+      <view class="card no-kid" wx:if="{{noKid}}">
+        <view class="card-title">还没有孩子档案</view>
+        <view class="no-kid-sub">点名表按「孩子档案」出人：先在档案里建好孩子，他才会出现在这里，课时记在他自己名下——几个孩子各算各的，互不影响。</view>
+        <view class="save-btn" bindtap="goChildren">去建立孩子档案</view>
+      </view>
+
+      <block wx:if="{{!noKid}}">
       <view class="empty" wx:if="{{!lessons.length}}">这一天没有课，点上面的箭头换一天看看</view>
 
       <view class="card" wx:for="{{lessons}}" wx:key="id" wx:for-item="ls" wx:for-index="li">
@@ -83,6 +90,7 @@
       </view>
 
       <view class="foot-note">保存即结算：到课扣课时、请假不扣、旷课照扣、试听不扣。点错了直接把状态改一下再保存，多扣的会以「课时回补（纠正）」记一笔退回 —— 明细只增不删，账永远对得上。当天课表里「时间已过、还没点名」的课，下次进这一页会自动按到课补算。</view>
+      </block>
     </block>
   </view>
 

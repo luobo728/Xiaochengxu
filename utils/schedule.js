@@ -15,17 +15,15 @@
 //   老师点名保存 → 立刻结算；进「点名」页 / 「课时」页 → settleDue() 把「时间已过、
 //   还没点名」的课按到课补上并结算。将来云端换成定时触发器，调的是同一个函数，页面不用改。
 const billing = require('./billing.js')
+const children = require('./children.js')
 
 const KEY_LESSONS = 'schedule_lessons_v1'
 const KEY_MARKS = 'schedule_marks_v1'
 
 // ===== 演示数据口径（要改演示范围只改这里）=====
 const CLS = '大一班'
-const STUDENTS = [
-  { id: 'lele', name: '乐乐' },
-  { id: 'tian', name: '甜甜' },
-  { id: 'mumu', name: '木木' }
-]
+// 班里的孩子不写死在这里：唯一来源是「孩子档案」（utils/children.js）——
+// 建了档就能点名，每个孩子一本独立的课时账（见 utils/billing.js 的 kids）
 
 const DEMO = {
   weeks: 2, // 生成「昨天起 2 周」的课：天天有课，随时都能演示
@@ -195,17 +193,41 @@ function writeMarks(map) {
 
 /* ---------------- 课表 ---------------- */
 
+// 班里的孩子来自「孩子档案」（utils/children.js）—— 唯一来源，不在这里再写一份名单
+// 建了档就能点名；档案里没有的孩子不会出现在点名表里（每个孩子一本独立的课时账）
+function roster() {
+  return children.list()
+}
+
 function studentIds() {
-  const ids = []
-  for (let i = 0; i < STUDENTS.length; i++) ids.push(STUDENTS[i].id)
-  return ids
+  const kids = roster()
+  const out = []
+  for (let i = 0; i < kids.length; i++) out.push(kids[i].id)
+  return out
 }
 
 function studentName(id) {
-  for (let i = 0; i < STUDENTS.length; i++) {
-    if (STUDENTS[i].id === id) return STUDENTS[i].name
+  return children.nameOf(id)
+}
+
+// 名册同步：今天（含）以后的「待上课」课，孩子名单刷成档案里的最新名单 ——
+// 刚建好档的孩子马上能点名；已点名 / 已结算的和过去的课一律不动（纠正不改历史）
+function syncRoster() {
+  const list = readLessons()
+  const ids = studentIds()
+  const key = ids.join(',')
+  const t = today()
+  let changed = false
+  for (let i = 0; i < list.length; i++) {
+    const l = list[i]
+    if (l.status !== 'planned' || l.date < t) continue
+    const cur = l.studentIds && l.studentIds.length ? l.studentIds.join(',') : ''
+    if (cur === key) continue
+    l.studentIds = ids.slice()
+    changed = true
   }
-  return String(id || '')
+  if (changed) writeLessons(list)
+  return ids
 }
 
 // 生成某一天的课（没有的字段不要瞎猜，全在这里定）
@@ -235,7 +257,9 @@ function lessonsOfDay(day) {
 }
 
 // 演示课表：保证「昨天起 2 周」每天都有课；已经存在的课一条都不动（点名结果不会被覆盖）
+// 每次进来先按档案同步一次名单：今天起的待上课会用最新名册（刚建档的孩子立刻能点名）
 function ensureLessons() {
+  syncRoster()
   const list = readLessons()
   const has = {}
   for (let i = 0; i < list.length; i++) has[list[i].id] = true
@@ -282,18 +306,33 @@ function saveLesson(lesson) {
   writeLessons(list)
 }
 
-// 第一次进入课时功能：生成课表 + 送一次演示课时（ref 判重，只送一次）
+// 第一次进入课时功能：生成课表 + 给每个孩子各送一次演示课时（ref 判重，只送一次）
+// 升级前设备上那笔「没有归属」的老课时先划给第一个孩子（只搬账不记流水，合计数不变）
 function bootstrap() {
   ensureLessons()
-  return billing.applyHours({
-    amount: DEMO.giftHours,
-    type: 'gift',
-    typeName: '演示赠送课时',
-    note: DEMO.giftNote,
-    ref: DEMO.giftRef,
-    title: '入园赠送课时',
-    sub: DEMO.giftNote,
-    okText: '已送演示课时'
+  const kids = roster()
+  if (!kids.length) {
+    // 一个档案都没有：一份课时都不送。课时的主人是「孩子」，还没有孩子就先不记账。
+    // （以前这里给「设备账」送 20 课时；等老师建好第一个档、再进这一页时，那 20 会被
+    //   划给第一个孩子、又按「每个孩子各送一份」再送一次 —— 同一份礼物变成 40，
+    //   和别的孩子对不上。现在不送：课时页显示 0 + 一句「去建档」，建好档后人人各得 20。）
+    return Promise.resolve({ ok: true, dup: false, msg: '' })
+  }
+  return billing.transferLegacy(kids[0].id, kids[0].name).then(function () {
+    return chain(kids, function (kid) {
+      return billing.applyHours({
+        amount: DEMO.giftHours,
+        type: 'gift',
+        typeName: '演示赠送课时',
+        note: kid.name + ' · ' + DEMO.giftNote,
+        childId: kid.id,
+        childName: kid.name,
+        ref: DEMO.giftRef + ':' + kid.id, // 每个孩子各判各的重，礼物一辈子只送一次
+        title: '入园赠送课时',
+        sub: kid.name + ' · ' + DEMO.giftNote,
+        okText: '已送演示课时'
+      })
+    })
   })
 }
 
@@ -360,9 +399,12 @@ function settleOne(lesson, mark, byName) {
 
   const seq = Number(mark.settleCount) || 0
   const when = dayTitle(lesson.date) + ' ' + lesson.time
+  const kid = mark.studentName || studentName(mark.studentId)
+  // 流水说明里必须写清是哪个孩子：一本账里几个孩子的记录挨在一起，
+  // 只写「课程名」会看成「同一个人被扣了三次」（这就是老版点一次名像扣三节课的原因）
   const note = charging
-    ? lesson.name + ' · ' + who + '（' + when + '）' + (mark.status === 'absent' ? ' 旷课照扣' : '')
-    : studentName(mark.studentId) + ' 这节不用扣（' +
+    ? kid + ' · ' + lesson.name + ' · ' + who + '（' + when + '）' + (mark.status === 'absent' ? ' 旷课照扣' : '')
+    : kid + ' 这节不用扣（' +
       (mark.status === 'leave' ? '请假' : mark.status === 'trial' ? '试听' : '不算课时') +
       '），回补 ' + Math.abs(delta) + ' 课时'
 
@@ -374,7 +416,9 @@ function settleOne(lesson, mark, byName) {
       note: note,
       ref: mark.id + '#' + seq, // 同一个孩子同一节课的同一笔只记一次
       title: charging ? lesson.name : '课时回补（纠正）',
-      sub: charging ? who + ' · ' + when : studentName(mark.studentId) + ' 这节不用扣'
+      sub: charging ? who + ' · ' + when : kid + ' 这节不用扣',
+      childId: mark.studentId, // 账记到孩子头上：几个孩子的课时各算各的
+      childName: kid
     })
     .then(function (res) {
       // 走到这里说明这笔账已经在流水里了（res.dup = 上次写成功过但记录没存下来）
@@ -546,6 +590,7 @@ function pillsOf(status) {
 }
 
 // 一个孩子 + 一个状态 → 页面要的显示字段（点名页按钮点了之后也调它，规则仍然只写在数据层）
+// state.left 传了就在行内写出「余 N 课时」—— 每个孩子各算各的余额
 function kidRow(status, lessonHours, state) {
   const st = state || {}
   const target = targetHoursOf(status, lessonHours)
@@ -553,15 +598,21 @@ function kidRow(status, lessonHours, state) {
   const hourText = target > 0 ? '扣 ' + target + ' 课时' : '不扣课时'
   const saved = !!st.saved
   const applied = round2(st.applied)
+  const hasLeft = st.left !== undefined && st.left !== null
+  const left = hasLeft ? round2(st.left) : null
+  const leftText = hasLeft ? '余 ' + left + ' 课时' : ''
+  const stateLine = saved
+    ? '已结算 · ' + (applied > 0 ? '扣 ' + applied + ' 课时' : '不扣课时') + (leftText ? ' · ' + leftText : '')
+    : label + ' · ' + hourText + (leftText ? ' · ' + leftText : '')
   return {
     status: status,
     statusText: label,
     hourText: hourText,
     done: saved,
     applied: applied,
-    stateLine: saved
-      ? '已结算 · ' + (applied > 0 ? '扣 ' + applied + ' 课时' : '不扣课时')
-      : label + ' · ' + hourText,
+    left: left,
+    leftText: leftText,
+    stateLine: stateLine,
     pills: pillsOf(status)
   }
 }
@@ -592,7 +643,12 @@ function decorateLesson(lesson, marks, now) {
   let charged = 0
   for (let i = 0; i < lesson.studentIds.length; i++) {
     const mark = marks[markId(lesson.id, lesson.studentIds[i])] || newMark(lesson, lesson.studentIds[i], 'present')
-    const row = kidRow(mark.status, lesson.hours, { saved: mark.saved, applied: mark.settledHours })
+    // 每个孩子各看各的余额：这一行扣完还剩多少（页面不自己算）
+    const row = kidRow(mark.status, lesson.hours, {
+      saved: mark.saved,
+      applied: mark.settledHours,
+      left: billing.hoursStat(mark.studentId).left
+    })
     row.id = mark.id
     row.studentId = mark.studentId
     row.studentName = mark.studentName
@@ -680,19 +736,23 @@ function courseRow(lesson, marks, idx, now) {
 }
 
 // 近 30 天课时明细（只取 unit = 'hour' 的流水，最多 10 条）
-function recordRows(items) {
+// 看单个孩子时不用再写名字（每行都是他的）；看合计时每行标出这是谁的课时
+function recordRows(items, childId) {
   const out = []
   const min = Date.now() - 30 * 86400000
+  const showKid = !String(childId || '')
   for (let i = 0; i < items.length; i++) {
     const it = items[i]
     if (it.unit !== 'hour') continue
     if (it.time && it.time < min) continue
     const amount = round2(it.amount)
     const d = new Date(it.time || Date.now())
+    const kid = it.childName || (it.childId ? studentName(it.childId) : '')
+    const base = it.title || it.typeName
     out.push({
       id: it.id,
       date: pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + WEEK_TXT[d.getDay()],
-      name: it.title || it.typeName,
+      name: showKid && kid ? kid + ' · ' + base : base,
       teacher: it.sub || it.note || it.typeName,
       val: (amount > 0 ? '+' : '') + amount + ' 课时',
       gray: amount > 0
@@ -704,8 +764,10 @@ function recordRows(items) {
 
 // 课时页要的全部数据：三个数字 + 本周课程 + 近 30 天明细
 // 口径：剩余 = 课时余额；已完成 = 已扣合计；本学期 = 已完成 + 剩余
-function buildStats() {
-  const stat = billing.hoursStat()
+// 传 childId：三个数字和明细都是这个孩子自己的；不传 = 全园合计（历史未分账 + 所有孩子）
+function buildStats(childId) {
+  const cid = String(childId || '')
+  const stat = billing.hoursStat(cid)
   const list = ensureLessons()
   const marks = readMarks()
   const t = today()
@@ -736,8 +798,10 @@ function buildStats() {
     })
   }
 
-  return billing.listLedger(60).then(function (items) {
+  return billing.listLedger(60, cid).then(function (items) {
     return {
+      childId: cid,
+      kidName: cid ? studentName(cid) : '全园合计',
       totalHours: stat.total,
       doneHours: stat.spent,
       leftHours: stat.left,
@@ -745,23 +809,25 @@ function buildStats() {
       weekTotal: weekTotal,
       weekPercent: weekTotal ? Math.round((weekDone / weekTotal) * 100) : 0,
       weekCourses: rows,
-      records: recordRows(items || [])
+      records: recordRows(items || [], cid)
     }
   })
 }
 
 // 课时页数据（进页面先送演示课时 + 自动补算一次，这就是「自动」的部分）
-function courseStats() {
+// 传 childId = 只看这个孩子的课时；不传 = 全园合计
+function courseStats(childId) {
+  const cid = String(childId || '')
   return bootstrap()
     .then(function () {
       return settleDue()
     })
     .then(
       function () {
-        return buildStats()
+        return buildStats(cid)
       },
       function () {
-        return buildStats()
+        return buildStats(cid)
       }
     )
 }
@@ -780,21 +846,39 @@ function ruleText() {
 
 // 点名页顶部那句演示说明
 function modeTip() {
-  return '演示模式：课表从昨天起 2 周自动生成，天天有课；进页面会把「时间已过、还没点名」的课按到课自动补算。课时按设备记账（切换演示账号看的是同一本账）。规则：' +
+  return '演示模式：课表从昨天起 2 周自动生成，天天有课；进页面会把「时间已过、还没点名」的课按到课自动补算。' +
+    '课时按孩子各记一本账（档案里建好孩子，点名一次算一次，几个孩子互不影响）。规则：' +
     ruleText()
 }
 
-// 剩余课时不足时的一句提醒（'' 表示不用提醒）
-function lowTip() {
+// 剩余课时不足时的一句话提醒（'' 表示不用提醒）
+// 每个孩子各看各的账：点名前老师就知道「谁快没课时了」，不用一个一个点开档案
+function lowTip(childId) {
   const r = billing.attendRules()
-  const st = billing.hoursStat()
-  if (st.left > r.lowWarn) return ''
-  return '剩余课时只剩 ' + st.left + ' 课时（≤ ' + r.lowWarn + ' 课时），记得提醒家长续费'
+  const cid = String(childId || '')
+
+  if (cid) {
+    const one = billing.hoursStat(cid)
+    if (one.left > r.lowWarn) return ''
+    return studentName(cid) + ' 剩余课时只剩 ' + one.left + ' 课时（≤ ' + r.lowWarn + ' 课时），记得提醒家长续费'
+  }
+
+  const kids = roster()
+  const low = []
+  for (let i = 0; i < kids.length; i++) {
+    const st = billing.hoursStat(kids[i].id)
+    if (st.left <= r.lowWarn) low.push(kids[i].name + '（剩 ' + st.left + ' 课时）')
+  }
+  if (low.length) return low.join('、') + ' 剩余课时不足（≤ ' + r.lowWarn + ' 课时），记得提醒家长续费'
+
+  // 一个孩子都没有（老数据）：退回设备账口径
+  const all = billing.hoursStat()
+  if (kids.length || all.left > r.lowWarn) return ''
+  return '剩余课时只剩 ' + all.left + ' 课时（≤ ' + r.lowWarn + ' 课时），记得提醒家长续费'
 }
 
 module.exports = {
   CLS: CLS,
-  STUDENTS: STUDENTS,
   DEMO: DEMO,
   STATUS_LIST: STATUS_LIST,
   today: today,
@@ -803,6 +887,10 @@ module.exports = {
   isWeekend: isWeekend,
   dayTitle: dayTitle,
   ensureLessons: ensureLessons,
+  syncRoster: syncRoster,
+  roster: roster,
+  studentIds: studentIds,
+  studentName: studentName,
   bootstrap: bootstrap,
   listDay: listDay,
   listToday: listToday,

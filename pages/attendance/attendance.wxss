@@ -305,3 +305,19 @@
 .btn-back {
   margin-top: 32rpx;
 }
+
+/* ---------- 一个孩子档案都还没有（引导先去建档） ---------- */
+.no-kid {
+  text-align: center;
+}
+
+.no-kid-sub {
+  margin-top: 12rpx;
+  font-size: 23rpx;
+  line-height: 1.7;
+  color: #8A93A3;
+}
+
+.no-kid .save-btn {
+  margin-top: 28rpx;
+}

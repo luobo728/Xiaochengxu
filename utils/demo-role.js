@@ -52,6 +52,13 @@ const ALBUM_STAFF_TIP = '你是老师：相册里可以上传照片；建相册�
 const ROLL_PARENT_TIP = '点名是老师做的事，家长端没有这个权限。要给孩子点名，请到「我的 → 切换演示账号」切到老师端。'
 const ROLL_STAFF_TIP = '你是老师：点到课 / 请假 / 旷课，保存后自动扣课时（请假不扣、旷课照扣）。'
 
+// 「孩子档案」页上的三句话（页面顶部提示条与锁卡片用同一份文案）
+//   老师端：能看，改档案由管理员负责（和相册同一种分工）
+//   家长端：只能看自己孩子的
+const CHILD_STAFF_TIP = '你是老师：孩子档案都可以查看；新建档、改资料、删档由管理员负责。'
+const CHILD_PARENT_TIP = '这里是你孩子的档案，只能查看。要改资料请找老师。'
+const CHILD_TIP = '孩子档案只能查看。要新建档、改资料，请让管理员（老师端 · 王老师）来做。'
+
 // toast 上用短句（一行能显示完）
 const PARENT_SHORT = '家长端没有管理权限，先切到老师端'
 const MEMBER_SHORT = '还不是管理员，请超级管理员设置'
@@ -187,6 +194,32 @@ function rollTip() {
   return ''
 }
 
+// 「孩子档案」页的门槛：'' 表示不拦（家长端给一句说明：只能看自己孩子的档案）
+function childTip() {
+  if (level() === 'parent') return CHILD_PARENT_TIP
+  return ''
+}
+
+// 能不能点名（和 rollTip() 同一份口径，只是这里只管「能不能」）：
+//   老师端演示账号（超级管理员 / 管理员 / 普通老师）→ true
+//   家长端 → false（一票否决：点名是老师做的事）
+//   不是演示账号 → null，交给页面照旧走云端白名单 / 本机体验管理员
+function canRoll() {
+  const lv = level()
+  if (lv === '') return null
+  return lv !== 'parent'
+}
+
+// 能不能新建 / 修改 / 删除孩子档案：
+//   老师端的超级管理员和管理员能改（和管通知、管相册同一档）
+//   普通老师、家长只能看
+//   不是演示账号 → null：交给页面照旧走云端白名单 / 本机体验管理员
+function canEditChildren() {
+  const lv = level()
+  if (lv === '') return null
+  return lv === 'super' || lv === 'admin'
+}
+
 // 管理员设置页的锁屏文案：'' 表示能进（只有超级管理员能进）
 function settingsTip() {
   const lv = level()
@@ -217,6 +250,9 @@ module.exports = {
   ALBUM_STAFF_TIP: ALBUM_STAFF_TIP,
   ROLL_PARENT_TIP: ROLL_PARENT_TIP,
   ROLL_STAFF_TIP: ROLL_STAFF_TIP,
+  CHILD_STAFF_TIP: CHILD_STAFF_TIP,
+  CHILD_PARENT_TIP: CHILD_PARENT_TIP,
+  CHILD_TIP: CHILD_TIP,
   SUPER_TIP: SUPER_TIP,
   PARENT_SHORT: PARENT_SHORT,
   MEMBER_SHORT: MEMBER_SHORT,
@@ -240,6 +276,9 @@ module.exports = {
   lockTip: lockTip,
   albumTip: albumTip,
   rollTip: rollTip,
+  canRoll: canRoll,
+  childTip: childTip,
+  canEditChildren: canEditChildren,
   settingsTip: settingsTip,
   demoShort: demoShort
 }

@@ -1,0 +1,84 @@
+<view class="page">
+  <view class="hd hd-kid" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack"><view class="ico-back"></view></view>
+      <view class="hd-title">孩子档案</view>
+      <view class="hd-back ghost"></view>
+    </view>
+    <view class="hd-sub">课时按孩子分开记：谁上了课，就只扣谁自己的课时</view>
+    <view class="hd-stats">
+      <view class="stat">
+        <view class="stat-num">{{sumLeft}}</view>
+        <view class="stat-lbl">剩余课时</view>
+      </view>
+      <view class="stat">
+        <view class="stat-num">{{sumSpent}}</view>
+        <view class="stat-lbl">已扣课时</view>
+      </view>
+      <view class="stat">
+        <view class="stat-num">{{count}}</view>
+        <view class="stat-lbl">档案人数</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="body">
+    <!-- 两分支：正在校验 / 校验完了（必须相邻，中间不夹注释） -->
+    <view class="empty" wx:if="{{!checked}}">正在校验身份…</view>
+    <block wx:else>
+      <view class="mode-tip">{{modeTip}}</view>
+      <view class="parent-tip" wx:if="{{tip}}">{{tip}}</view>
+      <view class="staff-tip" wx:if="{{roleTip}}">{{roleTip}}</view>
+
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">档案名单</view>
+          <view class="card-more">{{mine ? '只看自己孩子' : '全班名单'}}</view>
+        </view>
+
+        <block wx:for="{{rows}}" wx:key="id">
+          <view class="row-kid" hover-class="row-kid-hover" data-id="{{item.id}}" bindtap="onTapRow">
+            <view class="ava" style="background:{{item.tone}}">{{item.avatar}}</view>
+            <view class="row-main">
+              <view class="k-head">
+                <view class="row-name">{{item.name}}</view>
+                <view class="sex-tag {{item.sexClass}}">{{item.sexText}}</view>
+              </view>
+              <view class="row-sub">{{item.sub}}</view>
+              <view class="row-sub" wx:if="{{item.note}}">备注：{{item.note}}</view>
+            </view>
+            <view class="k-right">
+              <view class="row-val {{item.leftClass}}">{{item.leftText}}</view>
+              <view class="k-spent">{{item.spentText}}</view>
+            </view>
+          </view>
+          <view class="hairline"></view>
+        </block>
+
+        <view class="empty" wx:if="{{!rows.length}}">{{mine ? '这个孩子的档案还没建' : '还没有孩子档案，点下面的按钮建一个'}}</view>
+
+        <view class="save-btn" hover-class="save-btn-hover" wx:if="{{canEdit}}" bindtap="onAdd">＋ 建立孩子档案</view>
+        <view class="lock-tip" wx:else>{{demoLock}}</view>
+
+        <view class="row-hint">点名名单就是这份档案：建好档，这个孩子才会出现在「点名」里；点一次名只扣他自己的课时，几个孩子各记一本账、互不影响。</view>
+      </view>
+
+      <view class="alt-btn" hover-class="alt-btn-hover" bindtap="onRoll">去点名（给名单里的孩子点名）</view>
+
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">怎么用</view>
+        </view>
+        <view class="step" wx:for="{{steps}}" wx:key="id">
+          <view class="step-no">{{item.no}}</view>
+          <view class="step-txt">{{item.txt}}</view>
+        </view>
+      </view>
+
+      <view class="foot-note">姓名必填（不超过 8 个字），同一个班不能有重名的孩子（重名会点错人）。演示说明：打开「点名」或「课时」页时，会给名单里每个孩子各送 20 演示课时，每个孩子只送一次；新建档的孩子下次进点名页也会自动各送 20 课时，不用手工加。删档案只删名单，已经记下的课时流水不会丢，账单里还查得到。</view>
+    </block>
+  </view>
+
+  <!-- 底部导航：子页面也能直接切换模块（高亮「我的」） -->
+  <tab-bar selected="{{3}}" plain="{{true}}" />
+</view>

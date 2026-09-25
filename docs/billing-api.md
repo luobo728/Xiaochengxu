@@ -36,21 +36,20 @@ const DEMO_CODES = [
 
 - **新生扫码领课时**：园所把券码（如 `NEW-2026`）做成二维码，贴在门口或发到群里；家长在小程序里点「扫码领课时」扫它 → 课时进账（同一码限领一次）。
 - **打卡返余额**：每天 1 次，返 ¥1.5；连续打卡天数会自动累计（断了从 1 重新算）。
-- **上课扣课时（自动计算）**：老师点一次名 → 到课的孩子各扣 1 课时（请假不扣、旷课照扣、试听不扣）→ 自动写进账本，课时页与账单明细立刻同步；细节见 `docs/课时自动计算方案.md`。演示数据第一次打开会送 20 课时（`demo_gift_v1`，只送一次），否则余额是 0 没法演示。
+- **上课扣课时（自动计算）**：老师点一次名 → 到课的孩子各扣 1 课时（请假不扣、旷课照扣、试听不扣）→ 自动写进账本，课时页与账单明细立刻同步；**每个孩子各一本账，点一次名按人头各扣一次，扣谁的写谁的名字**；细节见 `docs/课时自动计算方案.md` 与 `docs/孩子档案.md`。演示数据第一次打开给每个已建档的孩子各送 20 课时（`demo_gift_v1:<id>`，只送一次），否则余额是 0 没法演示。
 
 ## 数据层接口（页面只调这些）
 
 | 方法 | 说明 |
 | --- | --- |
-| 方法 | 说明 |
-| --- | --- |
-| `getSummary()` | `{ hours, balance, checkinDays, todayChecked, claimCount }` |
-| `listLedger(limit)` | 收支明细（含 `typeName / amount / unit / note / timeText / afterText`） |
-| `claimByCode(code)` | 领券 → `{ ok, msg, hours, summary }`（内部走 `applyHours`，同一码另有 ref 判重） |
+| `getSummary(childId?)` | `{ hours, balance, checkinDays, todayChecked, claimCount }`；传 `childId` 就只算这个孩子那一本账 |
+| `listLedger(limit, childId?)` | 收支明细（含 `typeName / amount / unit / note / timeText / afterText / childId / childName`）；传 `childId` 只看这个孩子的流水 |
+| `claimByCode(code, childId?, childName?)` | 领券 → `{ ok, msg, hours, summary }`（内部走 `applyHours`，同一码另有 ref 判重；课时落到 `childId` 那本账，判重 key 始终是券码本身） |
 | `checkin()` | 今日打卡 → `{ ok, msg, reward, summary }` |
 | `rules()` | 计费规则（页面展示用，避免页面写死数字） |
-| **`applyHours(item)`** | **课时唯一原子写入口**：`{ amount, type, typeName, note, ref }` → `{ ok, dup, msg, summary }`；`ref` 重复直接返回 `dup: true`，一笔账都不写 |
-| **`hoursStat()`** | 课时统计 → `{ left, spent, total }`（课时页的「剩余 / 已完成 / 本学期」就是这三个数） |
+| **`applyHours(item)`** | **课时唯一原子写入口**：`{ amount, type, typeName, note, ref, childId, childName }` → `{ ok, dup, msg, summary }`；`ref` 重复直接返回 `dup: true`，一笔账都不写；带 `childId` 就记到这个孩子账上（`note` 里也会写清是谁） |
+| **`hoursStat(childId?)`** | 课时统计 → `{ left, spent, total }`；传 `childId` 就是这个孩子的那本账，不传 = 全部孩子 + 旧账合计（课时页的「剩余 / 已完成 / 本学期」就是这三个数） |
+| **`kidsStat(ids)`** | 一次拿多个孩子的账 → `Promise<[{ childId, left, spent, total }]>`（点名页 / 课时页按孩子展示用） |
 | **`attendRules()`** | 上课扣课时口径（点名页 / 课时页展示用，真值只有 `ATTEND` 一处） |
 | `demoCodes()` | 演示可用的券码 |
 | `mode` | 当前模式 `'local'` / `'cloud'` |
@@ -59,10 +58,10 @@ const DEMO_CODES = [
 
 1. 新建云函数 `billing`，实现 action：`summary` / `ledger` / `claim` / `checkin` / **`settle`（上课结算，课时自动计算用）**
    - 券码存集合 `billing_codes`：`{ code, hours, usedBy: [openid], expireAt, enabled }`
-   - 账户存集合 `billing_accounts`：文档 ID = `openid`，字段 `{ hours, balance, checkinDays, lastCheckinDate }`
-   - 流水存集合 `billing_ledger`：`{ openid, type, amount, unit, note, ref, createTime }`
+   - 账户存集合 `billing_accounts`：文档 ID = `openid + '_' + childId`（一个孩子一本账），字段 `{ openid, childId, hours, balance, checkinDays, lastCheckinDate }`
+   - 流水存集合 `billing_ledger`：`{ openid, childId, childName, type, amount, unit, note, ref, createTime }`
    - 课表 / 点名存集合 `lesson_schedules` / `attendance_marks`（课时自动计算，P3）
-   - **判重都必须在服务端**：同一 openid 同一天只能打一次卡、同一码只能领一次、同一节课同一个孩子只能结算一次（靠 `ref` 唯一索引）
+   - **判重都必须在服务端**：同一 openid 同一天只能打一次卡、同一码只能领一次（券码判重 key 始终是券码本身）、同一节课同一个孩子只能结算一次（靠 `ref` 唯一索引）
 2. 把 `utils/billing.js` 的 `MODE` 改成 `'cloud'`，并按 cloud 分支调用云函数
    （页面代码一行都不用改，接口签名保持不变）
 
@@ -73,11 +72,11 @@ const DEMO_CODES = [
 
 ## 两条铁律（课时 = 钱）
 
-1. **所有课时增减只走一个入口**：`applyHours({ amount, type, typeName, note, ref })`（正数进、负数扣，内部按 `ref` 判重）。页面、点名页、券码……谁都不许自己改 `hours` 这个数字。
-2. **余额永远由流水算出来**：`hoursStat()` 给 `{ left, spent, total }`，其中 `total` 恒等于账本里 `unit: 'hour'` 的金额合计 —— 对不上就说明有代码绕过了入口。
+1. **所有课时增减只走一个入口**：`applyHours({ amount, type, typeName, note, ref, childId, childName })`（正数进、负数扣，内部按 `ref` 判重，带 `childId` 就记到那个孩子账上）。页面、点名页、券码……谁都不许自己改 `hours` 这个数字。
+2. **余额永远由流水算出来**：`hoursStat(childId?)` 给 `{ left, spent, total }`，其中 `total` 恒等于账本里 `unit: 'hour'` 的金额合计 —— 不传 `childId` 是全部孩子 + 旧账的合计，传了就是这一个孩子的那本账。对不上就说明有代码绕过了入口。
 
 ## 安全提醒（接云端时）
 
 - 券码要在服务端校验 + 判重 + 设有效期，客户端只做展示
 - 余额/课时是**钱**：所有增减都必须走服务端，客户端不能直接改数字
-- 上课扣课时同理：云端由云函数 `billing` 的 `settle` 结算，集合建唯一索引 `openid + lessonId + studentId`（本机模式靠流水 `ref` 判重）
+- 上课扣课时同理：云端由云函数 `billing` 的 `settle` 结算，集合建唯一索引 `openid + childId + lessonId`（本机模式靠流水 `ref` 判重）

@@ -51,19 +51,20 @@
       <view class="acct-extra" wx:if="{{!userName || !userPhone}}" bindtap="onEditProfile">完善资料（姓名与手机号）›</view>
     </view>
 
-    <!-- 孩子档案：需要账号，未登录时整卡隐藏 -->
+    <!-- 孩子档案：需要账号，未登录时整卡隐藏（建档 / 点名 / 课时都按孩子各算各的） -->
     <view class="card" wx:if="{{logged}}">
       <view class="card-head">
         <view class="card-title">孩子档案</view>
-        <view class="card-more" bindtap="onMoreTap">编辑</view>
+        <view class="card-more" bindtap="onChildrenTap">{{kidId ? '管理 ›' : '去建档 ›'}}</view>
       </view>
-      <view class="row" bindtap="onMoreTap">
-        <view class="row-ico avatar">{{child.avatar}}</view>
+      <view class="row" bindtap="onChildrenTap">
+        <view class="row-ico avatar">{{kidAvatar}}</view>
         <view class="row-main">
-          <view class="row-name">{{child.name}}</view>
-          <view class="row-sub">{{child.sub}}</view>
+          <view class="row-name">{{kidName}}</view>
+          <view class="row-sub">{{kidSub}}</view>
         </view>
-        <view class="tag tag-green">已认证</view>
+        <view class="tag tag-green" wx:if="{{kidId}}">已建档</view>
+        <view class="tag tag-gray" wx:else>待建档</view>
       </view>
       <view class="mini-stats">
         <view class="mini-stat" wx:for="{{miniStats}}" wx:key="id">

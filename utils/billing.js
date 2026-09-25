@@ -75,9 +75,12 @@ function round2(n) {
 
 function emptyState() {
   return {
-    hours: 0,
+    hours: 0, // 历史未分账课时（升级前的老数据 / 没有归属的领课时）
     spent: 0,
     balance: 0,
+    // 每个孩子一本独立的账：{ 孩子 id: { hours: 剩余课时, spent: 已扣课时 } }
+    // 同班三个孩子各扣各的 —— 这就是「点一个名同一个人跨了三节」的修法
+    kids: {},
     ledger: [],
     checkins: {},
     checkinDays: 0,
@@ -85,6 +88,14 @@ function emptyState() {
     claims: {},
     claimCount: 0
   }
+}
+
+// 取（必要时建）某个孩子的账格 —— 全模块只有这里能建格
+function kidBucket(s, childId) {
+  const id = String(childId || '')
+  if (!s.kids) s.kids = {}
+  if (!s.kids[id]) s.kids[id] = { hours: 0, spent: 0 }
+  return s.kids[id]
 }
 
 function readState() {
@@ -107,11 +118,30 @@ function writeState(s) {
   }
 }
 
-function summarize(s) {
+// 概况：不传 childId = 全园合计（设备账 + 所有孩子）；传了只看那个孩子
+// 概况：不传 childId = 全园合计（历史未分账 + 所有孩子）；传了只看那个孩子
+// 合计口径必须和 hoursStat() 一致，不然账单页和课时页会显示两个数
+function summarize(s, childId) {
+  const id = String(childId || '')
+  const kids = s.kids || {}
+  let hours = round2(s.hours)
+  let spent = round2(s.spent || 0)
+  if (id) {
+    const b = kids[id]
+    hours = b ? round2(b.hours) : 0
+    spent = b ? round2(b.spent || 0) : 0
+  } else {
+    for (const k in kids) {
+      if (Object.prototype.hasOwnProperty.call(kids, k)) {
+        hours = round2(hours + (kids[k].hours || 0))
+        spent = round2(spent + (kids[k].spent || 0))
+      }
+    }
+  }
   return {
-    hours: s.hours,
+    hours: hours,
     // 已完成课时合计（课时页用；领到的课时不算「已完成」）
-    spent: s.spent || 0,
+    spent: spent,
     balance: s.balance,
     checkinDays: s.checkinDays,
     todayChecked: !!s.checkins[todayStr()],
@@ -120,8 +150,10 @@ function summarize(s) {
 }
 
 // 记一笔流水（新的在最前面，最多留 LEDGER_MAX 条）
+// childId / childName 是账本上最要紧的一列：看流水就知道这笔扣的是哪个孩子
 function addLedger(s, item) {
   const isYuan = item.unit === 'yuan'
+  const after = item.afterHours === undefined ? s.hours : item.afterHours
   s.ledger.unshift({
     id: 'l' + Date.now() + '_' + Math.floor(Math.random() * 1000),
     time: Date.now(),
@@ -134,10 +166,13 @@ function addLedger(s, item) {
     note: item.note || '',
     // 判重键：同一节课绝不用重复扣，就靠它（见 applyHours）
     ref: item.ref || '',
+    // 归属：哪个孩子的课时（升级前的老流水没有这一列 → 显示成「未分账」）
+    childId: item.childId || '',
+    childName: item.childName || '',
     // 展示用：课时页「课时明细」显示课程名 + 老师（账单页用不到，忽略也不影响）
     title: item.title || '',
     sub: item.sub || '',
-    afterText: isYuan ? '余额 ¥' + round2(s.balance).toFixed(2) : '课时 ' + s.hours
+    afterText: isYuan ? '余额 ¥' + round2(s.balance).toFixed(2) : '课时 ' + after
   })
   if (s.ledger.length > LEDGER_MAX) {
     s.ledger = s.ledger.slice(0, LEDGER_MAX)
@@ -153,16 +188,23 @@ function findCode(code) {
 
 /* ---------------- 对外接口 ---------------- */
 
-// 账户概况
-function getSummary() {
-  return Promise.resolve(summarize(readState()))
+// 账户概况（传 childId 就是那个孩子的概况）
+function getSummary(childId) {
+  return Promise.resolve(summarize(readState(), childId))
 }
 
-// 收支明细
-function listLedger(limit) {
+// 收支明细（传 childId 只看这个孩子的流水；不传看全部）
+function listLedger(limit, childId) {
   const s = readState()
   const n = typeof limit === 'number' && limit > 0 ? limit : 50
-  return Promise.resolve(s.ledger.slice(0, n))
+  const id = String(childId || '')
+  if (!id) return Promise.resolve(s.ledger.slice(0, n))
+
+  const out = []
+  for (let i = 0; i < s.ledger.length && out.length < n; i++) {
+    if (s.ledger[i].childId === id) out.push(s.ledger[i])
+  }
+  return Promise.resolve(out)
 }
 
 /* ---------------- 课时变动（唯一入口） ---------------- */
@@ -176,27 +218,42 @@ function hasRef(s, ref) {
   return false
 }
 
-// 课时增减的唯一入口 —— 页面和别的模块都不许自己改 `hours`，只能走这里
+// 课时增减的唯一入口 —— 页面和别的模块都不许自己改课时，只能走这里
 //   amount 正数进、负数扣
 //   type：'consume' 上课扣课时 / 'refund' 课时回补（纠正）/ 'claim' 领课时 / 'gift' 赠送
+//   childId 记到哪个孩子头上（**每次点名都要带**，不带就变成吃大锅饭）
 //   ref 是判重键（例：L20260415A:lele#0）：同一 ref 再来一次直接跳过 ——
 //   重复点保存、断网重试、自动补算撞上老师点名，都不会重复扣课时
 function applyHours(item) {
   const it = item || {}
   const amount = round2(it.amount)
   const ref = String(it.ref || '')
+  const childId = String(it.childId || '')
+  const childName = String(it.childName || '')
 
   if (!amount) return Promise.resolve({ ok: false, dup: false, msg: '没有课时变化' })
 
   const s = readState()
   if (ref && hasRef(s, ref)) {
-    return Promise.resolve({ ok: false, dup: true, msg: it.dupText || '这笔已经记过了', summary: summarize(s) })
+    return Promise.resolve({ ok: false, dup: true, msg: it.dupText || '这笔已经记过了', summary: summarize(s, childId) })
   }
 
-  s.hours = round2(s.hours + amount)
-  // 「已完成课时」的口径（课时页用）：扣课时算上过的课，冲正回补要减回去（领 / 赠不动它）
-  if (it.type === 'consume') s.spent = round2((s.spent || 0) + Math.abs(amount))
-  if (it.type === 'refund') s.spent = Math.max(0, round2((s.spent || 0) - Math.abs(amount)))
+  let afterHours = 0
+  if (childId) {
+    // 孩子的独立账户：只动他这一格，同班别的孩子一点不受影响
+    const b = kidBucket(s, childId)
+    b.hours = round2(b.hours + amount)
+    // 「已完成课时」的口径（课时页用）：扣课时算上过的课，冲正回补要减回去（领 / 赠不动它）
+    if (it.type === 'consume') b.spent = round2((b.spent || 0) + Math.abs(amount))
+    if (it.type === 'refund') b.spent = Math.max(0, round2((b.spent || 0) - Math.abs(amount)))
+    afterHours = b.hours
+  } else {
+    // 还没有归属的课时（老数据 / 全园公用）：先记在设备账上
+    s.hours = round2(s.hours + amount)
+    if (it.type === 'consume') s.spent = round2((s.spent || 0) + Math.abs(amount))
+    if (it.type === 'refund') s.spent = Math.max(0, round2((s.spent || 0) - Math.abs(amount)))
+    afterHours = s.hours
+  }
 
   addLedger(s, {
     type: it.type || 'adjust',
@@ -205,6 +262,9 @@ function applyHours(item) {
     unit: 'hour',
     note: it.note || '',
     ref: ref,
+    childId: childId,
+    childName: childName,
+    afterHours: afterHours,
     title: it.title || '',
     sub: it.sub || ''
   })
@@ -215,29 +275,95 @@ function applyHours(item) {
     dup: false,
     msg: it.okText || '已记账',
     amount: amount,
-    summary: summarize(s)
+    childId: childId,
+    summary: summarize(s, childId)
   })
 }
 
 // 课时口径（课时页的三个数字）：剩余 = 余额；已完成 = 已扣合计；本学期 = 已完成 + 剩余
-function hoursStat() {
+// 传 childId：只看这个孩子自己的账 —— 每个孩子独立计数，互不牵连
+// 不传：全园合计 = 历史未分账 + 所有孩子之和（列表页表头用）
+function hoursStat(childId) {
   const s = readState()
-  const left = round2(s.hours)
-  const spent = round2(s.spent || 0)
-  return {
-    left: left,
-    spent: spent,
-    total: round2(spent + left)
+  const id = String(childId || '')
+
+  if (id) {
+    const b = (s.kids || {})[id] || { hours: 0, spent: 0 }
+    const left = round2(b.hours)
+    const spent = round2(b.spent || 0)
+    return { left: left, spent: spent, total: round2(spent + left) }
   }
+
+  let left = round2(s.hours)
+  let spent = round2(s.spent || 0)
+  const kids = s.kids || {}
+  for (const k in kids) {
+    if (Object.prototype.hasOwnProperty.call(kids, k)) {
+      left = round2(left + (kids[k].hours || 0))
+      spent = round2(spent + (kids[k].spent || 0))
+    }
+  }
+  return { left: left, spent: spent, total: round2(spent + left) }
+}
+
+// 一批孩子的课时（孩子档案页表格用；不传 ids 就返回所有有账的孩子）
+function kidsStat(ids) {
+  const s = readState()
+  const kids = s.kids || {}
+  const list = ids && ids.length ? ids : Object.keys(kids)
+  const out = []
+  for (let i = 0; i < list.length; i++) {
+    const id = String(list[i])
+    const b = kids[id] || { hours: 0, spent: 0 }
+    const left = round2(b.hours)
+    const spent = round2(b.spent || 0)
+    out.push({ childId: id, left: left, spent: spent, total: round2(spent + left) })
+  }
+  return Promise.resolve(out)
+}
+
+// 老数据分账：升级前设备上那笔「没有归属」的课时，划到第一个孩子名下
+// 只搬账、不记流水 —— 全园合计一分不变（流水是财务凭证，不许删改）
+function transferLegacy(childId, childName) {
+  const id = String(childId || '')
+  if (!id) return Promise.resolve({ ok: false, moved: false, msg: '请先建孩子档案' })
+
+  const s = readState()
+  const hours = round2(s.hours)
+  const spent = round2(s.spent || 0)
+  if (!hours && !spent) {
+    return Promise.resolve({ ok: false, moved: false, msg: '没有历史课时需要分账' })
+  }
+
+  const b = kidBucket(s, id)
+  b.hours = round2(b.hours + hours)
+  b.spent = round2((b.spent || 0) + spent)
+  s.hours = 0
+  s.spent = 0
+  writeState(s)
+
+  return Promise.resolve({
+    ok: true,
+    moved: true,
+    hours: hours,
+    spent: spent,
+    childId: id,
+    childName: String(childName || ''),
+    summary: summarize(s, id)
+  })
 }
 
 // 扫码/输入券码 → 领课时（课时进账走唯一入口 applyHours，同一券码另有 ref 判重）
-function claimByCode(code) {
+// 传了 childId：课时记到那个孩子头上；判重键只认券码本身 —— 一个码只能领一次
+function claimByCode(code, childId, childName) {
   const raw = String(code || '').trim().toUpperCase()
   if (!raw) return Promise.resolve({ ok: false, msg: '请输入券码' })
 
+  const cid = String(childId || '')
+  const cname = String(childName || '')
+  const key = raw
   const s = readState()
-  if (s.claims[raw]) {
+  if (s.claims[key]) {
     return Promise.resolve({ ok: false, msg: RULES.claimAgainText })
   }
 
@@ -250,23 +376,25 @@ function claimByCode(code) {
     amount: found.hours,
     type: 'claim',
     typeName: '扫码领课时',
-    note: found.note + '（' + raw + '）',
-    ref: 'claim:' + raw,
+    note: (cname ? cname + ' · ' : '') + found.note + '（' + raw + '）',
+    ref: 'claim:' + key,
+    childId: cid,
+    childName: cname,
     title: '扫码领课时',
-    sub: found.note + '（' + raw + '）',
+    sub: (cname ? cname + ' · ' : '') + found.note + '（' + raw + '）',
     dupText: RULES.claimAgainText
   }).then(function (res) {
     if (res.dup) return { ok: false, msg: RULES.claimAgainText }
     // 券码标记写在进账之后：万一这步没写成，最多「同一券码能再领一次」，不会丢课时
     const s2 = readState()
-    s2.claims[raw] = true
+    s2.claims[key] = true
     s2.claimCount = (s2.claimCount || 0) + 1
     writeState(s2)
     return {
       ok: true,
       msg: '领取成功',
       hours: found.hours,
-      summary: summarize(s2)
+      summary: summarize(s2, cid)
     }
   })
 }
@@ -339,6 +467,8 @@ module.exports = {
   checkin: checkin,
   applyHours: applyHours,
   hoursStat: hoursStat,
+  kidsStat: kidsStat,
+  transferLegacy: transferLegacy,
   rules: rules,
   attendRules: attendRules,
   demoCodes: demoCodes

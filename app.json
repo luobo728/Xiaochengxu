@@ -16,7 +16,9 @@
     "pages/album/album",
     "pages/album-admin/album-admin",
     "pages/admin-members/admin-members",
-    "pages/attendance/attendance"
+    "pages/attendance/attendance",
+    "pages/children/children",
+    "pages/children-edit/children-edit"
   ],
   "window": {
     "navigationStyle": "custom",

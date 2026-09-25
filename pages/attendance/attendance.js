@@ -34,10 +34,10 @@ Page({
     dayText: '',
     isToday: true,
     lessons: [],
-    kidCount: schedule.STUDENTS.length,
+    kidCount: schedule.roster().length,
     perLesson: billing.attendRules().perLesson,
 
-    // 本机这本账（课时按设备记：切换演示账号看的是同一本账）
+    // 顶部两个数字：全园合计（每个孩子自己的余额写在每行「余 N 课时」里）
     left: 0,
     spent: 0,
 
@@ -46,7 +46,10 @@ Page({
 
     // 说明文案（进页面时由数据层填，避免加载期读存储）
     modeTip: '',
-    lowTip: ''
+    lowTip: '',
+
+    // 一个孩子档案都还没有：点名表出不来人，先引导去建档
+    noKid: false
   },
 
   onLoad() {
@@ -151,18 +154,21 @@ Page({
   // 画这一天：课表 + 提醒 + 顶部那两个数字
   renderDay(day) {
     const data = schedule.listDay(day)
+    const kids = schedule.roster()
     this.setData({
       day: data.date,
       dayText: data.title,
       isToday: data.isToday,
       lessons: data.lessons,
+      kidCount: kids.length,
+      noKid: !kids.length,
       dirty: false,
       lowTip: schedule.lowTip()
     })
     this.refreshStats()
   },
 
-  // 本机这本账（课时按设备记：切换演示账号看的是同一本账）
+  // 顶部那两个数字：全园合计（每个孩子自己的余额写在每行「余 N 课时」里）
   refreshStats() {
     const st = billing.hoursStat()
     this.setData({ left: st.left, spent: st.spent })
@@ -187,6 +193,11 @@ Page({
     this.fill(schedule.today())
   },
 
+  // 还没有孩子档案时的那一步：去「孩子档案」建档（建好回来就能点名）
+  goChildren() {
+    wx.navigateTo({ url: '/pages/children/children' })
+  },
+
   // 点某个孩子的某个状态（到课 / 请假 / 旷课 / 试听）
   // 只改这一行的显示，扣不扣课时仍然由 utils/schedule.js 的 kidRow() 算，页面不写规则
   onPill(e) {
@@ -201,7 +212,7 @@ Page({
     if (!kid || kid.status === key) return
 
     // 改过状态的这一行先按「还没保存」显示：保存后才显示「已结算 · 扣 N 课时」
-    const next = schedule.kidRow(key, ls.hours, { saved: false, applied: 0 })
+    const next = schedule.kidRow(key, ls.hours, { saved: false, applied: 0, left: kid.left })
     next.id = kid.id
     next.studentId = kid.studentId
     next.studentName = kid.studentName
