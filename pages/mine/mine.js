@@ -44,6 +44,8 @@ Page({
     isSuper: false,
     // 是否显示「相册管理」入口：管理员能建能删，普通老师进去只能传照片（演示账号按档位算）
     canAlbum: false,
+    // 是否显示「点名」入口：老师（含普通老师）都能点名，家长端一票否决
+    canRoll: false,
     // 演示账号（纯本机）：切换后头部、底部、设置里那一行都跟着变
     accountSide: '',
     accountSub: '一键切家长端 / 老师端，看两边区别',
@@ -654,6 +656,16 @@ Page({
     })
   },
 
+  // 老师入口：点名（给孩子点到课 / 请假 / 旷课，保存后由课时账本自动结算）
+  onRollTap() {
+    wx.navigateTo({
+      url: '/pages/attendance/attendance',
+      fail() {
+        wx.showToast({ title: '打开失败', icon: 'none' })
+      }
+    })
+  },
+
   // 相册入口副标题：本班 / 全园各有多少本，拿不到就保持原文案
   refreshAlbumSub() {
     const myClass = album.myClassSync()
@@ -731,8 +743,15 @@ Page({
     const isSuper = role.isSuper()
     // 「相册管理」入口老师都能看见：管理员进去能建能删，普通老师进去只能传照片
     const canAlbum = role.isDemo() ? role.canUploadAlbum() : isAdmin
-    if (isAdmin !== this.data.isAdmin || isSuper !== this.data.isSuper || canAlbum !== this.data.canAlbum) {
-      this.setData({ isAdmin: isAdmin, isSuper: isSuper, canAlbum: canAlbum })
+    // 「点名」入口老师都能看见（家长端一票否决）：点名保存后自动扣课时
+    const canRoll = role.isDemo() ? !role.isParent() : isAdmin
+    if (
+      isAdmin !== this.data.isAdmin ||
+      isSuper !== this.data.isSuper ||
+      canAlbum !== this.data.canAlbum ||
+      canRoll !== this.data.canRoll
+    ) {
+      this.setData({ isAdmin: isAdmin, isSuper: isSuper, canAlbum: canAlbum, canRoll: canRoll })
     }
   },
 

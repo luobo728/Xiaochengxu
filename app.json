@@ -15,7 +15,8 @@
     "pages/notice-admin/notice-admin",
     "pages/album/album",
     "pages/album-admin/album-admin",
-    "pages/admin-members/admin-members"
+    "pages/admin-members/admin-members",
+    "pages/attendance/attendance"
   ],
   "window": {
     "navigationStyle": "custom",

@@ -1,94 +1,27 @@
+// pages/course/course.js —— 课时（这本账的展示页）
+//
+// 页面自己一个课时都不算，数字全来自本机课时账本：
+//   本学期课时 / 已完成 / 剩余     ← billing.hoursStat()（总 = 已完成 + 剩余）
+//   本周进度 / 本周课程 / 近 30 天明细 ← utils/schedule.js（课表 + 账本）
+// 老师在「点名」页保存后，这一页会自动跟着变（进页面就重读一次账）。
 const app = getApp()
+const schedule = require('../../utils/schedule.js')
 
 Page({
   data: {
     statusBarHeight: 20,
     // 本学期课时统计
-    totalHours: 128,
-    doneHours: 76,
-    leftHours: 52,
+    totalHours: 0,
+    doneHours: 0,
+    leftHours: 0,
     // 本周课时进度
-    weekDone: 6,
-    weekTotal: 10,
-    weekPercent: 60,
+    weekDone: 0,
+    weekTotal: 0,
+    weekPercent: 0,
     // 本周课程列表
-    weekCourses: [
-      {
-        id: 1,
-        ico: '主',
-        name: '主题课 · 春天的颜色',
-        sub: '周二 09:20 · 王老师',
-        val: '剩 8 课时',
-        bg: 'linear-gradient(135deg,#59A2FF,#2E6BFF)'
-      },
-      {
-        id: 2,
-        ico: '语',
-        name: '绘本阅读 · 小种子旅行记',
-        sub: '周三 10:00 · 李老师',
-        val: '剩 10 课时',
-        bg: 'linear-gradient(135deg,#4FD1A5,#12A182)'
-      },
-      {
-        id: 3,
-        ico: '音',
-        name: '奥尔夫音乐 · 小手拍拍',
-        sub: '周四 15:30 · 陈老师',
-        val: '剩 12 课时',
-        bg: 'linear-gradient(135deg,#FFB45B,#F08A24)'
-      },
-      {
-        id: 4,
-        ico: '体',
-        name: '体能游戏 · 快乐跳跳跳',
-        sub: '周五 09:20 · 张老师',
-        val: '剩 16 课时',
-        bg: 'linear-gradient(135deg,#9B8CFF,#6A5BEF)'
-      }
-    ],
+    weekCourses: [],
     // 课时明细（近 30 天）
-    records: [
-      {
-        id: 1,
-        date: '04-15 周二',
-        name: '主题课 · 春天的颜色',
-        teacher: '王老师',
-        val: '-1 课时',
-        gray: false
-      },
-      {
-        id: 2,
-        date: '04-14 周一',
-        name: '绘本阅读 · 小种子旅行记',
-        teacher: '李老师',
-        val: '-1 课时',
-        gray: false
-      },
-      {
-        id: 3,
-        date: '04-12 周六',
-        name: '美术延时班 · 手工风车',
-        teacher: '陈老师',
-        val: '补课 +1',
-        gray: true
-      },
-      {
-        id: 4,
-        date: '04-11 周五',
-        name: '体能游戏 · 快乐跳跳跳',
-        teacher: '张老师',
-        val: '-1 课时',
-        gray: false
-      },
-      {
-        id: 5,
-        date: '04-10 周四',
-        name: '奥尔夫音乐 · 小手拍拍',
-        teacher: '陈老师',
-        val: '-1 课时',
-        gray: false
-      }
-    ]
+    records: []
   },
 
   onLoad() {
@@ -102,6 +35,37 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 1 })
     }
+    // 每次回到这一页都重读账本：老师点名、家长领课时都会让这里变化
+    this.refresh()
+  },
+
+  // 读账：顺手把过期没点名的课补算掉（和点名页同一套规则）
+  refresh() {
+    const that = this
+    schedule
+      .courseStats()
+      .then((st) => {
+        that.render(st)
+      })
+      .catch(() => {
+        // 读不到就给一份空数据，页面不白屏、不弹错
+        that.render(null)
+      })
+  },
+
+  // 把算好的数字铺到页面上
+  render(st) {
+    const d = st || {}
+    this.setData({
+      totalHours: d.totalHours || 0,
+      doneHours: d.doneHours || 0,
+      leftHours: d.leftHours || 0,
+      weekDone: d.weekDone || 0,
+      weekTotal: d.weekTotal || 0,
+      weekPercent: d.weekPercent || 0,
+      weekCourses: d.weekCourses || [],
+      records: d.records || []
+    })
   },
 
   // 统一轻量交互

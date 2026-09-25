@@ -9,7 +9,8 @@ const LEDGER_ICONS = {
   claim: { txt: '领', bg: 'linear-gradient(135deg,#59A2FF,#2E6BFF)' },
   checkin: { txt: '卡', bg: 'linear-gradient(135deg,#3FC5A0,#12A182)' },
   gift: { txt: '赠', bg: 'linear-gradient(135deg,#FFB45B,#F08A24)' },
-  consume: { txt: '耗', bg: 'linear-gradient(135deg,#9B8CFF,#6A5BEF)' }
+  consume: { txt: '耗', bg: 'linear-gradient(135deg,#9B8CFF,#6A5BEF)' },
+  refund: { txt: '补', bg: 'linear-gradient(135deg,#33C3A1,#12A97F)' },
 }
 const LEDGER_ICON_DEFAULT = { txt: '账', bg: 'linear-gradient(135deg,#C6CDDA,#9AA4B6)' }
 
@@ -48,14 +49,17 @@ Page({
     this.loadData()
   },
 
-  // 规则数值由数据层提供，页面不写死奖励金额
+  // 规则数值由数据层提供，页面不写死奖励金额与扣课时口径
   applyRules() {
     const r = billing.rules() || {}
+    const a = billing.attendRules() || {}
+    // 请假不扣 / 旷课照扣：口径在数据层，这里只拼成一句话
+    const attendTxt = (a.leaveFree ? '请假不扣' : '请假照扣') + (a.absentCharge ? '、旷课照扣' : '、旷课不扣')
     this.setData({
       rules: [
         { id: 'claim', ico: '领', txt: '新生扫码领课时：每个券码限领一次，领取后直接进课时余额' },
         { id: 'checkin', ico: '卡', txt: '每日打卡返余额：每天 1 次，返 ¥' + (r.checkinReward || 0) + '（连续打卡天数会累计）' },
-        { id: 'consume', ico: '耗', txt: '课时消耗：上课时按课时扣减，明细可在下方查看' }
+        { id: 'consume', ico: '耗', txt: '上课扣课时：每节 ' + (a.perLesson || 1) + ' 课时，老师点名保存后自动结算（' + attendTxt + '），明细可在下方查看' }
       ]
     })
   },

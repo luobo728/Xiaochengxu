@@ -48,6 +48,10 @@ const SUPER_TIP = '「管理员设置」只有超级管理员能进。演示账�
 // 「相册管理」页上给普通老师的一句说明（页面顶部提示条用）
 const ALBUM_STAFF_TIP = '你是老师：相册里可以上传照片；建相册、改名、删相册、删照片由管理员负责。'
 
+// 「点名」页上的两句说明（页面顶部提示条用）
+const ROLL_PARENT_TIP = '点名是老师做的事，家长端没有这个权限。要给孩子点名，请到「我的 → 切换演示账号」切到老师端。'
+const ROLL_STAFF_TIP = '你是老师：点到课 / 请假 / 旷课，保存后自动扣课时（请假不扣、旷课照扣）。'
+
 // toast 上用短句（一行能显示完）
 const PARENT_SHORT = '家长端没有管理权限，先切到老师端'
 const MEMBER_SHORT = '还不是管理员，请超级管理员设置'
@@ -174,6 +178,15 @@ function albumTip() {
   return ''
 }
 
+// 「点名」页的门槛：'' 表示能进
+//   老师端任何演示账号都能点名（点名本来就是老师做的事，普通老师也能做）
+//   家长端进不去 —— 点名是老师的事，家长端只负责看课时
+//   不是演示账号 → ''，照旧走云端白名单 / 本机体验管理员（notice.adminStatus）
+function rollTip() {
+  if (level() === 'parent') return ROLL_PARENT_TIP
+  return ''
+}
+
 // 管理员设置页的锁屏文案：'' 表示能进（只有超级管理员能进）
 function settingsTip() {
   const lv = level()
@@ -202,6 +215,8 @@ module.exports = {
   PARENT_TIP: PARENT_TIP,
   MEMBER_TIP: MEMBER_TIP,
   ALBUM_STAFF_TIP: ALBUM_STAFF_TIP,
+  ROLL_PARENT_TIP: ROLL_PARENT_TIP,
+  ROLL_STAFF_TIP: ROLL_STAFF_TIP,
   SUPER_TIP: SUPER_TIP,
   PARENT_SHORT: PARENT_SHORT,
   MEMBER_SHORT: MEMBER_SHORT,
@@ -224,6 +239,7 @@ module.exports = {
   canUploadAlbum: canUploadAlbum,
   lockTip: lockTip,
   albumTip: albumTip,
+  rollTip: rollTip,
   settingsTip: settingsTip,
   demoShort: demoShort
 }

@@ -1,0 +1,91 @@
+<view class="page">
+  <view class="hd hd-roll" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack"><view class="ico-back"></view></view>
+      <view class="hd-title">点名</view>
+      <view class="hd-back ghost"></view>
+    </view>
+    <view class="hd-sub">{{cls}} · 每节 {{perLesson}} 课时 · 课表 {{lessons.length}} 节</view>
+    <view class="hd-stats">
+      <view class="stat">
+        <view class="stat-num">{{left}}</view>
+        <view class="stat-lbl">剩余课时</view>
+      </view>
+      <view class="stat">
+        <view class="stat-num">{{spent}}</view>
+        <view class="stat-lbl">已扣课时</view>
+      </view>
+      <view class="stat">
+        <view class="stat-num">{{kidCount}}</view>
+        <view class="stat-lbl">班里孩子</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="body">
+    <!-- 三分支：正在校验 / 不是老师（锁卡片）/ 是老师（三分支必须相邻，中间不夹注释） -->
+    <view class="empty" wx:if="{{!checked}}">正在校验身份…</view>
+    <view class="card" wx:elif="{{!canRoll}}">
+      <view class="lock-box">
+        <view class="ico-lock"></view>
+        <view class="lock-title">点名只有老师能做</view>
+        <view class="lock-sub">这一页用来给孩子点到课 / 请假 / 旷课，保存后自动扣课时</view>
+        <view class="lock-me" wx:if="{{curName}}">当前身份：{{curName}}</view>
+        <view class="lock-demo" wx:if="{{demoLock}}">{{demoLock}}</view>
+        <view class="btn-primary btn-back" bindtap="goBack">返回</view>
+      </view>
+    </view>
+    <block wx:else>
+      <view class="day-bar">
+        <view class="day-btn" hover-class="day-btn-hover" bindtap="onPrevDay">‹</view>
+        <view class="day-mid" bindtap="onToday">
+          <view class="day-title">{{dayText}}</view>
+          <view class="day-sub">{{isToday ? '今天' : '点这里回到今天'}}</view>
+        </view>
+        <view class="day-btn" hover-class="day-btn-hover" bindtap="onNextDay">›</view>
+      </view>
+
+      <view class="mode-tip">{{modeTip}}</view>
+      <view class="staff-tip" wx:if="{{staffTip}}">{{staffTip}}</view>
+      <view class="low-tip" wx:if="{{lowTip}}">{{lowTip}}</view>
+      <view class="dirty-tip" wx:if="{{dirty}}">有改动还没保存：点每节课下面的「保存点名」才会计入课时</view>
+
+      <view class="empty" wx:if="{{!lessons.length}}">这一天没有课，点上面的箭头换一天看看</view>
+
+      <view class="card" wx:for="{{lessons}}" wx:key="id" wx:for-item="ls" wx:for-index="li">
+        <view class="card-head">
+          <view class="card-title">{{ls.time}} · {{ls.name}}</view>
+          <view class="tag {{ls.tagClass}}">{{ls.statusText}}</view>
+        </view>
+        <view class="ls-sub">{{ls.subText}}</view>
+
+        <view class="kid" wx:for="{{ls.kids}}" wx:key="id" wx:for-item="kid" wx:for-index="ki">
+          <view class="kid-top">
+            <view class="kid-name">{{kid.studentName}}</view>
+            <view class="kid-state {{kid.done ? 'done' : ''}}">{{kid.stateLine}}</view>
+          </view>
+          <view class="pills">
+            <view
+              class="pill {{p.on ? 'pill-on' : ''}}"
+              wx:for="{{kid.pills}}"
+              wx:key="key"
+              wx:for-item="p"
+              wx:for-index="pi"
+              data-li="{{li}}"
+              data-ki="{{ki}}"
+              data-key="{{p.key}}"
+              bindtap="onPill">{{p.label}}</view>
+          </view>
+        </view>
+
+        <view class="save-btn" hover-class="save-btn-hover" data-li="{{li}}" bindtap="onSave">保存点名</view>
+        <view class="ls-foot">{{ls.settledText}}</view>
+      </view>
+
+      <view class="foot-note">保存即结算：到课扣课时、请假不扣、旷课照扣、试听不扣。点错了直接把状态改一下再保存，多扣的会以「课时回补（纠正）」记一笔退回 —— 明细只增不删，账永远对得上。当天课表里「时间已过、还没点名」的课，下次进这一页会自动按到课补算。</view>
+    </block>
+  </view>
+
+  <!-- 底部导航：子页面也能直接切换模块（高亮「我的」） -->
+  <tab-bar selected="{{3}}" plain="{{true}}" />
+</view>

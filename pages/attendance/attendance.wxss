@@ -1,0 +1,307 @@
+/* pages/attendance/attendance.wxss —— 点名页样式（通用 class 见 app.wxss） */
+
+/* 底部有导航栏：为它预留高度 */
+.page {
+  padding-bottom: 220rpx;
+  padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 顶部头图（点名主题青） ---------- */
+.hd-roll {
+  background: linear-gradient(135deg, #2FD0C7, #0A9C95);
+}
+
+.hd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8rpx;
+}
+
+/* 标题已在 .hd-row 内，去掉 app.wxss 里的上间距 */
+.hd-roll .hd-title {
+  padding-top: 0;
+  font-size: 38rpx;
+}
+
+.hd-back {
+  flex-shrink: 0;
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hd-back-hover {
+  opacity: 0.7;
+}
+
+/* 右上占位：仅为保持标题居中 */
+.hd-back.ghost {
+  visibility: hidden;
+}
+
+/* 返回箭头（两条边框拼出的左尖括号，纯 CSS 无图片） */
+.ico-back {
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: 6rpx;
+  border-left: 4rpx solid #FFFFFF;
+  border-bottom: 4rpx solid #FFFFFF;
+  transform: rotate(45deg);
+}
+
+/* ---------- 换天 ---------- */
+.day-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 24rpx;
+  background: #FFFFFF;
+}
+
+.day-btn {
+  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
+  line-height: 66rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: #F2F5FA;
+  font-size: 34rpx;
+  color: #5A6273;
+}
+
+.day-btn-hover {
+  opacity: 0.7;
+}
+
+.day-mid {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.day-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.day-sub {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #8A93A3;
+}
+
+/* ---------- 提示条 ---------- */
+/* 演示说明（橙）：自动补算、课时按设备记账这些都写在这里 */
+.mode-tip {
+  margin-bottom: 24rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 20rpx;
+  background: rgba(240, 138, 0, 0.12);
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #B36A00;
+}
+
+/* 老师说明（蓝）：规则一句话 */
+.staff-tip {
+  margin-bottom: 24rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 20rpx;
+  background: rgba(76, 139, 255, 0.12);
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #2E6BFF;
+}
+
+/* 课时快用完了（红）：提醒续费 */
+.low-tip {
+  margin-bottom: 24rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 20rpx;
+  background: rgba(224, 82, 82, 0.12);
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #C0392B;
+}
+
+/* 有改动没保存（紫） */
+.dirty-tip {
+  margin-bottom: 24rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 20rpx;
+  background: rgba(106, 91, 239, 0.12);
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #6A5BEF;
+}
+
+/* ---------- 一节课 ---------- */
+.ls-sub {
+  margin-top: 8rpx;
+  font-size: 23rpx;
+  color: #8A93A3;
+}
+
+.kid {
+  margin-top: 22rpx;
+  padding-top: 22rpx;
+  border-top: 1rpx solid #EEF1F7;
+}
+
+.kid-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kid-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.kid-state {
+  font-size: 23rpx;
+  color: #8A93A3;
+}
+
+/* 已经结算过的孩子：这句话变绿 */
+.done {
+  color: #12A182;
+}
+
+.pills {
+  display: flex;
+  margin-top: 14rpx;
+}
+
+.pill {
+  flex: 1;
+  padding: 14rpx 0;
+  border-radius: 14rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #5A6273;
+  background: #F2F5FA;
+}
+
+.pill + .pill {
+  margin-left: 12rpx;
+}
+
+.pill-on {
+  background: linear-gradient(135deg, #2FD0C7, #0A9C95);
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.save-btn {
+  margin-top: 26rpx;
+  padding: 22rpx 0;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #2FD0C7, #0A9C95);
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.save-btn-hover {
+  opacity: 0.8;
+}
+
+.ls-foot {
+  margin-top: 14rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #A6AEBE;
+}
+
+.foot-note {
+  margin: 24rpx 8rpx 40rpx;
+  font-size: 21rpx;
+  line-height: 1.7;
+  color: #A6AEBE;
+}
+
+/* ---------- 进不来时（不是老师） ---------- */
+.lock-box {
+  padding: 16rpx 0 4rpx;
+  text-align: center;
+}
+
+/* 锁：半圆锁梁 + 方形锁体 */
+.ico-lock {
+  position: relative;
+  width: 84rpx;
+  height: 80rpx;
+  margin: 8rpx auto 26rpx;
+}
+
+.ico-lock::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 54rpx;
+  height: 50rpx;
+  margin-left: -27rpx;
+  box-sizing: border-box;
+  border: 8rpx solid #C6CDDA;
+  border-bottom: none;
+  border-radius: 28rpx 28rpx 0 0;
+}
+
+.ico-lock::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 84rpx;
+  height: 56rpx;
+  border-radius: 16rpx;
+  background: #DCE3EF;
+}
+
+.lock-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.lock-sub {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+/* 当前身份（例如「家长端 · 乐乐妈妈」），让人知道为什么进不来 */
+.lock-me {
+  margin-top: 18rpx;
+  font-size: 22rpx;
+  color: #8A93A3;
+}
+
+.lock-demo {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #FFF6EA;
+  border: 1rpx solid #FFDCB0;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #A25B00;
+  text-align: left;
+}
+
+.btn-back {
+  margin-top: 32rpx;
+}
