@@ -666,11 +666,8 @@ Page({
 
   // 云开发还没通时的兜底：开启「本机体验管理员」，只影响这一台手机
   offerLocalAdmin() {
-    // 演示账号的家长端不给开「本机体验管理员」
-    if (role.isParent()) {
-      wx.showToast({ title: role.PARENT_SHORT, icon: 'none', duration: 3000 })
-      return
-    }
+    // 演示账号的家长端：和长按版本号一样，不给开、也不提示（静默退出）
+    if (role.isParent()) return
     if (notice.isLocalAdmin()) {
       wx.showModal({
         title: '本机体验管理员已开启',
@@ -720,11 +717,9 @@ Page({
   //   还没有管理员 → 一键把自己设成本园管理员
   //   已设置过但不是管理员 → 提示把 openid 发给园长
   onOpenIdLongPress() {
-    // 演示账号的家长端：长按也不留后门，先说清楚
-    if (role.isParent()) {
-      wx.showToast({ title: role.PARENT_SHORT, icon: 'none', duration: 3000 })
-      return
-    }
+    // 演示账号的家长端：整条链路直接掐掉，连提示都不给（长按等于没按）——
+    // 页面底部那行字看上去就只是个版本号，不能让人以为「按一下说不定有权限」
+    if (role.isParent()) return
     if (!menu.isCloudReady()) {
       // 云开发还没通：不硬卡住，先让园长在本机把通知管起来
       this.offerLocalAdmin()
