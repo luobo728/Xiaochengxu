@@ -8,6 +8,8 @@ const auth = require('../../utils/auth.js')
 const notice = require('../../utils/notice.js')
 // 相册数据层：家长看相册 + 老师传照片共用
 const album = require('../../utils/album.js')
+// 演示账号（纯本机）：家长端 / 老师端一键切换，方便看双端区别
+const account = require('../../utils/account.js')
 
 // 把云端返回的原始错误翻译成「人话」，方便照着做
 function explainCloudError(err) {
@@ -36,6 +38,11 @@ Page({
     cloudAdmin: false,
     // 是否显示管理入口（云端管理员 或 本机体验管理员，合并结果）
     isAdmin: false,
+    // 演示账号（纯本机）：切换后头部、底部、设置里那一行都跟着变
+    accountSide: '',
+    accountSub: '一键切家长端 / 老师端，看两边区别',
+    identitySub: '未登录 · 请先登录',
+    identityFoot: '家长端',
     // 孩子档案
     child: {
       avatar: '王',
@@ -135,6 +142,8 @@ Page({
     this.refreshBilling()
     // 登录态同步到 data，未登录时收起需要账号的卡片
     this.syncLoginState()
+    // 演示账号身份（家长端 / 老师端）
+    this.syncIdentity()
     // 相册入口副标题：本班 / 全园各有几本
     this.refreshAlbumSub()
   },
@@ -311,18 +320,58 @@ Page({
       })
   },
 
-  // 已登录卡片里的「切换账号 ›」
+  // 账号卡片里的「切换账号 ›」和设置里的「切换演示账号」都走这里：一键切端
   onSwitchAccount() {
-    wx.showModal({
-      title: '切换账号',
-      content: '切换账号会退出当前登录，确定吗？',
-      confirmColor: '#2E6BFF',
+    const list = account.list()
+    const items = []
+    const curId = account.currentId()
+    for (let i = 0; i < list.length; i++) {
+      const mark = list[i].id === curId ? '（当前）' : list[i].admin ? '（管理员）' : ''
+      items.push(list[i].side + ' · ' + list[i].name + mark)
+    }
+    items.push('退出登录')
+    wx.showActionSheet({
+      itemList: items,
       success: (res) => {
-        if (res.confirm) this.doLogout()
+        const index = res && typeof res.tapIndex === 'number' ? res.tapIndex : -1
+        if (index < 0 || index >= items.length) return
+        // 最后一项是退出登录
+        if (index === list.length) {
+          this.doLogout()
+          return
+        }
+        this.applyAccount(list[index].id)
       },
-      fail() {
-        // 弹窗没弹出来就没得确认，静默即可
+      fail: () => {
+        // 老师点了取消：什么都不做
       }
+    })
+  },
+
+  // 真正切过去：登录态 + 本机管理员标记都由 utils/account.js 负责改
+  applyAccount(id) {
+    const res = account.switchTo(id)
+    if (!res || !res.ok) {
+      wx.showToast({ title: (res && res.msg) || '切换失败，请重试', icon: 'none' })
+      return
+    }
+    // 切完把跟身份有关的地方都刷一遍：账号卡片、管理入口、相册副标题
+    this.setData({ formOpen: false })
+    this.syncLoginState()
+    this.refreshAdminEntry()
+    this.syncIdentity()
+    this.refreshAlbumSub()
+    wx.showToast({ title: '已切到' + res.account.side + '（' + res.account.name + '）', icon: 'none' })
+  },
+
+  // 头部身份 / 底部端名 / 设置里那一行的说明，都从当前演示账号来
+  syncIdentity() {
+    const acc = account.current()
+    this.setData({
+      accountSide: acc ? acc.side : '',
+      accountSub: acc ? acc.desc : '一键切家长端 / 老师端，看两边区别',
+      identitySub: account.identityText() || (auth.isLoggedIn() ? '家长账号 · 已绑定 1 名幼儿' : '未登录 · 请先登录'),
+      identityFoot: account.sideName()
     })
   },
 
@@ -340,6 +389,9 @@ Page({
           // 退出后回到默认状态：主推微信一键登录，备用表单收起
           formOpen: false
         })
+        // 演示账号标记一起清掉，免得下次进来还以为在老师端
+        account.clear()
+        this.syncIdentity()
         wx.showToast({ title: '已退出登录', icon: 'none' })
       })
       .catch(() => {

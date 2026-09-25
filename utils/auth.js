@@ -221,6 +221,11 @@ function demoAccount() {
   return { name: DEMO.name, phone: DEMO.phone }
 }
 
+// 直接写入登录态：只有「演示账号切换」（utils/account.js）会用到，不走网络
+function setSession(user) {
+  return saveUser(user || {})
+}
+
 module.exports = {
   mode: MODE,
   getUser: getUser,
@@ -229,5 +234,6 @@ module.exports = {
   updateProfile: updateProfile,
   login: login,
   logout: logout,
-  demoAccount: demoAccount
+  demoAccount: demoAccount,
+  setSession: setSession
 }

@@ -1,7 +1,7 @@
 <view class="page">
   <view class="hd hd-mine" style="padding-top:{{statusBarHeight}}px">
     <view class="hd-title">我的</view>
-    <view class="hd-sub">{{logged ? '家长账号 · 已绑定 1 名幼儿' : '未登录 · 请先登录'}}</view>
+    <view class="hd-sub">{{identitySub}}</view>
   </view>
 
   <view class="body">
@@ -132,6 +132,17 @@
         <view class="card-title">设置</view>
       </view>
       <!-- 食谱管理入口（仅管理员可见） -->
+      <!-- 演示账号切换（纯本机）：家长端 / 老师端一键切，方便对比 -->
+      <view class="row" bindtap="onSwitchAccount">
+        <view class="row-ico" style="background:linear-gradient(135deg,#7C6BFF,#4B37E0)">换</view>
+        <view class="row-main">
+          <view class="row-name">切换演示账号</view>
+          <view class="row-sub">{{accountSub}}</view>
+        </view>
+        <view class="row-val gray">{{accountSide}}</view>
+        <view class="arrow"></view>
+      </view>
+
       <view class="row" wx:if="{{isAdmin}}" bindtap="onAdminTap">
         <view class="row-ico" style="background:linear-gradient(135deg,#FFB020,#F08A00)">谱</view>
         <view class="row-main"><view class="row-name">食谱管理</view></view>
@@ -178,6 +189,6 @@
     <view class="logout-box">
       <view class="btn-primary" bindtap="onLogout">退出登录</view>
     </view>
-    <view class="foot-tip" bindlongpress="onOpenIdLongPress">阳光幼儿园 · 家长端 {{version}}</view>
+    <view class="foot-tip" bindlongpress="onOpenIdLongPress">阳光幼儿园 · {{identityFoot}} {{version}}</view>
   </view>
 </view>
