@@ -966,10 +966,14 @@ function setLocalAdmin(on) {
 }
 
 // 身份判断：能连云端就以云端为准；云端不可用时退回「本机体验管理员」
-// 演示账号例外：直接复用通知那边的判断（tip 也同一句），保证三个管理页口径完全一致
-// 返回 Promise<{ isAdmin, source, openid, initialized, tip }>
+// 演示账号例外，分两种：
+//   家长端 —— 整页不给进，tip 沿用通知那边的同一句；
+//   老师端 —— 不查云端，直接按花名册给身份。普通老师也能进相册管理页，但只能上传照片
+//            （isAdmin 假、canAdd 真），建相册 / 改名 / 删相册 / 删照片都还是管理员的活
+// 返回 Promise<{ isAdmin, canAdd, source, openid, initialized, tip }>
 function adminStatus() {
-  if (role.lockTip()) return notice.adminStatus()
+  if (role.albumTip()) return notice.adminStatus()
+  if (role.isDemo()) return Promise.resolve(demoStatus())
 
   let task = null
   if (isCloudReady()) {
@@ -985,6 +989,7 @@ function adminStatus() {
       .then(function (res) {
         return {
           isAdmin: !!(res && res.isAdmin),
+          canAdd: !!(res && res.isAdmin),
           source: 'cloud',
           openid: (res && res.openid) || '',
           initialized: !!(res && res.initialized),
@@ -1005,14 +1010,29 @@ function localStatus(reason) {
   if (on) {
     tip = '本机体验模式（' + reason + '）：传的照片只保存在这台手机上'
   } else {
-    tip = role.lockTip()
+    tip = role.albumTip()
   }
   return {
     isAdmin: on,
+    canAdd: on,
     source: 'local',
     openid: '',
     initialized: false,
     tip: tip
+  }
+}
+
+// 老师端演示账号的身份：能不能建 / 改 / 删看花名册（role.canManage()），
+// 能不能上传照片另算（role.canUploadAlbum()）—— 普通老师就是「canAdd 真、isAdmin 假」这一种组合
+function demoStatus() {
+  const canAdmin = role.canManage()
+  return {
+    isAdmin: canAdmin,
+    canAdd: role.canUploadAlbum(),
+    source: 'demo',
+    openid: '',
+    initialized: true,
+    tip: ''
   }
 }
 

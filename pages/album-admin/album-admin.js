@@ -1,13 +1,14 @@
-// pages/album-admin/album-admin.js —— 相册管理（只有管理员能进）
+// pages/album-admin/album-admin.js —— 相册管理（老师都能进：管理员建 / 删，普通老师只能传照片）
 // 家长端「班级相册」看到的相册和照片，就是在这里建、在这里传的。
 // 页面只做「显示 + 转发用户操作」，真正的数据读写都在 utils/album.js 里。
-// 身份判断也不自己算：调用 album.adminStatus()，两种情况都支持
+// 身份判断也不自己算：调用 album.adminStatus()，三种情况都支持
 //   云端管理员 —— 云函数白名单里的 openid（与「通知公告管理」共用一份名单）
 //   本机体验管理员 —— 云端没连上时，长按「我的」页版本号开启，数据只存这台手机
+//   老师端演示账号 —— 只看花名册：管理员能建 / 改名 / 删，普通老师只能上传照片
 const album = require('../../utils/album.js')
 const view = require('../../utils/album-view.js')
 const nav = require('../../utils/nav.js')
-// 演示账号身份底线：家长端永远不是管理员（和 utils/notice.js 用的是同一份判断）
+// 演示账号身份底线：家长端进不来；「老师端里谁能建 / 谁能只传照片」也在这一份判断里
 const role = require('../../utils/demo-role.js')
 
 // 两位数补零：2025-4-6 → 2025-04-06
@@ -32,10 +33,14 @@ Page({
     // 身份相关
     checked: false,
     isAdmin: false,
+    // 能不能往相册里传照片：管理员和普通老师都是真，家长端 / 非管理员是假
+    canAdd: false,
     openid: '',
     modeTip: '',
     // 演示账号的家长端被拦住时显示的那句话（不是家长端就是空）
     demoLock: '',
+    // 普通老师进来时的一句说明（你不是管理员，但可以传照片）—— 管理员为空
+    staffTip: '',
 
     // 表单：editId 为空 = 在建新相册；有值 = 正在改这一本
     editId: '',
@@ -79,29 +84,38 @@ Page({
     this.checkAdmin()
   },
 
-  // 校验身份：是管理员才把表单和列表显示出来
+  // 校验身份：相册管理老师都能进，但能干什么分两档 ——
+  //   管理员：建相册 / 改名 / 删相册 / 删照片 / 恢复演示相册
+  //   普通老师：只能上传照片（canAdd 真、isAdmin 假）
+  // 家长端进都不给进
   checkAdmin() {
     const that = this
-    // 演示账号：家长端（永远不是管理员）、还没被超级管理员设为管理员的老师端，
-    // 都在这儿直接收口 —— 不查云端、不看 whoami 缓存、不看本机标记（判断只有一份，在 utils/demo-role.js）
-    const lock = role.lockTip()
+    // 演示账号的家长端：直接收口 —— 不查云端、不看 whoami 缓存、不看本机标记
+    //（判断只有一份，在 utils/demo-role.js）
+    const lock = role.albumTip()
     if (lock) {
-      that.setData({ checked: true, isAdmin: false, openid: '', demoLock: lock })
+      that.setData({ checked: true, isAdmin: false, canAdd: false, openid: '', demoLock: lock, staffTip: '' })
       return
     }
+    // 老师端演示账号：身份来自花名册（isAdmin）；「能不能传照片」由数据层另算（canAdd）
+    // 真登录账号：照旧走云端白名单 / 本机体验管理员，能管就能传
     album.adminStatus().then(function (res) {
       const isAdmin = !!(res && res.isAdmin)
+      const canAdd = !!(res && res.canAdd)
       that.setData({
         checked: true,
         isAdmin: isAdmin,
+        canAdd: canAdd,
         openid: (res && res.openid) || '',
-        modeTip: that.tipOf(res)
+        demoLock: '',
+        modeTip: that.tipOf(res),
+        staffTip: (canAdd && !isAdmin) ? role.ALBUM_STAFF_TIP : ''
       })
-      if (!isAdmin) return
+      if (!canAdd) return
       that.fillClass()
       that.refreshList()
     }).catch(function () {
-      that.setData({ checked: true, isAdmin: false })
+      that.setData({ checked: true, isAdmin: false, canAdd: false, staffTip: '' })
     })
   },
 
@@ -230,6 +244,7 @@ Page({
 
   // 「改名」：把这一本填进表单（相册名 / 班级 / 日期一起填）
   onEditTap(e) {
+    if (!this.data.isAdmin) return
     const id = e.currentTarget.dataset.id
     if (!id) return
     const card = this.rowOf(id)
@@ -259,6 +274,8 @@ Page({
   },
 
   onSave() {
+    // 建相册 / 改名只有管理员能做（普通老师只上传照片，页面上这些按钮也不显示）
+    if (!this.data.isAdmin) return
     const that = this
     if (this.data.saving) return
 
@@ -397,6 +414,8 @@ Page({
 
   // 传照片：一次最多 9 张，传完自动刷新张数
   onAddPhotos(e) {
+    // 只有「能上传照片」的账号能走到这儿：普通老师可以，管理员照旧
+    if (!this.data.canAdd) return
     const that = this
     const id = e.currentTarget.dataset.id || this.data.openId
     if (!id || this.data.uploading) return
@@ -459,6 +478,7 @@ Page({
 
   // 删一张照片
   onDelPhoto(e) {
+    if (!this.data.isAdmin) return
     const that = this
     const ds = e.currentTarget.dataset
     const photoId = ds.id
@@ -494,6 +514,7 @@ Page({
 
   // 删一整本相册（连带里面的照片）
   onDelTap(e) {
+    if (!this.data.isAdmin) return
     const that = this
     const id = e.currentTarget.dataset.id
     if (!id) return
@@ -541,6 +562,7 @@ Page({
 
   // 恢复演示相册（演示模式专用；云端模式数据层会拒绝）
   onReset() {
+    if (!this.data.isAdmin) return
     const that = this
     wx.showModal({
       title: '恢复演示相册？',

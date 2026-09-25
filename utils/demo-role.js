@@ -45,6 +45,9 @@ const PARENT_TIP = '当前是演示账号的「家长端」，没有管理权限
 const MEMBER_TIP = '当前这个演示账号还不是管理员，没有管理权限。请让超级管理员（老师端 · 李老师）到「我的 → 管理员设置」里把你设为管理员。'
 const SUPER_TIP = '「管理员设置」只有超级管理员能进。演示账号里的超级管理员是「老师端 · 李老师」，请到「我的 → 切换演示账号」切过去。'
 
+// 「相册管理」页上给普通老师的一句说明（页面顶部提示条用）
+const ALBUM_STAFF_TIP = '你是老师：相册里可以上传照片；建相册、改名、删相册、删照片由管理员负责。'
+
 // toast 上用短句（一行能显示完）
 const PARENT_SHORT = '家长端没有管理权限，先切到老师端'
 const MEMBER_SHORT = '还不是管理员，请超级管理员设置'
@@ -146,11 +149,28 @@ function canManage() {
   return lv === 'super' || lv === 'admin'
 }
 
+// 当前账号能不能往相册里上传照片：
+//   老师端的演示账号都能（超级管理员 / 管理员 / 普通老师）—— 普通老师就靠这一条拿到上传权限
+//   家长端不能；不是演示账号的走原有那套（能不能管由 adminStatus() 决定）
+function canUploadAlbum() {
+  const lv = level()
+  return lv === 'super' || lv === 'admin' || lv === 'none'
+}
+
 // 三个管理页的锁屏文案：'' 表示不拦（走云端 / 本机标记那套原有逻辑）
 function lockTip() {
   const lv = level()
   if (lv === 'parent') return PARENT_TIP
   if (lv === 'none') return MEMBER_TIP
+  return ''
+}
+
+// 「相册管理」页的门槛：'' 表示不拦
+//   老师端任何账号都能进（普通老师进去只能上传照片，页面按 canUploadAlbum() 摆按钮）
+//   家长端进不去 —— 家长看照片走「班级相册」，用不着管理页
+//   不是演示账号 → ''，照旧走云端白名单 / 本机体验管理员
+function albumTip() {
+  if (level() === 'parent') return PARENT_TIP
   return ''
 }
 
@@ -181,6 +201,7 @@ module.exports = {
   DEFAULT_MEMBERS: DEFAULT_MEMBERS,
   PARENT_TIP: PARENT_TIP,
   MEMBER_TIP: MEMBER_TIP,
+  ALBUM_STAFF_TIP: ALBUM_STAFF_TIP,
   SUPER_TIP: SUPER_TIP,
   PARENT_SHORT: PARENT_SHORT,
   MEMBER_SHORT: MEMBER_SHORT,
@@ -200,7 +221,9 @@ module.exports = {
   isSuper: isSuper,
   isAdmin: isAdmin,
   canManage: canManage,
+  canUploadAlbum: canUploadAlbum,
   lockTip: lockTip,
+  albumTip: albumTip,
   settingsTip: settingsTip,
   demoShort: demoShort
 }

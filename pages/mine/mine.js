@@ -42,6 +42,8 @@ Page({
     isAdmin: false,
     // 是否超级管理员（只有超级管理员能进「管理员设置」设置别人）
     isSuper: false,
+    // 是否显示「相册管理」入口：管理员能建能删，普通老师进去只能传照片（演示账号按档位算）
+    canAlbum: false,
     // 演示账号（纯本机）：切换后头部、底部、设置里那一行都跟着变
     accountSide: '',
     accountSub: '一键切家长端 / 老师端，看两边区别',
@@ -727,8 +729,10 @@ Page({
     const isAdmin = role.isDemo() ? role.canManage() : (!!this.data.cloudAdmin || notice.isLocalAdmin())
     // 「管理员设置」入口只有超级管理员可见（演示账号里的老师端 · 李老师）
     const isSuper = role.isSuper()
-    if (isAdmin !== this.data.isAdmin || isSuper !== this.data.isSuper) {
-      this.setData({ isAdmin: isAdmin, isSuper: isSuper })
+    // 「相册管理」入口老师都能看见：管理员进去能建能删，普通老师进去只能传照片
+    const canAlbum = role.isDemo() ? role.canUploadAlbum() : isAdmin
+    if (isAdmin !== this.data.isAdmin || isSuper !== this.data.isSuper || canAlbum !== this.data.canAlbum) {
+      this.setData({ isAdmin: isAdmin, isSuper: isSuper, canAlbum: canAlbum })
     }
   },
 

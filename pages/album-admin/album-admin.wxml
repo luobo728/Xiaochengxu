@@ -1,4 +1,5 @@
-<!-- pages/album-admin/album-admin.wxml —— 相册管理（老师/管理员：建相册、传照片） -->
+<!-- pages/album-admin/album-admin.wxml —— 相册管理（老师都能进：管理员建 / 删，普通老师只能传照片） -->
+<!-- 权限分档只在 JS 里判（isAdmin / canAdd），这里按结果摆按钮：普通老师看不到建相册、改名、删相册、删照片、恢复演示 -->
 <view class="page">
   <!-- ========== 顶部（相册主题紫，和「我的」页入口呼应） ========== -->
   <view class="hd hd-admin" style="padding-top:{{statusBarHeight}}px">
@@ -10,32 +11,35 @@
       <!-- 右上占位：仅为保持标题居中 -->
       <view class="hd-back ghost"></view>
     </view>
-    <view class="hd-sub">在这里建相册、传照片，家长在「班级相册」里就能看到</view>
+    <view class="hd-sub">{{isAdmin ? '在这里建相册、传照片，家长在「班级相册」里就能看到' : '在这里传照片，家长在「班级相册」里就能看到'}}</view>
   </view>
 
   <view class="body">
-    <!-- 三个分支：正在校验 / 不是管理员 / 是管理员；三者必须首尾相接，中间不夹注释，夹了分支会失效 -->
+    <!-- 三个分支：正在校验 / 进不去（家长端、非管理员）/ 能进（管理员 + 普通老师）；三者必须首尾相接，中间不夹注释，夹了分支会失效 -->
     <view class="card" wx:if="{{!checked}}">
       <view class="lock-box">
         <view class="lock-title">正在校验身份…</view>
         <view class="lock-sub">马上就好</view>
       </view>
     </view>
-    <view class="card" wx:elif="{{!isAdmin}}">
+    <view class="card" wx:elif="{{!canAdd}}">
       <view class="lock-box">
         <view class="ico-lock"></view>
-        <view class="lock-title">相册管理只有管理员能进</view>
-        <view class="lock-sub">家长端「班级相册」不受影响，照样能看照片</view>
-        <view class="lock-id">你的 openid：{{openid || '暂时拿不到'}}</view>
+        <view class="lock-title">相册管理只有老师能进</view>
+        <view class="lock-sub">家长看照片走「班级相册」，不受影响</view>
+        <view class="lock-id" wx:if="{{openid}}">你的 openid：{{openid}}</view>
         <view class="lock-demo" wx:if="{{demoLock}}">{{demoLock}}</view>
-        <view class="lock-tip">开通办法：把上面这串 openid 填进云函数白名单（和「通知公告管理」共用一份名单，见 docs/album-cloud-setup.md）；没连云端时，可以长按「我的」页底部的版本号，在这台手机上体验管理员。</view>
+        <view class="lock-tip">开通办法：把上面这串 openid 填进云函数白名单（和「通知公告管理」共用一份名单，见 docs/album-cloud-setup.md）；没连云端时，可以长按「我的」页底部的版本号，在这台手机上体验管理员。演示账号则到「我的 → 切换演示账号」切到老师端。</view>
         <view class="btn-primary btn-back" bindtap="goBack">返回「我的」</view>
       </view>
     </view>
     <block wx:else>
       <view class="mode-tip" wx:if="{{modeTip}}">{{modeTip}}</view>
+      <!-- 普通老师的说明条：能传照片，但建 / 删归管理员 -->
+      <view class="staff-tip" wx:if="{{staffTip}}">{{staffTip}}</view>
 
       <!-- ========== 建 / 改相册 ========== -->
+      <block wx:if="{{isAdmin}}">
       <view class="card">
         <view class="card-head">
           <view class="card-title">{{editId ? '修改相册' : '新建相册'}}</view>
@@ -79,6 +83,7 @@
 
         <view class="btn-primary save-btn" bindtap="onSave">{{saving ? '正在保存…' : (editId ? '保存修改' : '新建相册')}}</view>
       </view>
+      </block>
 
       <!-- ========== 全部相册 ========== -->
       <view class="card">
@@ -107,8 +112,8 @@
               </view>
               <view class="arow-btns">
                 <view class="mini edit" data-id="{{item.id}}" bindtap="onOpenTap">{{item.open ? '收起照片' : '管照片'}}</view>
-                <view class="mini" data-id="{{item.id}}" bindtap="onEditTap">改名</view>
-                <view class="mini danger" data-id="{{item.id}}" bindtap="onDelTap">删相册</view>
+                <view class="mini" wx:if="{{isAdmin}}" data-id="{{item.id}}" bindtap="onEditTap">改名</view>
+                <view class="mini danger" wx:if="{{isAdmin}}" data-id="{{item.id}}" bindtap="onDelTap">删相册</view>
               </view>
             </view>
 
@@ -129,7 +134,7 @@
                     data-id="{{ph.id}}"
                     bindtap="onPreviewTap" />
                   <view class="cell-ph" wx:else data-id="{{ph.id}}" bindtap="onPreviewTap">{{ph.label}}</view>
-                  <view class="cell-del" data-id="{{ph.id}}" data-album="{{item.id}}" catchtap="onDelPhoto">✕</view>
+                  <view class="cell-del" wx:if="{{isAdmin}}" data-id="{{ph.id}}" data-album="{{item.id}}" catchtap="onDelPhoto">✕</view>
                 </view>
               </view>
               <view class="ph-empty" wx:else>这本还没有照片，点上面「添加照片」传上去</view>
@@ -141,11 +146,11 @@
           <view class="hairline"></view>
         </block>
 
-        <view class="row-hint" wx:if="{{total}}">点「管照片」展开这本相册，就能传照片、删照片</view>
+        <view class="row-hint" wx:if="{{total}}">{{isAdmin ? '点「管照片」展开这本相册，就能传照片、删照片' : '点「管照片」展开这本相册，就能传照片'}}</view>
       </view>
 
-      <view class="reset-row" bindtap="onReset">恢复演示相册</view>
-      <view class="foot-note">照片存在云存储里（演示模式只存这台手机）。家长端只有「看」，看不到这里的任何管理按钮。单本相册最多 {{maxPhotos}} 张。</view>
+      <view class="reset-row" wx:if="{{isAdmin}}" bindtap="onReset">恢复演示相册</view>
+      <view class="foot-note">照片存在云存储里（演示模式只存这台手机）。家长端只有「看」，看不到这里的任何管理按钮。老师都能上传照片，建相册 / 改名 / 删相册 / 删照片归管理员。单本相册最多 {{maxPhotos}} 张。</view>
     </block>
   </view>
 

@@ -156,10 +156,13 @@
         <view class="arrow"></view>
       </view>
 
-      <!-- 相册管理入口（仅管理员可见） -->
-      <view class="row" wx:if="{{isAdmin}}" bindtap="onAlbumAdminTap">
+      <!-- 相册管理入口（老师可见：管理员能建能删，普通老师进去只能传照片） -->
+      <view class="row" wx:if="{{isAdmin || canAlbum}}" bindtap="onAlbumAdminTap">
         <view class="row-ico" style="background:linear-gradient(135deg,#9B8CFF,#6A5BEF)">册</view>
-        <view class="row-main"><view class="row-name">相册管理</view></view>
+        <view class="row-main">
+          <view class="row-name">相册管理</view>
+          <view class="row-sub">{{isAdmin ? '建相册、传照片、删照片' : '只上传照片，建 / 删由管理员做'}}</view>
+        </view>
         <view class="arrow"></view>
       </view>
 
