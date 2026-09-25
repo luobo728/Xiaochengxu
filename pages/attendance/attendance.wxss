@@ -321,3 +321,39 @@
 .no-kid .save-btn {
   margin-top: 28rpx;
 }
+
+/* ---------- 清空这一天（把「3/3」变回「0/3」＝没点过名的状态） ---------- */
+.clear-row {
+  margin-bottom: 24rpx;
+}
+
+/* 退回型的按钮走红色系：和「保存点名」的青色分开，一眼知道是撤销而不是记账 */
+.clear-btn {
+  padding: 22rpx 0;
+  border-radius: 999rpx;
+  border: 2rpx solid #F3C6C6;
+  background: #FFF6F6;
+  text-align: center;
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #D9534F;
+}
+
+.clear-btn-hover {
+  opacity: 0.8;
+}
+
+.clear-tip {
+  margin: 14rpx 8rpx 0;
+  font-size: 21rpx;
+  line-height: 1.7;
+  color: #A6AEBE;
+}
+
+/* 手动清空过的那节课：标一句「不再自动补算」 */
+.ls-cleared {
+  margin-top: 8rpx;
+  text-align: center;
+  font-size: 21rpx;
+  color: #D9534F;
+}

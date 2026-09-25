@@ -44,6 +44,11 @@ Page({
     // 有改动还没保存（点过状态、还没点「保存点名」）
     dirty: false,
 
+    // 清空这一天（点过名的课回到「没点过名」，扣掉的课时冲正退回）
+    rolled: 0,
+    showClear: false,
+    clearLabel: '清空今日点名',
+
     // 说明文案（进页面时由数据层填，避免加载期读存储）
     modeTip: '',
     lowTip: '',
@@ -163,6 +168,10 @@ Page({
       kidCount: kids.length,
       noKid: !kids.length,
       dirty: false,
+      // 这一天点过名的课有几节：点过才显示「清空」按钮，按钮文案按「看的是不是今天」变
+      rolled: data.rolled,
+      showClear: data.rolled > 0,
+      clearLabel: data.isToday ? '清空今日点名' : '清空这一天点名',
       lowTip: schedule.lowTip()
     })
     this.refreshStats()
@@ -258,6 +267,49 @@ Page({
         wx.hideLoading()
         this.saving = false
         wx.showToast({ title: '没保存成功，请再试一次', icon: 'none', duration: 2500 })
+      })
+  },
+
+  // 清空这一天：点过名的孩子全部撤销、课回到「没点过名」——页面上那节「3/3」就变回「0/3」
+  // 已经扣掉的课时按「冲正」退回（账本里多一条退回记录，明细只增不删），扣多少退多少由数据层算
+  onClear() {
+    if (!this.data.canRoll) return
+    if (this.clearing) return
+    if (!this.data.showClear) return
+    if (this.data.dirty) {
+      wx.showToast({ title: '有改动还没保存：先点「保存点名」再清空', icon: 'none', duration: 2500 })
+      return
+    }
+    const that = this
+    const isToday = this.data.isToday
+    wx.showModal({
+      title: isToday ? '清空今日点名？' : '清空这一天点名？',
+      content: '这一天点过名的孩子会回到「没点过名」（「3/3」变回「0/3」），已经扣掉的课时按「冲正」退回 —— 账单里会多一条退回记录，明细只增不删。清完想重新点名，照常点「保存点名」就行。',
+      confirmText: '清空',
+      success(res) {
+        if (!res || !res.confirm) return
+        that.doClear(that.data.day || schedule.today())
+      }
+    })
+  },
+
+  // 确认之后才真正动手：清空这一天 + 退回课时，完事把这一页重新画一遍
+  doClear(day) {
+    const that = this
+    this.clearing = true
+    wx.showLoading({ title: '清空中', mask: true })
+    schedule
+      .clearDay(day, this.byName())
+      .then((res) => {
+        wx.hideLoading()
+        this.clearing = false
+        wx.showToast({ title: (res && res.msg) || '已清空', icon: 'none', duration: 2500 })
+        this.fill(this.data.day)
+      })
+      .catch(() => {
+        wx.hideLoading()
+        this.clearing = false
+        wx.showToast({ title: '没清成功，请再试一次', icon: 'none', duration: 2500 })
       })
   },
 

@@ -302,6 +302,12 @@ function saveLesson(lesson) {
     list.push(lesson)
   } else {
     cur.status = lesson.status
+    // 手动「清空点名」的标记也要落盘：不然下次进页面自动补算又把它扣一遍
+    if (lesson.cleared) {
+      cur.cleared = true
+      cur.clearedAt = lesson.clearedAt
+      cur.clearedBy = lesson.clearedBy
+    }
   }
   writeLessons(list)
 }
@@ -537,6 +543,109 @@ function saveMarks(lessonId, list, byName) {
   })
 }
 
+/* ---------------- 清空点名：把「3/3」变回「0/3」（＝没点过名） ---------------- */
+
+// 老师按「清空今日点名」时做的事：这一天点过名的孩子全部撤销 —— 页面上那节「3/3」就回到「0/3」。
+//   ① 已经扣掉的课时按规矩冲正退回（记一笔退货流水，明细只增不删，账永远对得上）；
+//   ② 点名记录清零 —— 是清零不是删除：结算序号先往前挪一格，重新点名时流水 ref 不会撞上老账；
+//   ③ 课回到 planned 并打 cleared 标记 —— 免得下次进页面「自动补算」又把它扣一遍。
+// 清完想重新点名：照常点「保存点名」，按新的一笔记，不重不漏。
+function clearDay(day, byName) {
+  const d = day || today()
+  const list = ensureLessons()
+  const dayLessons = {}
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].date === d) dayLessons[list[i].id] = list[i]
+  }
+
+  const marks = readMarks()
+  const keys = Object.keys(marks)
+  const jobs = [] // 这一天点过名、而且真扣了课时的记录（要写退回流水）
+  const lessonIds = [] // 这一天点过名的课（要打 cleared 标记）
+  const touched = [] // 撤销了哪几条记录（写流水说明 + 后面清零用）
+  for (let i = 0; i < keys.length; i++) {
+    const mark = marks[keys[i]]
+    const lesson = dayLessons[mark.lessonId]
+    if (!lesson || !mark.saved) continue
+    if (lesson.status === 'canceled') continue // 取消的课本来就不结算
+    if (lessonIds.indexOf(mark.lessonId) === -1) lessonIds.push(mark.lessonId)
+    touched.push(mark)
+    const back = round2(mark.settledHours)
+    if (back) jobs.push({ mark: mark, back: back })
+  }
+
+  const when = dayTitle(d)
+  if (!touched.length) {
+    return Promise.resolve({
+      ok: false,
+      day: d,
+      lessons: 0,
+      kids: 0,
+      refunded: 0,
+      msg: '这一天没有点过名，不用清'
+    })
+  }
+
+  let refunded = 0
+  return chain(jobs, function (job) {
+    const mark = job.mark
+    const kid = mark.studentName || studentName(mark.studentId)
+    const seq = Number(mark.settleCount) || 0 // 点名用掉的号：退回这笔接着往下排
+    mark.settleCount = seq + 1 // 序号先走一格，下次点名（ref = id#序号）绝不和退回这笔重号
+    return billing
+      .applyHours({
+        amount: job.back, // 账本口径：正数进、负数扣 —— 退回传正数
+        type: 'refund',
+        typeName: '清空点名（冲正）',
+        note: kid + ' · 清空 ' + when + ' 的点名，退回 ' + job.back + ' 课时（' + (byName || '老师') + ' 手动清空）',
+        ref: mark.id + '#clear' + seq,
+        title: '清空点名（冲正）',
+        sub: kid + ' · ' + when + ' 的点名被清空',
+        childId: mark.studentId,
+        childName: kid
+      })
+      .then(function (res) {
+        if (!res.dup) refunded = round2(refunded + job.back)
+        return res
+      })
+  }).then(function () {
+    // 点名记录清零：回到「没点过名」的样子（记录留着，序号往后排，重新点名才不会撞账）
+    for (let i = 0; i < touched.length; i++) {
+      const mark = touched[i]
+      mark.status = 'present'
+      mark.hours = 0
+      mark.settledHours = 0
+      mark.saved = false
+      mark.by = ''
+      mark.at = 0
+      mark.timeText = ''
+    }
+    writeMarks(marks)
+
+    // 课也回到「没点过」：cleared 标记让自动补算不再碰它
+    const at = Date.now()
+    for (let i = 0; i < lessonIds.length; i++) {
+      const lesson = dayLessons[lessonIds[i]]
+      lesson.status = 'planned'
+      lesson.cleared = true
+      lesson.clearedAt = at
+      lesson.clearedBy = byName || ''
+      saveLesson(lesson)
+    }
+
+    let msg = '已清空 ' + lessonIds.length + ' 节课的点名：' + touched.length + ' 个孩子回到「没点过名」'
+    msg += refunded > 0 ? '，退回 ' + refunded + ' 课时' : '（这节课本来就不扣课时）'
+    return {
+      ok: true,
+      day: d,
+      lessons: lessonIds.length,
+      kids: touched.length,
+      refunded: refunded,
+      msg: msg
+    }
+  })
+}
+
 /* ---------------- 兜底：进页面自动补算 ---------------- */
 
 // 时间已过、还没点名（status = planned）的课：按「到课」补上并结算
@@ -547,7 +656,8 @@ function settleDue() {
   const now = Date.now()
   const due = []
   for (let i = 0; i < list.length; i++) {
-    if (list[i].status === 'planned' && endTs(list[i]) <= now) due.push(list[i])
+    // 手动清空过的课（cleared）不再自动补算：清完就是「没点名」，别一进页面又被扣回去
+    if (list[i].status === 'planned' && !list[i].cleared && endTs(list[i]) <= now) due.push(list[i])
   }
   if (!due.length) return Promise.resolve({ ok: true, count: 0, charged: 0 })
 
@@ -683,6 +793,12 @@ function decorateLesson(lesson, marks, now) {
     tagClass: tagClass,
     subText: lesson.teacher + ' · ' + lesson.time + ' · 每节 ' + lesson.hours + ' 课时',
     settledText: '已结算 ' + settled + '/' + kids.length + ' 人 · 本节记 ' + charged + ' 课时',
+    // 页面要的两个数字：点过几名（「3/3」里的前一个数）、记了几课时
+    rolled: settled,
+    charged: charged,
+    kidTotal: kids.length,
+    // 手动清空过的课：说明白它不再自动补算，免得以为漏算了
+    clearedNote: lesson.cleared ? '这一天被手动清空过：不再自动补算，想点名照常点「保存点名」' : '',
     kids: kids
   }
 }
@@ -697,11 +813,16 @@ function listDay(day) {
   for (let i = 0; i < list.length; i++) {
     if (list[i].date === d) out.push(decorateLesson(list[i], marks, now))
   }
+  let rolled = 0
+  for (let i = 0; i < out.length; i++) {
+    if (out[i].rolled > 0) rolled++
+  }
   return {
     date: d,
     title: dayTitle(d),
     isToday: d === today(),
-    lessons: out
+    lessons: out,
+    rolled: rolled // 这一天点过名的课有几节（大于 0 页面才显示「清空」按钮）
   }
 }
 
@@ -722,6 +843,8 @@ function courseRow(lesson, marks, idx, now) {
     val = charged > 0 ? '已扣 ' + charged + ' 课时' : '已结算 · 不扣课时'
   } else if (settled > 0) {
     val = '已结算 ' + settled + '/' + total + ' 人'
+  } else if (lesson.cleared) {
+    val = '已清空 · 待点名'
   } else if (lesson.start <= now) {
     val = '待点名'
   }
@@ -896,6 +1019,7 @@ module.exports = {
   listToday: listToday,
   saveMarks: saveMarks,
   settleDue: settleDue,
+  clearDay: clearDay,
   courseStats: courseStats,
   statusLabel: statusLabel,
   pillsOf: pillsOf,
