@@ -28,6 +28,7 @@ Page({
 
     // 表单：editId 为空 = 正在写一条新通知；有值 = 正在改这一条
     editId: '',
+    editTitle: '', // 正在修改哪一条（表单上方提示条显示用）
     title: '',
     tags: notice.TAGS,
     tagIndex: 0,
@@ -135,6 +136,7 @@ Page({
     }
     this.applyForm({
       editId: row.id,
+      editTitle: row.title,
       title: row.title,
       tagIndex: tagIndex,
       body: row.body,
@@ -156,7 +158,7 @@ Page({
 
   // 回到「写一条新通知」
   onNewTap() {
-    this.applyForm({ editId: '', title: '', tagIndex: 0, body: '', top: false })
+    this.applyForm({ editId: '', editTitle: '', title: '', tagIndex: 0, body: '', top: false })
   },
 
   onTitleInput(e) {
@@ -186,6 +188,8 @@ Page({
       return
     }
     this.setData({ saving: true })
+    // 这次是「改已有的」还是「新写一条」，保存前先记住，好给出不一样的提示
+    const wasEdit = !!this.data.editId
     Promise.resolve(notice.save({
       id: this.data.editId,
       title: title,
@@ -198,10 +202,14 @@ Page({
         wx.showToast({ title: (res && res.msg) || '保存失败', icon: 'none' })
         return
       }
-      // 存下来后切成「修改」状态：再点保存是改这一条，不会又建一条新的
-      if (res.item && res.item.id) this.applyForm({ editId: res.item.id })
+      // 存完继续保持「修改」状态：再点保存是改这一条，不会又建一条新的
+      const saved = res.item && res.item.id ? res.item : null
+      this.applyForm({
+        editId: saved ? saved.id : this.data.editId,
+        editTitle: saved ? (saved.title || title) : this.data.editTitle
+      })
       this.refreshList()
-      wx.showToast({ title: '已保存，首页马上能看到', icon: 'none' })
+      wx.showToast({ title: wasEdit ? '已保存修改' : '已发布，首页马上能看到', icon: 'none' })
     }).catch(() => {
       this.setData({ saving: false })
       wx.showToast({ title: '保存失败，请检查网络', icon: 'none' })

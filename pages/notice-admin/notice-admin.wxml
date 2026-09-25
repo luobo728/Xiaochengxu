@@ -25,6 +25,12 @@
       <view class="mode-tip" wx:if="{{modeTip}}">{{modeTip}}</view>
 
       <!-- ========== 编辑 / 新建 ========== -->
+      <!-- 正在修改某一条时，上面给一条明显的提示，右边可以一键取消 -->
+      <view class="editing-bar" wx:if="{{editId}}">
+        <view class="editing-txt">正在修改：{{editTitle}}</view>
+        <view class="editing-cancel" bindtap="onNewTap">取消修改</view>
+      </view>
+
       <view class="card">
         <view class="card-head">
           <view class="card-title">{{editId ? '修改这条通知' : '写一条新通知'}}</view>
@@ -98,6 +104,7 @@
               <view class="nrow-sub">{{item.time}} 发布 · 正文 {{item.bodyLen}} 字</view>
             </view>
             <view class="nrow-btns">
+              <view class="mini edit" data-id="{{item.id}}" catchtap="onRowTap">编辑</view>
               <view class="mini" data-id="{{item.id}}" catchtap="onTopTap">{{item.top ? '取消置顶' : '置顶'}}</view>
               <view class="mini danger" data-id="{{item.id}}" catchtap="onDelTap">删除</view>
             </view>
@@ -105,7 +112,7 @@
           <view class="hairline"></view>
         </block>
 
-        <view class="row-hint">点某一条就能把它填到上面修改</view>
+        <view class="row-hint">点一条右边的「编辑」，上面就会变成修改它</view>
       </view>
 
       <view class="reset-row" bindtap="onReset">恢复演示通知</view>
