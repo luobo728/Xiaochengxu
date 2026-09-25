@@ -66,7 +66,8 @@
         <view class="tag tag-green" wx:if="{{kidId}}">已建档</view>
         <view class="tag tag-gray" wx:else>待建档</view>
       </view>
-      <view class="mini-stats">
+      <!-- 这三列小统计老师端才有（家长端看不到全园人数），判断在 mine.js 的 refreshKid() -->
+      <view class="mini-stats" wx:if="{{showKidStats}}">
         <view class="mini-stat" wx:for="{{miniStats}}" wx:key="id">
           <view class="mini-num">{{item.num}}</view>
           <view class="mini-lbl">{{item.lbl}}</view>

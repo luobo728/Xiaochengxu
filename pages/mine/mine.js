@@ -58,8 +58,9 @@ Page({
     kidAvatar: '档',
     kidName: '还没有孩子档案',
     kidSub: '老师建档后，点名和课时都按孩子各算各的',
-    // 三列小统计
     // 三列小统计：全部来自这个孩子自己的账本（不再是写死的演示数字）
+    //   家长端不显示这三列（家长端看不到全园人数）；老师端照旧
+    showKidStats: false, // 默认不显示，身份确定后在 refreshKid() 里决定
     miniStats: [
       { id: 1, num: '0', lbl: '剩余课时' },
       { id: 2, num: '0', lbl: '已上课时' },
@@ -402,6 +403,8 @@ Page({
       kidAvatar: kid ? children.avatarOf(kid) : '档',
       kidName: kid ? kid.name : '还没有孩子档案',
       kidSub: kid ? children.subOf(kid) : '老师建档后，点名和课时都按孩子各算各的',
+      // 家长端看不到这三列小统计（老师端保留）；「是不是家长端」只有一份判断，在 utils/demo-role.js
+      showKidStats: !role.isParent(),
       miniStats: [
         { id: 1, num: String(st.left), lbl: '剩余课时' },
         { id: 2, num: String(st.spent), lbl: '已上课时' },
@@ -523,7 +526,8 @@ Page({
     this.setData({ billingBusy: true })
     wx.showLoading({ title: '领取中', mask: true })
     billing
-      .claimByCode(code)
+      // 课时记到卡片上这个孩子头上（家长端 = 自己的孩子）——不带 childId 会落到设备大锅饭里
+      .claimByCode(code, this.data.kidId, this.data.kidName)
       .then((res) => {
         wx.hideLoading()
         if (res && res.ok) {
@@ -532,7 +536,7 @@ Page({
           const hours = (res.summary && res.summary.hours) || 0
           wx.showModal({
             title: '领取成功',
-            content: '+' + res.hours + ' 课时，当前课时 ' + hours,
+          content: '+' + res.hours + ' 课时，' + (this.data.kidId && this.data.kidName ? this.data.kidName + ' 当前课时 ' : '当前课时 ') + hours,
             showCancel: false
           })
         } else {

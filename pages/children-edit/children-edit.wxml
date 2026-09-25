@@ -109,6 +109,8 @@
           <view class="card-more">按孩子独立记账</view>
         </view>
         <view class="left-text">{{leftText}}</view>
+        <view class="add3-btn" wx:if="{{canEdit && demo}}" hover-class="add3-btn-hover" bindtap="onAdd3">＋3 课时（测试用）</view>
+        <view class="add3-tip" wx:if="{{canEdit && demo}}">点一次给这个孩子补 3 课时，可以重复点 —— 只用来试「点名扣课时」。</view>
       </view>
 
       <view class="save-btn" hover-class="save-btn-hover" bindtap="onSave">{{saving ? '正在保存…' : (editId ? '保存修改' : '建立档案')}}</view>

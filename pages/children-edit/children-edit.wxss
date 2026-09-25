@@ -167,6 +167,30 @@
   color: #5A6273;
 }
 
+/* 「＋3 课时（测试用）」：演示账号 + 管理员才画；描边小按钮，别和「保存修改」抢眼 */
+.add3-btn {
+  margin-top: 20rpx;
+  padding: 20rpx 0;
+  width: 380rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid #C9D6FF;
+  background: #F2F6FF;
+  font-size: 25rpx;
+  color: #2E6BFF;
+  text-align: center;
+}
+
+.add3-btn-hover {
+  opacity: 0.85;
+}
+
+.add3-tip {
+  margin-top: 12rpx;
+  font-size: 21rpx;
+  line-height: 1.7;
+  color: #A6AEBE;
+}
+
 /* ---------- 按钮 ---------- */
 .save-btn {
   margin-top: 28rpx;

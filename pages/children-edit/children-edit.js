@@ -74,6 +74,8 @@ Page({
 
     // 编辑时：这个孩子自己的课时账
     leftText: '',
+    demo: false, // 演示账号（「＋3 课时（测试用）」只给演示账号里的管理员看）
+    adding: false, // 补课时进行中（防连点）
 
     // 说明文案（进页面时填，避免加载期读存储）
     modeTip: ''
@@ -125,13 +127,12 @@ Page({
   },
 
   apply(curName, canEdit, lock) {
-    this.setData({ checked: true, canEdit: canEdit, demoLock: lock, curName: curName })
+    this.setData({ checked: true, canEdit: canEdit, demo: role.isDemo(), demoLock: lock, curName: curName })
     if (canEdit) this.loadForm()
   },
 
   // 把档案读进表单（新建档用空白表单）
   loadForm() {
-    const that = this
     const id = this.data.editId
     if (!id) {
       const f = children.emptyForm()
@@ -171,7 +172,17 @@ Page({
       clsIndex: clsIndexOf(kid.cls)
     })
 
-    // 这个孩子自己那本账（别的孩子扣多少都不影响这里）
+    this.refreshHours()
+  },
+
+  // 这个孩子自己那本账（别的孩子扣多少都不影响这里）
+  refreshHours() {
+    const that = this
+    const id = this.data.editId
+    if (!id) {
+      this.setData({ leftText: '' })
+      return
+    }
     billing.kidsStat([id]).then(
       function (stats) {
         const st = stats[0]
@@ -184,6 +195,41 @@ Page({
         that.setData({ leftText: '' })
       }
     )
+  },
+
+  // ＋3 课时（测试用）：只给演示账号里的管理员看（家长端 / 普通老师连按钮都没有）
+  //   点一次给这个孩子补 3 课时，专门用来试「点名扣课时」——三节课就能看见余额一格格往下走
+  //   补课时也走唯一入口 applyHours；故意不写 ref：可以重复点，方便反复试
+  onAdd3() {
+    const that = this
+    const id = this.data.editId
+    if (!this.data.canEdit || !id) {
+      wx.showToast({ title: this.data.demoLock || role.CHILD_TIP, icon: 'none', duration: 3000 })
+      return
+    }
+    if (this.data.adding) return
+
+    const kid = children.get(id)
+    const name = kid ? kid.name : this.data.name
+    this.setData({ adding: true })
+    billing
+      .applyHours({
+        amount: 3,
+        type: 'gift',
+        typeName: '补课时（测试）',
+        note: name + ' · 测试用：手工补 3 课时',
+        childId: id,
+        childName: name
+      })
+      .then(function (res) {
+        that.setData({ adding: false })
+        if (res && res.ok) {
+          wx.showToast({ title: '已补 3 课时', icon: 'success' })
+          that.refreshHours()
+        } else {
+          wx.showToast({ title: (res && res.msg) || '没加上', icon: 'none' })
+        }
+      })
   },
 
   // 输入框：姓名 / 家长称呼 / 家长手机号 / 备注（data-key 决定写哪个字段）
