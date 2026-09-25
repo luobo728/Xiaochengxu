@@ -363,11 +363,12 @@ function clearListCache() {
 
 /* ---------------- 管理员身份 ---------------- */
 
-// 本机体验管理员：云端还没连上时，让园长能先把通知改起来（只影响本机）
-// 例外：演示账号的「家长端」一票否决 —— 之前长按开过的、云端白名单里有这台机器
-// openid 的，全都不算数（见 utils/demo-role.js）。要管理先切到老师端。
+// 「现在这个人是不是管理员」只有一份判断（utils/demo-role.js）：
+//   演示账号 —— 只看花名册：超级管理员固定是、管理员看有没有被设置、家长和普通老师一律不是
+//               （长按开过的标记、云端白名单、whoami 缓存全都不参与）
+//   没切演示账号 —— 还是原来那套：本机体验管理员标记（长按「我的」页版本号开启）
 function isLocalAdmin() {
-  if (role.isParent()) return false
+  if (role.isDemo()) return role.canManage()
   try {
     return !!wx.getStorageSync(KEY_LOCAL_ADMIN)
   } catch (e) {
@@ -375,9 +376,9 @@ function isLocalAdmin() {
   }
 }
 
-// 返回值：true 表示这次写入生效；false 表示被演示账号的家长端挡下了（调用方要给提示）
+// 返回值：true 表示这次写入生效；false 表示被演示账号挡下了（这条路只给没切账号的真机用）
 function setLocalAdmin(on) {
-  if (on && role.isParent()) return false
+  if (on && role.isDemo() && !role.isSuper()) return false
   try {
     if (on) {
       wx.setStorageSync(KEY_LOCAL_ADMIN, 1)
@@ -391,10 +392,12 @@ function setLocalAdmin(on) {
 }
 
 // 身份判断：能连云端就以云端为准；云端不可用时退回「本机体验管理员」
-// 演示账号的家长端例外：不看云端、不看缓存、不看本机标记，一律「不是管理员」
+// 演示账号例外：不看云端、不看缓存、不看本机标记，权限只看花名册
+//   —— 家长端、还没被设为管理员的老师端，都在这里直接收口成「不是管理员」
 // 返回 Promise<{ isAdmin, source, openid, initialized, tip }>
 function adminStatus() {
-  if (role.isParent()) return Promise.resolve(parentStatus())
+  const lock = role.lockTip()
+  if (lock) return Promise.resolve(demoStatus(lock))
 
   let task = null
   if (isCloudReady()) {
@@ -424,15 +427,15 @@ function adminStatus() {
   return Promise.resolve(localStatus('云开发未就绪'))
 }
 
-// 演示账号的家长端：统一按「不是管理员」回，并带一句照着做的提示
+// 演示账号被拦住时统一这么回，tip 就是锁屏卡片上那句话
 // initialized 给 true：免得页面再走「还没有设置管理员 → 一键成为管理员」那一套
-function parentStatus() {
+function demoStatus(tip) {
   return {
     isAdmin: false,
     source: 'demo',
     openid: '',
     initialized: true,
-    tip: role.PARENT_TIP
+    tip: tip || role.PARENT_TIP
   }
 }
 
@@ -441,8 +444,8 @@ function localStatus(reason) {
   let tip = ''
   if (on) {
     tip = '本机体验模式（' + reason + '）：改的通知只保存在这台手机上'
-  } else if (role.isParent()) {
-    tip = role.PARENT_TIP
+  } else {
+    tip = role.lockTip()
   }
   return {
     isAdmin: on,

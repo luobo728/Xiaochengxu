@@ -1,0 +1,73 @@
+<view class="page">
+  <view class="hd hd-set" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack"><view class="ico-back"></view></view>
+      <view class="hd-title">管理员设置</view>
+      <view class="hd-back ghost"></view>
+    </view>
+    <view class="hd-sub">超级管理员能设置谁是管理员，管理员自己设置不了</view>
+  </view>
+
+  <view class="body">
+    <!-- 三分支：正在校验 / 不是超级管理员 / 是超级管理员（三个分支必须相邻，中间不夹注释） -->
+    <view class="empty" wx:if="{{!checked}}">正在校验身份…</view>
+    <view class="card" wx:elif="{{!canSet}}">
+      <view class="lock-box">
+        <view class="ico-lock"></view>
+        <view class="lock-title">只有超级管理员能设置管理员</view>
+        <view class="lock-sub">这一页用来把某个账号设成管理员，或者取消他的管理员</view>
+        <view class="lock-me" wx:if="{{curName}}">当前身份：{{curName}}</view>
+        <view class="lock-demo" wx:if="{{demoLock}}">{{demoLock}}</view>
+        <view class="btn-primary btn-back" bindtap="goBack">返回</view>
+      </view>
+    </view>
+    <block wx:else>
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">管理员名单</view>
+          <view class="card-more">{{summary}}</view>
+        </view>
+
+        <block wx:for="{{rows}}" wx:key="id">
+          <view class="mrow">
+            <view class="m-ava" style="background:{{item.tone}}">{{item.badge}}</view>
+            <view class="m-main">
+              <view class="m-head">
+                <view class="m-name">{{item.name}}</view>
+                <view class="m-tag {{item.admin ? 'on' : ''}}">{{item.roleName}}</view>
+              </view>
+              <view class="m-sub">{{item.side}} · {{item.phone}}</view>
+            </view>
+            <switch
+              wx:if="{{item.editable}}"
+              class="m-switch"
+              checked="{{item.admin}}"
+              color="#12A97F"
+              data-id="{{item.id}}"
+              bindchange="onToggle" />
+            <view wx:else class="m-fixed">{{item.fixedText}}</view>
+          </view>
+          <view class="hairline"></view>
+        </block>
+
+        <view class="row-hint">拨动开关就是「设置为管理员 / 取消管理员」，改完立刻生效。切到那个演示账号（我的 → 切换演示账号）就能看到管理入口的变化。</view>
+      </view>
+
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">怎么测</view>
+        </view>
+        <view class="step" wx:for="{{steps}}" wx:key="id">
+          <view class="step-no">{{item.no}}</view>
+          <view class="step-txt">{{item.txt}}</view>
+        </view>
+      </view>
+
+      <view class="reset-row" bindtap="onReset">恢复默认名单</view>
+      <view class="foot-note">默认名单：李老师是超级管理员，王老师是管理员，陈老师是普通老师。家长端（乐乐妈妈）固定不是管理员，设不了。这份名单只存在这台手机上，方便演示「超级管理员 vs 管理员」的区别。</view>
+    </block>
+  </view>
+
+  <!-- 底部导航：子页面也能直接切换模块（高亮「我的」） -->
+  <tab-bar selected="{{3}}" plain="{{true}}" />
+</view>

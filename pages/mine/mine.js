@@ -40,6 +40,8 @@ Page({
     cloudAdmin: false,
     // 是否显示管理入口（云端管理员 或 本机体验管理员，合并结果）
     isAdmin: false,
+    // 是否超级管理员（只有超级管理员能进「管理员设置」设置别人）
+    isSuper: false,
     // 演示账号（纯本机）：切换后头部、底部、设置里那一行都跟着变
     accountSide: '',
     accountSub: '一键切家长端 / 老师端，看两边区别',
@@ -328,8 +330,7 @@ Page({
     const items = []
     const curId = account.currentId()
     for (let i = 0; i < list.length; i++) {
-      const mark = list[i].id === curId ? '（当前）' : list[i].admin ? '（管理员）' : ''
-      items.push(list[i].side + ' · ' + list[i].name + mark)
+      items.push(account.labelOf(list[i], curId))
     }
     items.push('退出登录')
     wx.showActionSheet({
@@ -576,8 +577,9 @@ Page({
 
   // 管理员身份校验：云端管理员（本地缓存秒显，缓存缺失才走云函数）或本机体验管理员
   checkAdmin() {
-    // 演示账号的家长端：whoami 缓存里的管理员身份也不算，直接按「不是管理员」收口
-    if (role.isParent()) {
+    // 演示账号：管理权限只由「管理员名单」决定（家长端永远不是管理员），
+    // 所以不查云端、不看 whoami 缓存、也不看本机标记，直接收口
+    if (role.isDemo()) {
       this.setData({ cloudAdmin: false })
       this.refreshAdminEntry()
       return
@@ -640,6 +642,16 @@ Page({
     })
   },
 
+  // 超级管理员专属入口：管理员设置（设置 / 取消谁是管理员）
+  onMemberAdminTap() {
+    wx.navigateTo({
+      url: '/pages/admin-members/admin-members',
+      fail() {
+        wx.showToast({ title: '打开失败', icon: 'none' })
+      }
+    })
+  },
+
   // 相册入口副标题：本班 / 全园各有多少本，拿不到就保持原文案
   refreshAlbumSub() {
     const myClass = album.myClassSync()
@@ -668,6 +680,8 @@ Page({
   offerLocalAdmin() {
     // 演示账号的家长端：和长按版本号一样，不给开、也不提示（静默退出）
     if (role.isParent()) return
+    // 其他演示账号：权限只由「管理员名单」决定，本机标记对演示账号不生效（静默退出）
+    if (role.isDemo()) return
     if (notice.isLocalAdmin()) {
       wx.showModal({
         title: '本机体验管理员已开启',
@@ -707,9 +721,15 @@ Page({
 
   // 刷新管理入口是否显示：云端管理员 或 本机体验管理员，任一为真就显示
   refreshAdminEntry() {
-    // 演示账号的家长端：管理入口一个都不显示（云端白名单 / 缓存里是管理员也不算）
-    const isAdmin = role.isParent() ? false : (!!this.data.cloudAdmin || notice.isLocalAdmin())
-    if (isAdmin !== this.data.isAdmin) this.setData({ isAdmin: isAdmin })
+    // 管理入口在两种身份体系下算法不同：
+    //   演示账号 —— 只看「管理员名单」：家长端永远不是管理员，老师端看名单里有没有他
+    //   真登录账号 —— 老规矩：云端白名单 或 本机体验管理员
+    const isAdmin = role.isDemo() ? role.canManage() : (!!this.data.cloudAdmin || notice.isLocalAdmin())
+    // 「管理员设置」入口只有超级管理员可见（演示账号里的老师端 · 李老师）
+    const isSuper = role.isSuper()
+    if (isAdmin !== this.data.isAdmin || isSuper !== this.data.isSuper) {
+      this.setData({ isAdmin: isAdmin, isSuper: isSuper })
+    }
   },
 
   // 隐藏入口：长按页面底部版本号
@@ -720,6 +740,12 @@ Page({
     // 演示账号的家长端：整条链路直接掐掉，连提示都不给（长按等于没按）——
     // 页面底部那行字看上去就只是个版本号，不能让人以为「按一下说不定有权限」
     if (role.isParent()) return
+    // 其他演示账号：只给一句短提示就结束，不再走 whoami / 本机体验管理员那条路
+    //（演示账号的管理权限只由「管理员名单」决定，长按改不了任何东西）
+    if (role.isDemo()) {
+      wx.showToast({ title: role.demoShort(), icon: 'none', duration: 3000 })
+      return
+    }
     if (!menu.isCloudReady()) {
       // 云开发还没通：不硬卡住，先让园长在本机把通知管起来
       this.offerLocalAdmin()
@@ -788,9 +814,13 @@ Page({
 
   // 一键成为管理员
   becomeAdmin() {
-    // 演示账号的家长端不给这条路：要管先到「我的 → 切换演示账号」切到老师端
+    // 演示账号不给这条路：家长端永远不是管理员；其他演示账号要管，先让超级管理员把你加进名单
     if (role.isParent()) {
       wx.showToast({ title: role.PARENT_SHORT, icon: 'none', duration: 3000 })
+      return
+    }
+    if (role.isDemo()) {
+      wx.showToast({ title: role.SUPER_SHORT, icon: 'none', duration: 3000 })
       return
     }
     wx.showLoading({ title: '设置中', mask: true })

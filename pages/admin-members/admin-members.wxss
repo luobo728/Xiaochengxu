@@ -1,0 +1,258 @@
+/* pages/admin-members/admin-members.wxss —— 管理员设置页样式（通用 class 见 app.wxss） */
+
+/* 底部有导航栏：为它预留高度 */
+.page {
+  padding-bottom: 220rpx;
+  padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 顶部头图（管理主题绿） ---------- */
+.hd-set {
+  background: linear-gradient(135deg, #33C3A1, #12A97F);
+}
+
+.hd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8rpx;
+}
+
+/* 标题已在 .hd-row 内，去掉 app.wxss 里的上间距 */
+.hd-set .hd-title {
+  padding-top: 0;
+  font-size: 38rpx;
+}
+
+.hd-back {
+  flex-shrink: 0;
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hd-back-hover {
+  opacity: 0.7;
+}
+
+/* 右上占位：仅为保持标题居中 */
+.hd-back.ghost {
+  visibility: hidden;
+}
+
+/* 返回箭头（两条边框拼出的左尖括号，纯 CSS 无图片） */
+.ico-back {
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: 6rpx;
+  border-left: 4rpx solid #FFFFFF;
+  border-bottom: 4rpx solid #FFFFFF;
+  transform: rotate(45deg);
+}
+
+/* ---------- 花名册一行 ---------- */
+.mrow {
+  display: flex;
+  align-items: center;
+  padding: 26rpx 0;
+}
+
+/* 头像方块：只用 CSS 渐变 + 一个字，项目里不用图片 */
+.m-ava {
+  flex-shrink: 0;
+  width: 76rpx;
+  height: 76rpx;
+  margin-right: 20rpx;
+  border-radius: 22rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.m-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.m-head {
+  display: flex;
+  align-items: center;
+}
+
+.m-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.m-tag {
+  margin-left: 12rpx;
+  padding: 2rpx 14rpx;
+  border-radius: 999rpx;
+  background: #EEF1F6;
+  font-size: 20rpx;
+  color: #8A93A3;
+}
+
+.m-tag.on {
+  background: #E4F7F0;
+  color: #12A97F;
+}
+
+.m-sub {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #A6AEBE;
+}
+
+.m-switch {
+  flex-shrink: 0;
+  transform: scale(0.85);
+}
+
+/* 固定身份的行：右边不是开关，而是一句话 */
+.m-fixed {
+  flex-shrink: 0;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: #F7F9FD;
+  font-size: 21rpx;
+  color: #A6AEBE;
+}
+
+/* 名单下面那句话（拨开关怎么生效） */
+.row-hint {
+  padding-top: 20rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #A6AEBE;
+}
+
+/* ---------- 「怎么测」步骤 ---------- */
+.step {
+  display: flex;
+  align-items: flex-start;
+  padding: 16rpx 0;
+}
+
+.step-no {
+  flex-shrink: 0;
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 16rpx;
+  border-radius: 50%;
+  background: #E4F7F0;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #12A97F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-txt {
+  flex: 1;
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #5A6273;
+}
+
+/* ---------- 底部 ---------- */
+.reset-row {
+  margin: 10rpx auto 0;
+  padding: 20rpx 0;
+  width: 420rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  border: 2rpx solid #DCE3EF;
+  font-size: 26rpx;
+  color: #5A6273;
+}
+
+.foot-note {
+  margin: 24rpx 8rpx 40rpx;
+  font-size: 21rpx;
+  line-height: 1.7;
+  color: #A6AEBE;
+}
+
+/* ---------- 不是超级管理员 ---------- */
+.lock-box {
+  padding: 16rpx 0 4rpx;
+  text-align: center;
+}
+
+/* 锁：半圆锁梁 + 方形锁体 */
+.ico-lock {
+  position: relative;
+  width: 84rpx;
+  height: 80rpx;
+  margin: 8rpx auto 26rpx;
+}
+
+.ico-lock::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 54rpx;
+  height: 50rpx;
+  margin-left: -27rpx;
+  box-sizing: border-box;
+  border: 8rpx solid #C6CDDA;
+  border-bottom: none;
+  border-radius: 28rpx 28rpx 0 0;
+}
+
+.ico-lock::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 84rpx;
+  height: 56rpx;
+  border-radius: 16rpx;
+  background: #DCE3EF;
+}
+
+.lock-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+.lock-sub {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+/* 当前身份（例如「管理员 · 王老师」），让人知道为什么进不来 */
+.lock-me {
+  margin-top: 18rpx;
+  font-size: 22rpx;
+  color: #8A93A3;
+}
+
+.lock-demo {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #FFF6EA;
+  border: 1rpx solid #FFDCB0;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #A25B00;
+  text-align: left;
+}
+
+.btn-back {
+  margin-top: 32rpx;
+}

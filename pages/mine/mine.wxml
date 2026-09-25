@@ -162,6 +162,16 @@
         <view class="row-main"><view class="row-name">相册管理</view></view>
         <view class="arrow"></view>
       </view>
+
+      <!-- 管理员设置入口（仅超级管理员可见）：设置 / 取消谁是管理员 -->
+      <view class="row" wx:if="{{isSuper}}" bindtap="onMemberAdminTap">
+        <view class="row-ico" style="background:linear-gradient(135deg,#33C3A1,#12A97F)">权</view>
+        <view class="row-main">
+          <view class="row-name">管理员设置</view>
+          <view class="row-sub">设置或取消老师的管理员权限</view>
+        </view>
+        <view class="arrow"></view>
+      </view>
       <view class="row">
         <view class="row-main">
           <view class="row-name">消息通知</view>

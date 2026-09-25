@@ -94,9 +94,11 @@ Page({
 
   // 身份校验：失败兜底为非管理员（非管理员不渲染任何上传 / 删除 UI）
   checkAdmin() {
-    // 演示账号的家长端：不查云端，一律按「不是管理员」收口
-    if (role.isParent()) {
-      this.setData({ checked: true, isAdmin: false, openid: '', demoLock: role.PARENT_TIP })
+    // 演示账号：家长端（永远不是管理员）、还没被超级管理员设为管理员的老师端，
+    // 都在这儿直接收口 —— 不查云端、不看 whoami 缓存、不看本机标记（判断只有一份，在 utils/demo-role.js）
+    const lock = role.lockTip()
+    if (lock) {
+      this.setData({ checked: true, isAdmin: false, openid: '', demoLock: lock })
       return
     }
     let task = null

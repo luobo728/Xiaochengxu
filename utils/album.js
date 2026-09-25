@@ -946,8 +946,8 @@ function resetDemo() {
 
 /* ---------------- 管理员身份 ---------------- */
 
-// 本机体验管理员：与「通知」共用同一把钥匙（长按「我的」页底部版本号开启）
-// 演示账号的「家长端」由通知那边一票否决，这里跟着一起否
+// 本机体验管理员：与「通知」共用同一把钥匙，也都共用同一份身份判断
+// （演示账号看花名册，家长端 / 还没被设为管理员的老师端一律不是管理员）
 function isLocalAdmin() {
   try {
     return !!notice.isLocalAdmin()
@@ -956,7 +956,7 @@ function isLocalAdmin() {
   }
 }
 
-// 返回值同通知那边：false 表示被演示账号的家长端挡下了
+// 返回值同通知那边：false 表示被演示账号挡下了（只有超级管理员能开本机标记）
 function setLocalAdmin(on) {
   try {
     return notice.setLocalAdmin(!!on)
@@ -966,10 +966,10 @@ function setLocalAdmin(on) {
 }
 
 // 身份判断：能连云端就以云端为准；云端不可用时退回「本机体验管理员」
-// 演示账号的家长端例外：直接复用通知那边的判断，保证三个管理页口径完全一致
+// 演示账号例外：直接复用通知那边的判断（tip 也同一句），保证三个管理页口径完全一致
 // 返回 Promise<{ isAdmin, source, openid, initialized, tip }>
 function adminStatus() {
-  if (role.isParent()) return notice.adminStatus()
+  if (role.lockTip()) return notice.adminStatus()
 
   let task = null
   if (isCloudReady()) {
@@ -1004,8 +1004,8 @@ function localStatus(reason) {
   let tip = ''
   if (on) {
     tip = '本机体验模式（' + reason + '）：传的照片只保存在这台手机上'
-  } else if (role.isParent()) {
-    tip = role.PARENT_TIP
+  } else {
+    tip = role.lockTip()
   }
   return {
     isAdmin: on,
