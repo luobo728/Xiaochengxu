@@ -4,6 +4,8 @@ const menu = require('../../utils/menu.js')
 const billing = require('../../utils/billing.js')
 // 登录数据层：账号只存在手机本地，页面只负责展示与调用
 const auth = require('../../utils/auth.js')
+// 通知公告数据层：本地模式先跑通，联网只改这一个文件
+const notice = require('../../utils/notice.js')
 
 // 把云端返回的原始错误翻译成「人话」，方便照着做
 function explainCloudError(err) {
@@ -28,7 +30,9 @@ function explainCloudError(err) {
 Page({
   data: {
     statusBarHeight: 20,
-    // 是否管理员（仅控制「食谱管理」入口是否显示）
+    // 是否云端管理员（云函数判断）
+    cloudAdmin: false,
+    // 是否显示管理入口（云端管理员 或 本机体验管理员，合并结果）
     isAdmin: false,
     // 孩子档案
     child: {
@@ -510,22 +514,23 @@ Page({
     })
   },
 
-  // 管理员身份校验：优先读本地缓存秒显，缓存缺失才走云端（省掉每次进页面等云函数的几百毫秒）
+  // 管理员身份校验：云端管理员（本地缓存秒显，缓存缺失才走云函数）或本机体验管理员
   checkAdmin() {
     const cached = menu.cachedWhoami()
     if (cached) {
-      if (this.data.isAdmin !== !!cached.isAdmin) {
-        this.setData({ isAdmin: !!cached.isAdmin })
-      }
+      this.setData({ cloudAdmin: !!cached.isAdmin })
+      this.refreshAdminEntry()
       return
     }
     menu
       .whoami()
       .then((res) => {
-        this.setData({ isAdmin: !!(res && res.isAdmin) })
+        this.setData({ cloudAdmin: !!(res && res.isAdmin) })
+        this.refreshAdminEntry()
       })
       .catch(() => {
-        // 云端不可用时保持不显示管理入口
+        // 云端不可用：本机体验管理员仍然可用
+        this.refreshAdminEntry()
       })
   },
 
@@ -539,17 +544,69 @@ Page({
     })
   },
 
+  // 管理员入口：通知公告管理端
+  onNoticeAdminTap() {
+    wx.navigateTo({
+      url: '/pages/notice-admin/notice-admin',
+      fail() {
+        wx.showToast({ title: '打开失败', icon: 'none' })
+      }
+    })
+  },
+
+  // 云开发还没通时的兜底：开启「本机体验管理员」，只影响这一台手机
+  offerLocalAdmin() {
+    if (notice.isLocalAdmin()) {
+      wx.showModal({
+        title: '本机体验管理员已开启',
+        content: '你可以到「我的 → 通知公告管理」编辑通知。要关掉吗？',
+        confirmText: '关掉',
+        cancelText: '继续用',
+        success: (r) => {
+          if (!r.confirm) return
+          notice.setLocalAdmin(false)
+          this.refreshAdminEntry()
+          wx.showToast({ title: '已关闭体验管理员', icon: 'none' })
+        }
+      })
+      return
+    }
+    wx.showModal({
+      title: '云开发还没准备好',
+      content: '要先用「本机体验管理员」的方式管理通知吗？开启后你在这台手机上就能发布、修改通知（内容只保存在这台手机里，不会发给家长）。',
+      confirmText: '开启体验',
+      cancelText: '暂不',
+      success: (r) => {
+        if (!r.confirm) return
+        notice.setLocalAdmin(true)
+        this.refreshAdminEntry()
+        wx.showModal({
+          title: '已开启',
+          content: '现在去「通知公告管理」试试吧。',
+          confirmText: '去管理',
+          cancelText: '稍后',
+          success: (r2) => {
+            if (r2.confirm) this.onNoticeAdminTap()
+          }
+        })
+      }
+    })
+  },
+
+  // 刷新管理入口是否显示：云端管理员 或 本机体验管理员，任一为真就显示
+  refreshAdminEntry() {
+    const isAdmin = !!this.data.cloudAdmin || notice.isLocalAdmin()
+    if (isAdmin !== this.data.isAdmin) this.setData({ isAdmin: isAdmin })
+  },
+
   // 隐藏入口：长按页面底部版本号
   //   已是管理员 → 显示并复制 openid
   //   还没有管理员 → 一键把自己设成本园管理员
   //   已设置过但不是管理员 → 提示把 openid 发给园长
   onOpenIdLongPress() {
     if (!menu.isCloudReady()) {
-      wx.showModal({
-        title: '还不能使用',
-        content: '云开发还没准备好。请先完成说明里的第 1 步（开通云开发）和第 2 步（上传云函数）。',
-        showCancel: false
-      })
+      // 云开发还没通：不硬卡住，先让园长在本机把通知管起来
+      this.offerLocalAdmin()
       return
     }
 
@@ -628,12 +685,13 @@ Page({
           })
           return
         }
-        this.setData({ isAdmin: true })
+        this.setData({ cloudAdmin: true })
+        this.refreshAdminEntry()
         // 身份已变更，清掉本地身份缓存，否则下次进「我的」页入口会被旧缓存藏掉
         menu.clearWhoamiCache()
         wx.showModal({
           title: '设置成功',
-          content: '你现在是管理员了。要现在去上传食谱图片吗？',
+          content: '你现在是管理员了：可以上传食谱图片，也可以编辑通知公告。要现在去上传食谱图片吗？',
           confirmText: '去上传',
           cancelText: '稍后',
           success: (r) => {

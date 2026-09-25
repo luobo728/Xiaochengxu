@@ -1,0 +1,154 @@
+/* pages/notice/notice.wxss —— 通知详情：公众号文章正文风格
+   通用 class（.page/.hairline/.empty/.btn-primary/.tag）见 app.wxss */
+
+/* 文章页用白底；正文底部留白 240rpx，避免被固定操作条盖住 */
+.page {
+  background: #FFFFFF;
+  padding-bottom: 240rpx;
+  padding-bottom: calc(240rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 顶部条 ---------- */
+.topbar {
+  background: #FFFFFF;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  padding-bottom: 20rpx;
+}
+
+.hd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8rpx;
+}
+
+.top-back {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: #F1F4FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-back-hover {
+  background: #E6EBF5;
+}
+
+/* 右上占位圆：透明不显示，只为让标题居中 */
+.top-back.ghost {
+  background: transparent;
+  visibility: hidden;
+}
+
+/* 返回箭头：两条边框拼出的左尖括号（纯 CSS，无图片） */
+.ico-back {
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: 6rpx;
+  border-left: 4rpx solid #1B1F27;
+  border-bottom: 4rpx solid #1B1F27;
+  transform: rotate(45deg);
+}
+
+.top-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1B1F27;
+}
+
+/* ---------- 正文 ---------- */
+.article {
+  padding: 36rpx 40rpx 0;
+}
+
+.art-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #1B1F27;
+}
+
+.art-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22rpx;
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+.art-meta-l {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.meta-time {
+  margin-left: 14rpx;
+  font-size: 24rpx;
+  color: #8A93A3;
+}
+
+.art-meta-r {
+  flex-shrink: 0;
+  margin-left: 20rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  color: #E07B00;
+  background: rgba(240, 138, 0, 0.14);
+}
+
+/* ---------- 正文段落 ---------- */
+.para {
+  margin-top: 28rpx;
+  font-size: 30rpx;
+  line-height: 1.85;
+  color: #1B1F27;
+}
+
+.art-line {
+  margin: 56rpx 0 24rpx;
+}
+
+.art-end {
+  padding-bottom: 20rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #B4BBC8;
+  letter-spacing: 2rpx;
+}
+
+/* ---------- 空态 ---------- */
+.empty-state {
+  padding: 140rpx 40rpx 0;
+}
+
+.back-btn {
+  width: 360rpx;
+  margin: 60rpx auto 0;
+}
+
+/* ---------- 底部固定操作条（管理员才显示） ---------- */
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 16rpx 0;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: #FFFFFF;
+  border-top: 1rpx solid #F0F2F7;
+}
+
+.edit-btn {
+  margin: 0 40rpx;
+}

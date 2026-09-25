@@ -10,7 +10,9 @@
     "pages/monitor/monitor",
     "pages/billing/billing",
     "pages/activity/activity",
-    "pages/activity/detail"
+    "pages/activity/detail",
+    "pages/notice/notice",
+    "pages/notice-admin/notice-admin"
   ],
   "window": {
     "navigationStyle": "custom",

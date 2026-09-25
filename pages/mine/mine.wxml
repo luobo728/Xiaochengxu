@@ -128,6 +128,13 @@
         <view class="row-main"><view class="row-name">食谱管理</view></view>
         <view class="arrow"></view>
       </view>
+
+      <!-- 通知公告管理入口（仅管理员可见） -->
+      <view class="row" wx:if="{{isAdmin}}" bindtap="onNoticeAdminTap">
+        <view class="row-ico" style="background:linear-gradient(135deg,#4C8BFF,#2E6BFF)">知</view>
+        <view class="row-main"><view class="row-name">通知公告管理</view></view>
+        <view class="arrow"></view>
+      </view>
       <view class="row">
         <view class="row-main">
           <view class="row-name">消息通知</view>

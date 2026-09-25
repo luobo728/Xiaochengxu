@@ -1,0 +1,118 @@
+<view class="page">
+  <view class="hd hd-admin" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack"><view class="ico-back"></view></view>
+      <view class="hd-title">通知公告管理</view>
+      <view class="hd-back ghost"></view>
+    </view>
+    <view class="hd-sub">保存后，家长端首页「最新通知」立刻显示</view>
+  </view>
+
+  <view class="body">
+    <!-- 三分支：正在校验 / 不是管理员 / 是管理员（wx:if·wx:elif·wx:else 必须相邻，中间不夹注释） -->
+    <view class="empty" wx:if="{{!checked}}">正在校验身份…</view>
+    <view class="card" wx:elif="{{!isAdmin}}">
+      <view class="lock-box">
+        <view class="ico-lock"></view>
+        <view class="lock-title">只有管理员能编辑通知</view>
+        <view class="lock-sub">这个页面用来给家长发布和修改通知公告</view>
+        <view class="lock-id" wx:if="{{openid}}">{{openid}}</view>
+        <view class="lock-tip">怎么成为管理员：① 长按「我的」页面最下面的版本号，按提示开启本机体验管理员（改的通知只在这台手机上）；② 云端管理员要把上面这串编号交给园里的技术老师，加进云函数白名单（见 docs/notice-admin.md）</view>
+        <view class="btn-primary btn-back" bindtap="goBack">返回</view>
+      </view>
+    </view>
+    <block wx:else>
+      <view class="mode-tip" wx:if="{{modeTip}}">{{modeTip}}</view>
+
+      <!-- ========== 编辑 / 新建 ========== -->
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">{{editId ? '修改这条通知' : '写一条新通知'}}</view>
+          <view class="card-more" wx:if="{{editId}}" bindtap="onNewTap">改成新建 ›</view>
+        </view>
+
+        <view class="fld">
+          <view class="fld-lbl">标题<text class="fld-req">必填</text></view>
+          <input
+            class="fld-input"
+            value="{{title}}"
+            maxlength="{{maxTitle}}"
+            placeholder="例如：4月20日 家长开放日，欢迎准时参加"
+            placeholder-class="ph"
+            bindinput="onTitleInput" />
+          <view class="fld-count">还能写 {{titleLeft}} 个字</view>
+        </view>
+
+        <view class="fld">
+          <view class="fld-lbl">分类</view>
+          <view class="pills">
+            <view
+              class="pill {{tagIndex === index ? 'on' : ''}}"
+              wx:for="{{tags}}"
+              wx:key="*this"
+              data-index="{{index}}"
+              bindtap="onTagTap">{{item}}</view>
+          </view>
+        </view>
+
+        <view class="fld">
+          <view class="fld-lbl">正文<text class="fld-tip">换行就是分段</text></view>
+          <textarea
+            class="fld-textarea"
+            value="{{body}}"
+            maxlength="{{maxBody}}"
+            placeholder="写清时间、地点，以及要家长做什么"
+            placeholder-class="ph"
+            bindinput="onBodyInput"></textarea>
+          <view class="fld-count">还能写 {{bodyLeft}} 个字</view>
+        </view>
+
+        <view class="hairline"></view>
+
+        <view class="opt-row">
+          <view class="opt-lbl">置顶</view>
+          <switch checked="{{top}}" color="#2E6BFF" bindchange="onTopChange" />
+        </view>
+        <view class="opt-hint">打开后这条通知排在家长端最上面</view>
+
+        <view class="btn-primary save-btn" bindtap="onSave">{{saving ? '正在保存…' : (editId ? '保存修改' : '发布通知')}}</view>
+      </view>
+
+      <!-- ========== 已有通知 ========== -->
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">已有通知</view>
+          <view class="card-more">共 {{rows.length}} 条</view>
+        </view>
+
+        <view class="empty" wx:if="{{!rows.length}}">还没有通知，上面写一条试试</view>
+
+        <block wx:for="{{rows}}" wx:key="id">
+          <view class="nrow {{item.id === editId ? 'on' : ''}}" data-id="{{item.id}}" bindtap="onRowTap">
+            <view class="nrow-main">
+              <view class="nrow-head">
+                <text class="tag {{item.tone}}">{{item.tag}}</text>
+                <text class="nrow-badge" wx:if="{{item.top}}">置顶中</text>
+              </view>
+              <view class="nrow-title">{{item.title}}</view>
+              <view class="nrow-sub">{{item.time}} 发布 · 正文 {{item.bodyLen}} 字</view>
+            </view>
+            <view class="nrow-btns">
+              <view class="mini" data-id="{{item.id}}" catchtap="onTopTap">{{item.top ? '取消置顶' : '置顶'}}</view>
+              <view class="mini danger" data-id="{{item.id}}" catchtap="onDelTap">删除</view>
+            </view>
+          </view>
+          <view class="hairline"></view>
+        </block>
+
+        <view class="row-hint">点某一条就能把它填到上面修改</view>
+      </view>
+
+      <view class="reset-row" bindtap="onReset">恢复演示通知</view>
+      <view class="foot-note">本地模式下通知保存在这台手机上；连上云端后（见 docs/notice-admin.md），全园家长看到的是同一份内容</view>
+    </block>
+  </view>
+
+  <!-- 底部导航：子页面也能直接切换模块（高亮「我的」） -->
+  <tab-bar selected="{{3}}" plain="{{true}}" />
+</view>

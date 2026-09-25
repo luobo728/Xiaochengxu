@@ -1,0 +1,40 @@
+<view class="page">
+  <!-- ========== 顶部条：返回 + 「通知详情」 ========== -->
+  <view class="topbar" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="top-back" hover-class="top-back-hover" bindtap="goBack">
+        <view class="ico-back"></view>
+      </view>
+      <view class="top-title">通知详情</view>
+      <view class="top-back ghost"></view>
+    </view>
+  </view>
+  <view class="hairline"></view>
+
+  <!-- 找到通知 → 文章正文；否则 → 空态（wx:if / wx:else 必须相邻，中间不夹注释） -->
+  <view wx:if="{{found}}" class="article">
+    <view class="art-title">{{title}}</view>
+    <view class="art-meta">
+      <view class="art-meta-l">
+        <text class="tag tag-blue">{{tag}}</text>
+        <text class="meta-time">{{time}} 发布</text>
+      </view>
+      <view class="art-meta-r" wx:if="{{top}}">已置顶</view>
+    </view>
+
+    <!-- 正文段落 -->
+    <view class="para" wx:for="{{paragraphs}}" wx:key="*this">{{item}}</view>
+
+    <view class="hairline art-line"></view>
+    <view class="art-end">—— 阳光幼儿园 ——</view>
+  </view>
+  <view wx:else class="empty-state">
+    <view class="empty">这条通知已被删除</view>
+    <view class="btn-primary back-btn" bindtap="goBack">返回首页</view>
+  </view>
+
+  <!-- ========== 底部固定操作条：只有管理员才出现 ========== -->
+  <view wx:if="{{found && isAdmin}}" class="bar">
+    <view class="btn-primary edit-btn" bindtap="toEdit">编辑这条通知</view>
+  </view>
+</view>

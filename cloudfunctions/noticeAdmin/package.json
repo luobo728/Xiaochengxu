@@ -1,0 +1,9 @@
+{
+  "name": "noticeAdmin",
+  "version": "1.0.0",
+  "description": "通知公告管理：仅管理员可新增/修改/删除，家长端只读",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

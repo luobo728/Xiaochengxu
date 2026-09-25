@@ -110,7 +110,7 @@
         class="notice"
         wx:for="{{notices}}"
         wx:key="id"
-        data-title="{{item.title}}"
+        data-id="{{item.id}}"
         bindtap="onNoticeTap">
         <view class="notice-dot"></view>
         <view class="notice-main">
@@ -119,6 +119,7 @@
         </view>
         <view class="arrow"></view>
       </view>
+      <view class="empty" wx:if="{{!notices.length}}">暂无通知</view>
     </view>
 
     <view class="foot-tip">阳光幼儿园 · 家园共育</view>

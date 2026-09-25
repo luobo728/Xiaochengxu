@@ -50,20 +50,14 @@ const ACTIVITIES = [
   }
 ]
 
-// 顶部跑马灯滚动公告
-const NOTICES = [
-  { id: 'n1', title: '周六亲子运动会报名截止 4月15日 18:00', time: '04-14', tag: '活动' },
-  { id: 'n2', title: '春季流感高发，请为宝贝准备一件外套', time: '04-13', tag: '保健' },
-  { id: 'n3', title: '4月20日 家长开放日，欢迎家长准时参加', time: '04-12', tag: '通知' },
-  { id: 'n4', title: '本周五 16:00 结束接送，请提前安排', time: '04-11', tag: '提示' }
-]
+// 通知公告的数据不写在这里：统一放在 utils/notice.js
+// 家长看到的内容 = 管理员在「我的 → 通知公告管理」里编辑的内容
 
 App({
   globalData: {
     statusBarHeight: 20,
     navBarHeight: 44,
     activities: ACTIVITIES,
-    notices: NOTICES,
     lastPhotoPath: '',
     cloudReady: false,
     cloudError: ''

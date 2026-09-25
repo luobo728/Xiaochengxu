@@ -2,6 +2,7 @@
 const app = getApp()
 const menu = require('../../utils/menu.js')
 const activity = require('../../utils/activity.js')
+const notice = require('../../utils/notice.js')
 
 // 常用功能入口（bg 为渐变背景，icon 为中文单字，避免依赖图片资源）
 const QUICK_ENTRIES = [
@@ -34,19 +35,14 @@ Page({
 
   onLoad() {
     const g = app.globalData || {}
-    const activities = g.activities || []
-    const notices = g.notices || []
-    const marqueeText = this.buildMarquee(notices)
-
     this.setData({
       statusBarHeight: g.statusBarHeight || 20,
       today: this.buildToday(),
-      activities,
-      notices: notices.slice(0, 3),
-      marqueeText,
-      // 按时长比例给滚动速度：约 0.4s 滚过一个字
-      marqueeDuration: Math.min(60, Math.max(16, Math.round(marqueeText.length * 0.4)))
+      activities: g.activities || []
     })
+    // 通知：先用本机已有的立刻画出来（不会白屏），再刷新一次拿最新的
+    this.applyNotices(notice.listSync())
+    this.refreshNotices()
   },
 
   onShow() {
@@ -56,6 +52,8 @@ Page({
     }
     // 回到前台恢复动画
     this.setData({ pageActive: true })
+    // 管理员在「通知公告管理」里改完返回首页时，这里会把新内容刷出来
+    this.refreshNotices()
     // 后台预热「今日食谱」数据，等用户点进食谱页就不用再等网络
     menu.prefetchToday()
   },
@@ -76,6 +74,27 @@ Page({
   buildMarquee(notices) {
     if (!notices || !notices.length) return ''
     return notices.map(function (n) { return n.title }).join('　·　')
+  },
+
+  // 把通知写进页面：列表只显示最近 3 条，顶部跑马灯滚动全部标题
+  applyNotices(rows) {
+    const list = rows || []
+    const marqueeText = this.buildMarquee(list)
+    const next = { notices: list.slice(0, 3) }
+    // 文案没变就不回写，避免跑马灯动画被 setData 打断、从头开始滚
+    if (marqueeText !== this.data.marqueeText) {
+      next.marqueeText = marqueeText
+      // 按时长比例给滚动速度：约 0.4s 滚过一个字
+      next.marqueeDuration = Math.min(60, Math.max(16, Math.round(marqueeText.length * 0.4)))
+    }
+    this.setData(next)
+  },
+
+  // 取最新通知：本地模式立刻返回；网络出错时保留现有内容，不打扰用户
+  refreshNotices() {
+    notice.list().then((rows) => {
+      this.applyNotices(rows)
+    }).catch(() => {})
   },
 
   onActChange(e) {
@@ -108,6 +127,12 @@ Page({
       return
     }
     if (key === 'notice') {
+      // 打开最新一条通知，家长常用的就是这个
+      const first = (this.data.notices || [])[0]
+      if (first && first.id) {
+        wx.navigateTo({ url: '/pages/notice/notice?id=' + encodeURIComponent(first.id) })
+        return
+      }
       wx.switchTab({ url: '/pages/campus/campus' })
       return
     }
@@ -115,7 +140,13 @@ Page({
   },
 
   onNoticeTap(e) {
-    wx.showToast({ title: '通知详情待接入', icon: 'none' })
+    const id = (e.currentTarget.dataset || {}).id || ''
+    wx.navigateTo({
+      url: '/pages/notice/notice' + (id ? '?id=' + encodeURIComponent(id) : ''),
+      fail() {
+        wx.showToast({ title: '通知打开失败', icon: 'none' })
+      }
+    })
   },
 
   goCourse() {

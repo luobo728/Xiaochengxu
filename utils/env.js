@@ -6,6 +6,8 @@ module.exports = {
 
   // 食谱管理云函数名（改名时这里同步改，云函数目录名也要一致）
   FUNCTION_NAME: 'menuAdmin',
+  // 通知公告管理云函数名（改名时这里同步改，云函数目录名也要一致）
+  NOTICE_FUNCTION: 'noticeAdmin',
 
   // ===== 园区监控接入配置（详细契约见 docs/monitor-api.md）=====
   // MODE 决定监控数据从哪里来：
