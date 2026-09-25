@@ -19,6 +19,8 @@ const env = require('./env.js')
 const menu = require('./menu.js')
 // 「谁是管理员」只有一份判断：云端 menuAdmin（menu.whoami）+ 本机体验标记
 const notice = require('./notice.js')
+// 演示账号身份底线：家长端永远不是管理员（单独一个文件，避免循环依赖）
+const role = require('./demo-role.js')
 
 const MODE = 'local'
 
@@ -945,6 +947,7 @@ function resetDemo() {
 /* ---------------- 管理员身份 ---------------- */
 
 // 本机体验管理员：与「通知」共用同一把钥匙（长按「我的」页底部版本号开启）
+// 演示账号的「家长端」由通知那边一票否决，这里跟着一起否
 function isLocalAdmin() {
   try {
     return !!notice.isLocalAdmin()
@@ -953,17 +956,21 @@ function isLocalAdmin() {
   }
 }
 
+// 返回值同通知那边：false 表示被演示账号的家长端挡下了
 function setLocalAdmin(on) {
   try {
-    notice.setLocalAdmin(!!on)
+    return notice.setLocalAdmin(!!on)
   } catch (e) {
-    // 忽略
+    return false
   }
 }
 
 // 身份判断：能连云端就以云端为准；云端不可用时退回「本机体验管理员」
+// 演示账号的家长端例外：直接复用通知那边的判断，保证三个管理页口径完全一致
 // 返回 Promise<{ isAdmin, source, openid, initialized, tip }>
 function adminStatus() {
+  if (role.isParent()) return notice.adminStatus()
+
   let task = null
   if (isCloudReady()) {
     try {
@@ -994,12 +1001,18 @@ function adminStatus() {
 
 function localStatus(reason) {
   const on = isLocalAdmin()
+  let tip = ''
+  if (on) {
+    tip = '本机体验模式（' + reason + '）：传的照片只保存在这台手机上'
+  } else if (role.isParent()) {
+    tip = role.PARENT_TIP
+  }
   return {
     isAdmin: on,
     source: 'local',
     openid: '',
     initialized: false,
-    tip: on ? '本机体验模式（' + reason + '）：传的照片只保存在这台手机上' : ''
+    tip: tip
   }
 }
 

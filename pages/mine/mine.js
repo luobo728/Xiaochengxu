@@ -10,6 +10,8 @@ const notice = require('../../utils/notice.js')
 const album = require('../../utils/album.js')
 // 演示账号（纯本机）：家长端 / 老师端一键切换，方便看双端区别
 const account = require('../../utils/account.js')
+// 演示账号身份底线：家长端永远不是管理员（判断只有一份，见 utils/demo-role.js）
+const role = require('../../utils/demo-role.js')
 
 // 把云端返回的原始错误翻译成「人话」，方便照着做
 function explainCloudError(err) {
@@ -574,6 +576,12 @@ Page({
 
   // 管理员身份校验：云端管理员（本地缓存秒显，缓存缺失才走云函数）或本机体验管理员
   checkAdmin() {
+    // 演示账号的家长端：whoami 缓存里的管理员身份也不算，直接按「不是管理员」收口
+    if (role.isParent()) {
+      this.setData({ cloudAdmin: false })
+      this.refreshAdminEntry()
+      return
+    }
     const cached = menu.cachedWhoami()
     if (cached) {
       this.setData({ cloudAdmin: !!cached.isAdmin })
@@ -658,6 +666,11 @@ Page({
 
   // 云开发还没通时的兜底：开启「本机体验管理员」，只影响这一台手机
   offerLocalAdmin() {
+    // 演示账号的家长端不给开「本机体验管理员」
+    if (role.isParent()) {
+      wx.showToast({ title: role.PARENT_SHORT, icon: 'none', duration: 3000 })
+      return
+    }
     if (notice.isLocalAdmin()) {
       wx.showModal({
         title: '本机体验管理员已开启',
@@ -697,7 +710,8 @@ Page({
 
   // 刷新管理入口是否显示：云端管理员 或 本机体验管理员，任一为真就显示
   refreshAdminEntry() {
-    const isAdmin = !!this.data.cloudAdmin || notice.isLocalAdmin()
+    // 演示账号的家长端：管理入口一个都不显示（云端白名单 / 缓存里是管理员也不算）
+    const isAdmin = role.isParent() ? false : (!!this.data.cloudAdmin || notice.isLocalAdmin())
     if (isAdmin !== this.data.isAdmin) this.setData({ isAdmin: isAdmin })
   },
 
@@ -706,6 +720,11 @@ Page({
   //   还没有管理员 → 一键把自己设成本园管理员
   //   已设置过但不是管理员 → 提示把 openid 发给园长
   onOpenIdLongPress() {
+    // 演示账号的家长端：长按也不留后门，先说清楚
+    if (role.isParent()) {
+      wx.showToast({ title: role.PARENT_SHORT, icon: 'none', duration: 3000 })
+      return
+    }
     if (!menu.isCloudReady()) {
       // 云开发还没通：不硬卡住，先让园长在本机把通知管起来
       this.offerLocalAdmin()
@@ -774,6 +793,11 @@ Page({
 
   // 一键成为管理员
   becomeAdmin() {
+    // 演示账号的家长端不给这条路：要管先到「我的 → 切换演示账号」切到老师端
+    if (role.isParent()) {
+      wx.showToast({ title: role.PARENT_SHORT, icon: 'none', duration: 3000 })
+      return
+    }
     wx.showLoading({ title: '设置中', mask: true })
     menu
       .initAdmin()

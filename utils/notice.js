@@ -12,6 +12,8 @@
 const env = require('./env.js')
 // 复用「谁是管理员」的唯一判断（云端 menuAdmin + 本机体验标记），避免项目里出现两套身份
 const menu = require('./menu.js')
+// 演示账号身份底线：家长端永远不是管理员（单独一个文件，避免循环依赖）
+const role = require('./demo-role.js')
 
 const MODE = 'local'
 
@@ -362,7 +364,10 @@ function clearListCache() {
 /* ---------------- 管理员身份 ---------------- */
 
 // 本机体验管理员：云端还没连上时，让园长能先把通知改起来（只影响本机）
+// 例外：演示账号的「家长端」一票否决 —— 之前长按开过的、云端白名单里有这台机器
+// openid 的，全都不算数（见 utils/demo-role.js）。要管理先切到老师端。
 function isLocalAdmin() {
+  if (role.isParent()) return false
   try {
     return !!wx.getStorageSync(KEY_LOCAL_ADMIN)
   } catch (e) {
@@ -370,7 +375,9 @@ function isLocalAdmin() {
   }
 }
 
+// 返回值：true 表示这次写入生效；false 表示被演示账号的家长端挡下了（调用方要给提示）
 function setLocalAdmin(on) {
+  if (on && role.isParent()) return false
   try {
     if (on) {
       wx.setStorageSync(KEY_LOCAL_ADMIN, 1)
@@ -380,11 +387,15 @@ function setLocalAdmin(on) {
   } catch (e) {
     // 忽略
   }
+  return true
 }
 
 // 身份判断：能连云端就以云端为准；云端不可用时退回「本机体验管理员」
+// 演示账号的家长端例外：不看云端、不看缓存、不看本机标记，一律「不是管理员」
 // 返回 Promise<{ isAdmin, source, openid, initialized, tip }>
 function adminStatus() {
+  if (role.isParent()) return Promise.resolve(parentStatus())
+
   let task = null
   if (isCloudReady()) {
     try {
@@ -413,14 +424,32 @@ function adminStatus() {
   return Promise.resolve(localStatus('云开发未就绪'))
 }
 
+// 演示账号的家长端：统一按「不是管理员」回，并带一句照着做的提示
+// initialized 给 true：免得页面再走「还没有设置管理员 → 一键成为管理员」那一套
+function parentStatus() {
+  return {
+    isAdmin: false,
+    source: 'demo',
+    openid: '',
+    initialized: true,
+    tip: role.PARENT_TIP
+  }
+}
+
 function localStatus(reason) {
   const on = isLocalAdmin()
+  let tip = ''
+  if (on) {
+    tip = '本机体验模式（' + reason + '）：改的通知只保存在这台手机上'
+  } else if (role.isParent()) {
+    tip = role.PARENT_TIP
+  }
   return {
     isAdmin: on,
     source: 'local',
     openid: '',
     initialized: false,
-    tip: on ? '本机体验模式（' + reason + '）：改的通知只保存在这台手机上' : ''
+    tip: tip
   }
 }
 

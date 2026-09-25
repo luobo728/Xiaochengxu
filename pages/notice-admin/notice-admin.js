@@ -6,6 +6,8 @@
 const app = getApp()
 const notice = require('../../utils/notice.js')
 const nav = require('../../utils/nav.js')
+// 演示账号身份底线：家长端永远不是管理员（和 utils/notice.js 用的是同一份判断）
+const role = require('../../utils/demo-role.js')
 
 // 分类 → 标签配色（配色 class 见 app.wxss 的 .tag-*）
 const TONES = {
@@ -25,6 +27,8 @@ Page({
     isAdmin: false,
     openid: '',
     modeTip: '',
+    // 演示账号的家长端被拦住时显示的那句话（不是家长端就是空）
+    demoLock: '',
 
     // 表单：editId 为空 = 正在写一条新通知；有值 = 正在改这一条
     editId: '',
@@ -55,6 +59,11 @@ Page({
 
   // 校验身份：是管理员才把表单和列表显示出来
   checkAdmin(pendingId) {
+    // 演示账号的家长端：不查云端、不看本机标记，一律按「不是管理员」收口
+    if (role.isParent()) {
+      this.setData({ checked: true, isAdmin: false, openid: '', demoLock: role.PARENT_TIP })
+      return
+    }
     notice.adminStatus().then((res) => {
       const isAdmin = !!(res && res.isAdmin)
       this.setData({

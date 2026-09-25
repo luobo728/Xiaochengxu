@@ -12,8 +12,10 @@
 // 想回到「未登录」：在「我的 → 切换演示账号」里选退出登录。
 const auth = require('./auth.js')
 const notice = require('./notice.js')
+// 演示账号的身份底线（家长端永远不是管理员）：key 与判断都在这个文件里
+const role = require('./demo-role.js')
 
-const KEY_CURRENT = 'demo_account_v1'
+const KEY_CURRENT = role.KEY_CURRENT
 
 // 顺序就是切换面板里的顺序
 const ACCOUNTS = [

@@ -7,6 +7,8 @@
 const album = require('../../utils/album.js')
 const view = require('../../utils/album-view.js')
 const nav = require('../../utils/nav.js')
+// 演示账号身份底线：家长端永远不是管理员（和 utils/notice.js 用的是同一份判断）
+const role = require('../../utils/demo-role.js')
 
 // 两位数补零：2025-4-6 → 2025-04-06
 function pad2(n) {
@@ -32,6 +34,8 @@ Page({
     isAdmin: false,
     openid: '',
     modeTip: '',
+    // 演示账号的家长端被拦住时显示的那句话（不是家长端就是空）
+    demoLock: '',
 
     // 表单：editId 为空 = 在建新相册；有值 = 正在改这一本
     editId: '',
@@ -78,6 +82,11 @@ Page({
   // 校验身份：是管理员才把表单和列表显示出来
   checkAdmin() {
     const that = this
+    // 演示账号的家长端：不查云端、不看本机标记，一律按「不是管理员」收口
+    if (role.isParent()) {
+      that.setData({ checked: true, isAdmin: false, openid: '', demoLock: role.PARENT_TIP })
+      return
+    }
     album.adminStatus().then(function (res) {
       const isAdmin = !!(res && res.isAdmin)
       that.setData({

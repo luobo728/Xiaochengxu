@@ -2,6 +2,8 @@
 const app = getApp()
 const menu = require('../../utils/menu.js')
 const mealUtil = require('../../utils/meal.js')
+// 演示账号身份底线：家长端永远不是管理员（和 utils/notice.js 用的是同一份判断）
+const role = require('../../utils/demo-role.js')
 
 const WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 const MAX_PER_MEAL = 9      // 单个餐次最多 9 张
@@ -38,6 +40,8 @@ Page({
     checked: false,     // 是否已拿到身份结果
     isAdmin: false,
     openid: '',
+    // 演示账号的家长端被拦住时显示的那句话（不是家长端就是空）
+    demoLock: '',
     list: [],           // 当前日期全部记录
     current: [],        // 当前日期 + 当前餐次的记录
     stats: [],          // 当日各餐次张数（概览卡）
@@ -90,6 +94,11 @@ Page({
 
   // 身份校验：失败兜底为非管理员（非管理员不渲染任何上传 / 删除 UI）
   checkAdmin() {
+    // 演示账号的家长端：不查云端，一律按「不是管理员」收口
+    if (role.isParent()) {
+      this.setData({ checked: true, isAdmin: false, openid: '', demoLock: role.PARENT_TIP })
+      return
+    }
     let task = null
     try {
       task = menu.whoami()

@@ -17,6 +17,7 @@
         <view class="lock-title">只有管理员能编辑通知</view>
         <view class="lock-sub">这个页面用来给家长发布和修改通知公告</view>
         <view class="lock-id" wx:if="{{openid}}">{{openid}}</view>
+        <view class="lock-demo" wx:if="{{demoLock}}">{{demoLock}}</view>
         <view class="lock-tip">怎么成为管理员：① 长按「我的」页面最下面的版本号，按提示开启本机体验管理员（改的通知只在这台手机上）；② 云端管理员要把上面这串编号交给园里的技术老师，加进云函数白名单（见 docs/notice-admin.md）</view>
         <view class="btn-primary btn-back" bindtap="goBack">返回</view>
       </view>

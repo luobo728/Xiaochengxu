@@ -369,6 +369,18 @@
   text-align: left;
 }
 
+.lock-demo {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #FFF6EA;
+  border: 1rpx solid #FFDCB0;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #A25B00;
+  text-align: left;
+}
+
 .btn-back {
   margin-top: 32rpx;
 }

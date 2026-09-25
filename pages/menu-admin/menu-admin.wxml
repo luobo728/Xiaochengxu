@@ -14,6 +14,7 @@
       <view class="lock-box">
         <view class="lock-title">云开发未就绪</view>
         <view class="lock-sub">{{cloudError}}</view>
+        <view class="lock-demo" wx:if="{{demoLock}}">{{demoLock}}</view>
         <view class="btn-primary btn-back" bindtap="goBack">返回</view>
       </view>
     </view>
@@ -29,6 +30,7 @@
         <view class="lock-sub">本页面仅幼儿园管理员可操作</view>
         <view class="lock-id" wx:if="{{openid}}">{{openid}}</view>
         <view class="lock-tip">把该 openid 加入云函数环境变量 ADMIN_OPENIDS，或写入数据库 menu_admins 集合（文档 ID = 该 openid）后重新进入本页</view>
+        <view class="lock-demo" wx:if="{{demoLock}}">{{demoLock}}</view>
         <view class="btn-primary btn-back" bindtap="goBack">返回</view>
       </view>
     </view>

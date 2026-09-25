@@ -27,6 +27,7 @@
         <view class="lock-title">相册管理只有管理员能进</view>
         <view class="lock-sub">家长端「班级相册」不受影响，照样能看照片</view>
         <view class="lock-id">你的 openid：{{openid || '暂时拿不到'}}</view>
+        <view class="lock-demo" wx:if="{{demoLock}}">{{demoLock}}</view>
         <view class="lock-tip">开通办法：把上面这串 openid 填进云函数白名单（和「通知公告管理」共用一份名单，见 docs/album-cloud-setup.md）；没连云端时，可以长按「我的」页底部的版本号，在这台手机上体验管理员。</view>
         <view class="btn-primary btn-back" bindtap="goBack">返回「我的」</view>
       </view>
