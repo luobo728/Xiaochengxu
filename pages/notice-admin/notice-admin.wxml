@@ -63,6 +63,19 @@
         </view>
 
         <view class="fld">
+          <view class="fld-lbl">推送范围<text class="fld-tip">定向推送</text></view>
+          <view class="pills">
+            <view
+              class="pill {{targetIndex === index ? 'on' : ''}}"
+              wx:for="{{targets}}"
+              wx:key="*this"
+              data-index="{{index}}"
+              bindtap="onTargetTap">{{item}}</view>
+          </view>
+          <view class="opt-hint">选一个班 = 定向推送：只有这个班的家长端能看到；「全园」= 每个家长都看到。演示账号的家长端是大一班的乐乐妈妈</view>
+        </view>
+
+        <view class="fld">
           <view class="fld-lbl">正文<text class="fld-tip">换行就是分段</text></view>
           <textarea
             class="fld-textarea"
@@ -99,6 +112,7 @@
             <view class="nrow-main">
               <view class="nrow-head">
                 <text class="tag {{item.tone}}">{{item.tag}}</text>
+                <text class="tag {{item.rangeTone}}">{{item.rangeText}}</text>
                 <text class="nrow-badge" wx:if="{{item.top}}">置顶中</text>
               </view>
               <view class="nrow-title">{{item.title}}</view>

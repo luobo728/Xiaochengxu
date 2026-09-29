@@ -41,7 +41,8 @@ Page({
       activities: g.activities || []
     })
     // 通知：先用本机已有的立刻画出来（不会白屏），再刷新一次拿最新的
-    this.applyNotices(notice.listSync())
+    // listVisible* = 家长端只看推给本班的（定向推送），老师/管理员看到全部
+    this.applyNotices(notice.listVisibleSync())
     this.refreshNotices()
   },
 
@@ -92,7 +93,7 @@ Page({
 
   // 取最新通知：本地模式立刻返回；网络出错时保留现有内容，不打扰用户
   refreshNotices() {
-    notice.list().then((rows) => {
+    notice.listVisible().then((rows) => {
       this.applyNotices(rows)
     }).catch(() => {})
   },

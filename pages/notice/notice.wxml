@@ -17,6 +17,7 @@
     <view class="art-meta">
       <view class="art-meta-l">
         <text class="tag tag-blue">{{tag}}</text>
+        <text class="tag {{rangeTone}}" wx:if="{{rangeText}}">{{rangeText}}</text>
         <text class="meta-time">{{time}} 发布</text>
       </view>
       <view class="art-meta-r" wx:if="{{top}}">已置顶</view>
@@ -29,7 +30,7 @@
     <view class="art-end">—— 阳光幼儿园 ——</view>
   </view>
   <view wx:else class="empty-state">
-    <view class="empty">这条通知已被删除</view>
+    <view class="empty">{{emptyText}}</view>
     <view class="btn-primary back-btn" bindtap="goBack">返回首页</view>
   </view>
 

@@ -14,6 +14,8 @@ const env = require('./env.js')
 const menu = require('./menu.js')
 // 演示账号身份底线：家长端永远不是管理员（单独一个文件，避免循环依赖）
 const role = require('./demo-role.js')
+// 定向推送要知道「这个客户端是哪个班的」：班级只认「孩子档案」那一份（谁都不 require，不会绕圈）
+const kids = require('./children.js')
 
 const MODE = 'local'
 
@@ -25,12 +27,19 @@ const MAX_TITLE = 40
 const MAX_BODY = 1000
 const TAGS = ['通知', '活动', '保健', '提示', '食谱']
 
+// 定向推送：'全园' = 所有家长都看得到；选了班级，就只有那个班的客户端看得到
+// 班级名单不在这个文件里再抄一份 —— 用的是「孩子档案」里那一份（同一个园，加班只改一处）
+const ALL_CLASS = '全园'
+const TARGETS = [ALL_CLASS].concat(kids.CLASSES)
+
 // 演示通知：本机第一次使用时自动写入，管理员可编辑 / 删除 / 恢复
+// n5 是「定向推送」的样例：只推给大一班（演示账号的家长端就是大一班的乐乐妈妈，所以她看得到）
 const DEFAULT_NOTICES = [
   {
     id: 'n1',
     title: '周六亲子运动会报名截止 4月15日 18:00',
     tag: '活动',
+    to: ALL_CLASS,
     time: '04-14',
     top: false,
     body:
@@ -41,6 +50,7 @@ const DEFAULT_NOTICES = [
     id: 'n2',
     title: '春季流感高发，请为宝贝准备一件外套',
     tag: '保健',
+    to: ALL_CLASS,
     time: '04-13',
     top: false,
     body:
@@ -51,6 +61,7 @@ const DEFAULT_NOTICES = [
     id: 'n3',
     title: '4月20日 家长开放日，欢迎家长准时参加',
     tag: '通知',
+    to: ALL_CLASS,
     time: '04-12',
     top: true,
     body:
@@ -61,11 +72,23 @@ const DEFAULT_NOTICES = [
     id: 'n4',
     title: '本周五 16:00 结束接送，请提前安排',
     tag: '提示',
+    to: ALL_CLASS,
     time: '04-11',
     top: false,
     body:
       '本周五下午全园教研活动，16:00 开始离园，请家长提前安排时间。\n' +
       '如确需晚接，请在 15:00 前跟班主任说明，园里会安排值班老师看护。'
+  },
+  {
+    id: 'n5',
+    title: '大一班周五户外写生：请给孩子带画本和彩色笔',
+    tag: '通知',
+    to: '大一班',
+    time: '04-10',
+    top: false,
+    body:
+      '周五上午大一班到园外小公园写生，9:00 出发，11:30 回园。\n' +
+      '请给孩子带一本画本、一盒彩色笔，穿方便走路的鞋子。这条通知只推给「大一班」的家长，别班的家长端看不到。'
   }
 ]
 
@@ -85,6 +108,13 @@ function trimText(v) {
   return String(v === undefined || v === null ? '' : v).replace(/^\s+|\s+$/g, '')
 }
 
+// 把任意来源的「推送范围」收成一个合法值：不认识的一律当「全园」
+// （宁可推给全园，也不要因为班级写错让这条通知在家长端凭空消失）
+function pickTarget(v) {
+  const t = trimText(v)
+  return TARGETS.indexOf(t) > -1 ? t : ALL_CLASS
+}
+
 // 把任意来源的数据整理成统一的一条通知
 function normalize(raw) {
   if (!raw || typeof raw !== 'object') return null
@@ -95,6 +125,7 @@ function normalize(raw) {
     id: id,
     title: title,
     tag: trimText(raw.tag) || '通知',
+    to: pickTarget(raw.to),
     time: trimText(raw.time) || todayShort(),
     body: trimText(raw.body),
     top: !!raw.top,
@@ -224,6 +255,72 @@ function getById(id) {
   return null
 }
 
+/* ---------------- 定向推送（推送范围） ---------------- */
+
+// 这个客户端「属于哪个班」—— 定向推送就按它投递：
+//   演示账号的家长端 —— 自己孩子（乐乐）档案里的班级（档案被删就当没有班级）
+//   老师端 / 管理员 / 没切演示账号的真机 —— '' 表示不筛，通知全都看得到
+function viewClass() {
+  if (!role.isParent()) return ''
+  const kid = kids.get(kids.OWNER.parent)
+  return trimText(kid && kid.cls)
+}
+
+// 这条通知这个客户端看得到吗：
+//   全园 —— 都看得到
+//   定向到某个班 —— 只有这个班的客户端看得到（没有班级的客户端不筛，免得老师自己看不到）
+function canSee(row) {
+  const to = pickTarget(row && row.to)
+  if (to === ALL_CLASS) return true
+  const cls = viewClass()
+  if (!cls) return true
+  return cls === to
+}
+
+// 按「这个客户端的班级」筛一遍（家长端首页 / 通知详情用这个）
+function filterVisible(rows) {
+  const all = rows || []
+  const out = []
+  for (let i = 0; i < all.length; i++) {
+    if (canSee(all[i])) out.push(all[i])
+  }
+  return out
+}
+
+// 同步版：本机数据立刻画出来（家长端首页不等网络）
+function listVisibleSync() {
+  return filterVisible(listSync())
+}
+
+// 最新版：拉一次最新数据再筛
+function listVisible() {
+  return list().then(function (rows) {
+    return filterVisible(rows)
+  })
+}
+
+// 这条通知推给谁（'全园' / '小班' / '中班' / '大班' / '大一班' / '学前班'）
+function targetOf(row) {
+  return pickTarget(row && row.to)
+}
+
+// 「推送范围」在页面上怎么写（管理页列表和通知详情共用这一份文案）
+function rangeText(row) {
+  const to = targetOf(row)
+  return to === ALL_CLASS ? '全园' : '仅 ' + to
+}
+
+// 范围标签的配色：全园用灰的，定向用蓝的（配色 class 在 app.wxss）
+function rangeTone(row) {
+  return targetOf(row) === ALL_CLASS ? 'tag-gray' : 'tag-blue'
+}
+
+// 表单用：某个范围在胶囊列表里的下标（找不到就是 0 = 全园）
+function targetIndex(v) {
+  const i = TARGETS.indexOf(pickTarget(v))
+  return i > -1 ? i : 0
+}
+
 /* ---------------- 写（仅管理员） ---------------- */
 
 // 保存：带 id 表示改这一条，不带 id 表示新增。返回 Promise<{ ok, msg, item }>
@@ -243,12 +340,16 @@ function save(input) {
 
   const now = Date.now()
   const id = trimText(draft.id)
+  // 推送范围：这次没传就沿用原来那条（改通知时不会把范围悄悄改回「全园」）
+  const cur = id ? getById(id) : null
+  const to = draft.to === undefined || draft.to === '' ? targetOf(cur) : pickTarget(draft.to)
 
   if (MODE === 'cloud' && isCloudReady()) {
     return call('save', {
       id: id,
       title: title,
       tag: trimText(draft.tag) || '通知',
+      to: to,
       body: body,
       top: !!draft.top
     }).then(function (res) {
@@ -266,6 +367,7 @@ function save(input) {
       item = Object.assign({}, row, {
         title: title,
         tag: trimText(draft.tag) || row.tag || '通知',
+        to: to,
         body: body,
         top: !!draft.top,
         updatedAt: now
@@ -280,6 +382,7 @@ function save(input) {
       id: 'n' + now,
       title: title,
       tag: trimText(draft.tag) || '通知',
+      to: to,
       time: todayShort(),
       body: body,
       top: !!draft.top,
@@ -324,6 +427,7 @@ function toggleTop(id) {
       title: row.title,
       tag: row.tag,
       body: row.body,
+      to: pickTarget(row.to),
       top: !row.top
     }).then(function (res) {
       if (res && res.ok) clearListCache()
@@ -461,6 +565,8 @@ module.exports = {
   TAGS: TAGS,
   MAX_TITLE: MAX_TITLE,
   MAX_BODY: MAX_BODY,
+  ALL_CLASS: ALL_CLASS,
+  TARGETS: TARGETS,
   isCloudReady: isCloudReady,
   list: list,
   listSync: listSync,
@@ -472,5 +578,16 @@ module.exports = {
   clearListCache: clearListCache,
   adminStatus: adminStatus,
   isLocalAdmin: isLocalAdmin,
-  setLocalAdmin: setLocalAdmin
+  setLocalAdmin: setLocalAdmin,
+  // 定向推送（推送范围）：谁属于哪个班、这条通知他看不看得到、页面上怎么写
+  pickTarget: pickTarget,
+  targetOf: targetOf,
+  viewClass: viewClass,
+  canSee: canSee,
+  filterVisible: filterVisible,
+  listVisible: listVisible,
+  listVisibleSync: listVisibleSync,
+  rangeText: rangeText,
+  rangeTone: rangeTone,
+  targetIndex: targetIndex
 }

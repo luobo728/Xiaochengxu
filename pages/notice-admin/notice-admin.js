@@ -18,6 +18,11 @@ const TONES = {
   食谱: 'tag-orange'
 }
 
+// 发布成功的提示：一眼看出这条推给谁
+function publishTip(to) {
+  return to === notice.ALL_CLASS ? '已发布：全园家长可见' : '已发布：仅' + to + '家长可见'
+}
+
 Page({
   data: {
     statusBarHeight: 20,
@@ -36,6 +41,8 @@ Page({
     title: '',
     tags: notice.TAGS,
     tagIndex: 0,
+    targets: notice.TARGETS,
+    targetIndex: 0,
     body: '',
     top: false,
     maxTitle: notice.MAX_TITLE,
@@ -105,6 +112,8 @@ Page({
         tag: row.tag,
         tone: TONES[row.tag] || 'tag-blue',
         time: row.time,
+        rangeText: notice.rangeText(row),
+        rangeTone: notice.rangeTone(row),
         top: !!row.top,
         bodyLen: (row.body || '').length
       }
@@ -150,6 +159,7 @@ Page({
       editTitle: row.title,
       title: row.title,
       tagIndex: tagIndex,
+      targetIndex: notice.targetIndex(row.to),
       body: row.body,
       top: !!row.top
     })
@@ -169,7 +179,7 @@ Page({
 
   // 回到「写一条新通知」
   onNewTap() {
-    this.applyForm({ editId: '', editTitle: '', title: '', tagIndex: 0, body: '', top: false })
+    this.applyForm({ editId: '', editTitle: '', title: '', tagIndex: 0, targetIndex: 0, body: '', top: false })
   },
 
   onTitleInput(e) {
@@ -183,6 +193,11 @@ Page({
   onTagTap(e) {
     const index = Number((e.currentTarget.dataset || {}).index) || 0
     this.setData({ tagIndex: index })
+  },
+
+  onTargetTap(e) {
+    const index = Number((e.currentTarget.dataset || {}).index) || 0
+    this.setData({ targetIndex: index })
   },
 
   onTopChange(e) {
@@ -201,10 +216,13 @@ Page({
     this.setData({ saving: true })
     // 这次是「改已有的」还是「新写一条」，保存前先记住，好给出不一样的提示
     const wasEdit = !!this.data.editId
+    // 推送范围：选中的那个胶囊（0 = 全园）
+    const to = notice.TARGETS[this.data.targetIndex] || notice.ALL_CLASS
     Promise.resolve(notice.save({
       id: this.data.editId,
       title: title,
       tag: notice.TAGS[this.data.tagIndex] || '通知',
+      to: to,
       body: this.data.body,
       top: this.data.top
     })).then((res) => {
@@ -220,7 +238,7 @@ Page({
         editTitle: saved ? (saved.title || title) : this.data.editTitle
       })
       this.refreshList()
-      wx.showToast({ title: wasEdit ? '已保存修改' : '已发布，首页马上能看到', icon: 'none' })
+      wx.showToast({ title: wasEdit ? '已保存修改' : publishTip(to), icon: 'none' })
     }).catch(() => {
       this.setData({ saving: false })
       wx.showToast({ title: '保存失败，请检查网络', icon: 'none' })
@@ -277,7 +295,7 @@ Page({
   onReset() {
     wx.showModal({
       title: '恢复演示通知？',
-      content: '会把通知恢复成最初的 4 条演示内容，你写的通知会被清掉',
+      content: '会把通知恢复成最初的 5 条演示内容，你写的通知会被清掉',
       confirmText: '恢复',
       success: (r) => {
         if (!r.confirm) return

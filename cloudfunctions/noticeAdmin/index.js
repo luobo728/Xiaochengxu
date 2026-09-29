@@ -4,7 +4,7 @@
 // 管理员来源（满足其一即可，与 menuAdmin 完全相同）：
 //   ① 云函数环境变量 ADMIN_OPENIDS（多个用英文逗号分隔）
 //   ② 数据库集合 menu_admins，文档 ID = 管理员 openid
-// 数据集合：notices（文档字段：title / tag / time / body / top / createdAt / updatedAt）
+// 数据集合：notices（文档字段：title / tag / to / time / body / top / createdAt / updatedAt）
 const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -13,17 +13,24 @@ const db = cloud.database()
 const COLLECTION = 'notices'
 const ADMINS = 'menu_admins' // 与食谱管理共用同一份管理员名单
 const TAGS = ['通知', '活动', '保健', '提示', '食谱']
+
+// 定向推送范围：'全园' = 所有家长；选了某个班，就只有那个班的客户端看得到
+// 班级名单与小程序端 utils/children.js 的 CLASSES 保持一致（云函数是独立部署包，
+// require 不到小程序端代码，只能各写一份，加班时两边都要改）
+const ALL_CLASS = '全园'
+const TARGETS = [ALL_CLASS, '小班', '中班', '大班', '大一班', '学前班']
 const MAX_TITLE = 40
 const MAX_BODY = 1000
 const DATE_RE = /^\d{2}-\d{2}$/
 const DB_TIMEOUT = 1500 // 数据库查询的内部超时（毫秒），防止云函数被平台判超时
 
-// 演示通知：管理员点「恢复演示通知」时写回这 4 条
+// 演示通知：管理员点「恢复演示通知」时写回这 5 条（n5 是定向推送给大一班的样例）
 const DEFAULT_NOTICES = [
   {
     id: 'n1',
     title: '周六亲子运动会报名截止 4月15日 18:00',
     tag: '活动',
+    to: ALL_CLASS,
     time: '04-14',
     top: false,
     body:
@@ -34,6 +41,7 @@ const DEFAULT_NOTICES = [
     id: 'n2',
     title: '春季流感高发，请为宝贝准备一件外套',
     tag: '保健',
+    to: ALL_CLASS,
     time: '04-13',
     top: false,
     body:
@@ -44,6 +52,7 @@ const DEFAULT_NOTICES = [
     id: 'n3',
     title: '4月20日 家长开放日，欢迎家长准时参加',
     tag: '通知',
+    to: ALL_CLASS,
     time: '04-12',
     top: true,
     body:
@@ -54,11 +63,23 @@ const DEFAULT_NOTICES = [
     id: 'n4',
     title: '本周五 16:00 结束接送，请提前安排',
     tag: '提示',
+    to: ALL_CLASS,
     time: '04-11',
     top: false,
     body:
       '本周五下午全园教研活动，16:00 开始离园，请家长提前安排时间。\n' +
       '如确需晚接，请在 15:00 前跟班主任说明，园里会安排值班老师看护。'
+  },
+  {
+    id: 'n5',
+    title: '大一班周五户外写生：请给孩子带画本和彩色笔',
+    tag: '通知',
+    to: '大一班',
+    time: '04-10',
+    top: false,
+    body:
+      '周五上午大一班到园外小公园写生，9:00 出发，11:30 回园。\n' +
+      '请给孩子带一本画本、一盒彩色笔，穿方便走路的鞋子。这条通知只推给「大一班」的家长，别班的家长端看不到。'
   }
 ]
 
@@ -128,6 +149,13 @@ async function hasAdmin() {
   return !!(res && res.total > 0)
 }
 
+// 定向推送范围：不在名单里的一律当「全园」（老数据没这个字段 / 传错了都按全园处理，
+// 宁可多推给全园，也不能让一条通知凭空消失）
+function pickTarget(v) {
+  const t = trimText(v)
+  return TARGETS.indexOf(t) > -1 ? t : ALL_CLASS
+}
+
 // 统一整理成客户端要的形状（id 用文档 _id，保证「改这一条」能对上）
 function shape(doc) {
   const raw = doc || {}
@@ -135,6 +163,7 @@ function shape(doc) {
     id: raw._id || raw.id || '',
     title: raw.title || '',
     tag: raw.tag || '通知',
+    to: pickTarget(raw.to),
     time: raw.time || todayShort(),
     body: raw.body || '',
     top: !!raw.top,
@@ -219,6 +248,8 @@ exports.main = async (event) => {
       if (!doc) return fail('这条通知已经不在了')
 
       const time = DATE_RE.test(doc.time || '') ? doc.time : todayShort()
+      // 改的时候没带 to（老客户端）就沿用原来的范围，别悄悄改成全园
+      const to = trimText(event.to) ? pickTarget(event.to) : pickTarget(doc.to)
       try {
         await db
           .collection(COLLECTION)
@@ -227,6 +258,7 @@ exports.main = async (event) => {
             data: {
               title: title,
               tag: tag,
+              to: to,
               body: body,
               top: top,
               time: time,
@@ -237,13 +269,16 @@ exports.main = async (event) => {
       } catch (e) {
         return fail('保存失败：' + errText(e))
       }
-      return ok({ item: shape(Object.assign({}, doc, { title: title, tag: tag, body: body, top: top, time: time, updatedAt: now })) })
+      return ok({ item: shape(Object.assign({}, doc, { title: title, tag: tag, to: to, body: body, top: top, time: time, updatedAt: now })) })
     }
 
     // 新增
+    // 新增的默认推给全园
+    const to = pickTarget(event.to)
     const data = {
       title: title,
       tag: tag,
+      to: to,
       time: todayShort(),
       body: body,
       top: top,
@@ -274,7 +309,7 @@ exports.main = async (event) => {
     return ok({ removed: 1 })
   }
 
-  // 恢复演示通知：清空后写回那 4 条（给园长试手感的，谨慎使用）
+  // 恢复演示通知：清空后写回那 5 条（给园长试手感的，谨慎使用）
   if (action === 'reset') {
     try {
       await db.createCollection(COLLECTION)
@@ -309,7 +344,8 @@ exports.main = async (event) => {
               data: {
                 title: item.title,
                 tag: item.tag,
-                time: item.time,
+                tag: item.tag,
+                to: pickTarget(item.to),
                 body: item.body,
                 top: item.top,
                 createdAt: now - (DEFAULT_NOTICES.length - i) * 1000,

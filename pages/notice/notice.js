@@ -7,8 +7,10 @@ const nav = require('../../utils/nav.js')
 Page({
   data: {
     statusBarHeight: 20,
-    // 是否找到这条通知：false 时显示「已被删除」的空态
+    // 是否找到这条通知：false 时显示空态（找不到 / 定向推送看不到，文案不一样）
     found: false,
+    // 空态文案：数据层和页面都可能改写它
+    emptyText: '这条通知已被删除',
     id: '',
     // 展示字段全部来自数据层，页面不改写文案
     title: '',
@@ -17,6 +19,9 @@ Page({
     top: false,
     // 正文段落（按换行拆开，一段一个 view）
     paragraphs: [],
+    // 定向推送的范围（如「仅 大一班」）：全园时为空串，页面不显示标签
+    rangeText: '',
+    rangeTone: 'tag-blue',
     // 管理员才会出现底部的「编辑这条通知」
     isAdmin: false
   },
@@ -46,32 +51,54 @@ Page({
     }
     // 本地模式没有更多来源了，直接显示空态
     if (notice.MODE !== 'cloud' || !notice.isCloudReady()) {
-      this.setData({ found: false, paragraphs: [] })
+      this.paintMissing('这条通知已被删除')
       return
     }
     Promise.resolve(notice.list())
       .then((rows) => {
         const again = notice.getById(this.data.id)
         if (!again) {
-          this.setData({ found: false, paragraphs: [] })
+          this.paintMissing('这条通知已被删除')
           return
         }
         this.paintRow(again)
       })
       .catch(() => {
-        this.setData({ found: false, paragraphs: [] })
+        this.paintMissing('这条通知已被删除')
       })
   },
 
   // 把一条通知画到页面上
   paintRow(row) {
+    // 定向推送：不属于自己班的通知看不到（从分享链接直接点进来也一样挡住）
+    if (!notice.canSee(row)) {
+      this.paintMissing('这条通知只推送给「' + notice.targetOf(row) + '」的家长')
+      return
+    }
     this.setData({
       found: true,
+      emptyText: '这条通知已被删除',
       title: row.title,
       tag: row.tag,
       time: row.time,
       top: !!row.top,
+      rangeText: this.rangeChip(row),
+      rangeTone: notice.rangeTone(row),
       paragraphs: this.splitBody(row.body)
+    })
+  },
+
+  // 详情页的范围小标签：定向推送才显示（「全园」不显示，免得每条都挂个灰标签）
+  rangeChip(row) {
+    return notice.targetOf(row) === notice.ALL_CLASS ? '' : notice.rangeText(row)
+  },
+
+  // 找不到 / 看不到这条通知时统一走这里，只有文案不一样
+  paintMissing(text) {
+    this.setData({
+      found: false,
+      paragraphs: [],
+      emptyText: text || '这条通知已被删除'
     })
   },
 
