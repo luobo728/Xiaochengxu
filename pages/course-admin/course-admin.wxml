@@ -1,0 +1,133 @@
+<view class="page">
+  <view class="hd hd-course" style="padding-top:{{statusBarHeight}}px">
+    <view class="hd-row">
+      <view class="hd-back" hover-class="hd-back-hover" bindtap="goBack"><view class="ico-back"></view></view>
+      <view class="hd-title">课程内容管理</view>
+      <view class="hd-back ghost"></view>
+    </view>
+    <view class="hd-sub">改的是「这一节课」：课程名 / 老师 / 每节几课时 / 内容简介</view>
+  </view>
+
+  <view class="body">
+    <!-- 三分支：正在校验 / 不是老师 / 是老师（wx:if·wx:elif·wx:else 必须相邻，中间不夹注释） -->
+    <view class="empty" wx:if="{{!checked}}">正在校验身份…</view>
+    <view class="card" wx:elif="{{!canEdit}}">
+      <view class="lock-box">
+        <view class="ico-lock"></view>
+        <view class="lock-title">课程内容只有老师能改</view>
+        <view class="lock-sub">这一页用来改课表里每节课的课程名、老师、课时和内容简介</view>
+        <view class="lock-demo" wx:if="{{demoLock}}">{{demoLock}}</view>
+        <view class="btn-primary btn-back" bindtap="goBack">返回</view>
+      </view>
+    </view>
+    <block wx:else>
+      <view class="mode-tip">{{modeTip}}</view>
+      <view class="staff-tip" wx:if="{{staffTip}}">{{staffTip}}</view>
+
+      <!-- ========== 编辑区 ========== -->
+      <view class="editing-bar" wx:if="{{editing}}">
+        <view class="editing-txt">正在修改：{{editTitle}}</view>
+        <view class="editing-cancel" bindtap="onCancelEdit">不改了</view>
+      </view>
+
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">{{editing ? '修改这节课的内容' : '选一节课来改'}}</view>
+          <view class="card-more" wx:if="{{editing}}">共 {{total}} 节</view>
+        </view>
+
+        <view class="empty" wx:if="{{!editing}}">点下面课表里任意一节课，这里就会变成修改它</view>
+
+        <block wx:else>
+          <view class="fld">
+            <view class="fld-lbl">课程名<text class="fld-req">必填</text></view>
+            <input
+              class="fld-input"
+              value="{{name}}"
+              maxlength="{{maxName}}"
+              placeholder="例如：主题课 · 春天的颜色"
+              placeholder-class="ph"
+              bindinput="onNameInput" />
+            <view class="fld-count">还能写 {{nameLeft}} 个字</view>
+          </view>
+
+          <view class="fld">
+            <view class="fld-lbl">老师</view>
+            <input
+              class="fld-input"
+              value="{{teacher}}"
+              maxlength="{{maxTeacher}}"
+              placeholder="例如：王老师"
+              placeholder-class="ph"
+              bindinput="onTeacherInput" />
+            <view class="fld-count">还能写 {{teacherLeft}} 个字</view>
+          </view>
+
+          <view class="fld">
+            <view class="fld-lbl">每节课时<text class="fld-tip">课时=钱</text></view>
+            <view class="pills">
+              <view
+                class="pill {{hours === item ? 'on' : ''}}"
+                wx:for="{{hoursChoices}}"
+                wx:key="*this"
+                data-index="{{index}}"
+                bindtap="onHoursTap">{{item}}</view>
+            </view>
+            <view class="opt-hint" wx:if="{{hoursLocked}}">{{hoursLockTip}}</view>
+            <view class="opt-hint" wx:else>改完这节课就按新的课时数结算；已经点过名的课不能改</view>
+          </view>
+
+          <view class="fld">
+            <view class="fld-lbl">内容简介<text class="fld-tip">家长在课时页能看到</text></view>
+            <textarea
+              class="fld-textarea"
+              value="{{desc}}"
+              maxlength="{{maxDesc}}"
+              placeholder="这节课教什么，一句话就行"
+              placeholder-class="ph"
+              bindinput="onDescInput"></textarea>
+            <view class="fld-count">还能写 {{descLeft}} 个字</view>
+          </view>
+
+          <view class="btn-primary save-btn" bindtap="onSave">{{saving ? '正在保存…' : '保存修改'}}</view>
+        </block>
+      </view>
+
+      <!-- ========== 课表 ========== -->
+      <view class="card">
+        <view class="card-head">
+          <view class="card-title">课表</view>
+          <view class="card-more">共 {{total}} 节 · {{dayCount}} 天</view>
+        </view>
+
+        <view class="empty" wx:if="{{!rows.length}}">还没有课表</view>
+
+        <block wx:for="{{rows}}" wx:key="id">
+          <view class="day-head" wx:if="{{item.dayHead}}">{{item.dayText}}</view>
+          <view class="lrow {{item.id === editId ? 'on' : ''}}" data-id="{{item.id}}" bindtap="onRowTap">
+            <view class="lrow-main">
+              <view class="lrow-head">
+                <text class="tag {{item.tagClass}}">{{item.statusText}}</text>
+                <text class="tag tag-gray">每节 {{item.hours}} 课时</text>
+                <text class="lrow-rolled" wx:if="{{item.rolledText}}">{{item.rolledText}}</text>
+              </view>
+              <view class="lrow-title">{{item.time}} · {{item.name}}</view>
+              <view class="lrow-sub">{{item.sub}}</view>
+            </view>
+            <view class="lrow-btns">
+              <view class="mini edit" data-id="{{item.id}}" catchtap="onRowTap">编辑</view>
+            </view>
+          </view>
+          <view class="hairline"></view>
+        </block>
+
+        <view class="row-hint">点一行的「编辑」，上面就会变成修改这一节</view>
+      </view>
+
+      <view class="foot-note">改的是「这一节课」：只影响这一天这一节，别的日子、别的时段都不动。课时数决定结算扣多少（课时=钱，增减只走账本），所以已经点过名的课不让改 —— 想改先到点名页把这一天「清空今日点名」；课程名、老师、内容简介随时能改。</view>
+    </block>
+  </view>
+
+  <!-- 底部导航：子页面也能直接切换模块（高亮「我的」） -->
+  <tab-bar selected="{{3}}" plain="{{true}}" />
+</view>

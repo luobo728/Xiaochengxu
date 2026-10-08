@@ -47,18 +47,26 @@ const WEEKDAY_SLOTS = ['09:20', '15:30']
 const WEEKEND_SLOTS = ['10:00', '16:00']
 const WEEKDAY_COURSES = [
   [
-    { name: '主题课 · 春天的颜色', teacher: '王老师' },
-    { name: '绘本阅读 · 小种子旅行记', teacher: '李老师' }
+    { name: '主题课 · 春天的颜色', teacher: '王老师', desc: '认识春天常见的颜色，动手做一张自己的色卡' },
+    { name: '绘本阅读 · 小种子旅行记', teacher: '李老师', desc: '跟着小种子去旅行，说一说种子是怎么长大的' }
   ],
   [
-    { name: '奥尔夫音乐 · 小手拍拍', teacher: '陈老师' },
-    { name: '体能游戏 · 快乐跳跳跳', teacher: '张老师' }
+    { name: '奥尔夫音乐 · 小手拍拍', teacher: '陈老师', desc: '用身体打拍子，跟着节奏做律动小游戏' },
+    { name: '体能游戏 · 快乐跳跳跳', teacher: '张老师', desc: '练习双脚跳和跨跳，玩一个接力小游戏' }
   ]
 ]
 const WEEKEND_COURSES = [
-  { name: '美术延时班 · 手工风车', teacher: '陈老师' },
-  { name: '舞蹈延时班 · 小星星', teacher: '李老师' }
+  { name: '美术延时班 · 手工风车', teacher: '陈老师', desc: '剪贴做一只会转的小风车，带回家给爸爸妈妈看' },
+  { name: '舞蹈延时班 · 小星星', teacher: '李老师', desc: '学一段小星星的舞蹈，练基本手位和站姿' }
 ]
+
+// 「课程内容管理」（老师端）能改哪些 —— 数据层和页面共用这一份，不各写一遍
+const MAX_NAME = 24 // 课程名最多 24 字
+const MAX_TEACHER = 8 // 老师名字最多 8 字
+const MAX_DESC = 60 // 内容简介最多 60 字
+const HOURS_CHOICES = [1, 2, 3, 4, 5, 6] // 每节几课时（页面上摆成胶囊，点一下选中）
+const HOURS_MIN = 1
+const HOURS_MAX = 9
 
 // 课时页「本周课程」每行左侧方块换着颜色用（和原来的假数据一个色系）
 const ROW_BGS = [
@@ -246,6 +254,7 @@ function lessonsOfDay(day) {
       time: slots[i],
       start: startTs(day, slots[i]),
       name: course.name,
+      desc: course.desc || '',
       teacher: course.teacher,
       cls: CLS,
       studentIds: studentIds(),
@@ -784,6 +793,7 @@ function decorateLesson(lesson, marks, now) {
     id: lesson.id,
     date: lesson.date,
     name: lesson.name,
+    desc: lesson.desc || '',
     time: lesson.time,
     teacher: lesson.teacher,
     hours: lesson.hours,
@@ -830,6 +840,116 @@ function listToday() {
   return listDay(today())
 }
 
+/* ---------------- 课程内容编辑（老师改「这一节课」的内容） ----------------
+ * 改的是「这一节课」这一条记录：不动别的日子、别的时段，也不动点名和账本。
+ * 唯一要小心的是「每节几课时」—— 它决定结算扣多少，所以已经点过名的课不让改：
+ * 账已经按旧数字记下了，页面却显示新数字就对不上了（想改先把这一天「清空今日点名」）。
+ */
+
+function trimText(v) {
+  return String(v === undefined || v === null ? '' : v).replace(/^\s+|\s+$/g, '')
+}
+
+// 这节课点过名了吗（有人保存过点名就算，已结算的也算）
+function lessonRolled(lesson, marks) {
+  if (!lesson) return false
+  if (lesson.status === 'settled') return true
+  for (let i = 0; i < lesson.studentIds.length; i++) {
+    const m = marks[markId(lesson.id, lesson.studentIds[i])]
+    if (m && m.saved) return true
+  }
+  return false
+}
+
+// 课时数能不能改：点过名的不能（账已经按旧的数字记了）
+function hoursLocked(lesson, marks) {
+  return lessonRolled(lesson, marks)
+}
+
+// 改一节课的内容：patch = { name, teacher, desc, hours }
+// 返回 { ok, msg, item }；校验不过就带着人话原样返回（页面直接弹出来）
+function updateLesson(id, patch, byName) {
+  const list = ensureLessons()
+  const lesson = findLesson(list, String(id || ''))
+  if (!lesson) return { ok: false, msg: '这节课已经不在了，返回列表刷新一下' }
+  const p = patch || {}
+  const name = trimText(p.name)
+  if (!name) return { ok: false, msg: '课程名不能空着' }
+  if (name.length > MAX_NAME) return { ok: false, msg: '课程名最多 ' + MAX_NAME + ' 字' }
+  const teacher = trimText(p.teacher)
+  if (teacher.length > MAX_TEACHER) return { ok: false, msg: '老师名字最多 ' + MAX_TEACHER + ' 字' }
+  const desc = trimText(p.desc)
+  if (desc.length > MAX_DESC) return { ok: false, msg: '内容简介最多 ' + MAX_DESC + ' 字' }
+  const hours = Number(p.hours)
+  if (!(hours >= HOURS_MIN && hours <= HOURS_MAX) || Math.round(hours) !== hours) {
+    return { ok: false, msg: '每节课时填 ' + HOURS_MIN + '~' + HOURS_MAX + ' 之间的整数' }
+  }
+  const marks = readMarks()
+  const locked = hoursLocked(lesson, marks)
+  if (locked && hours !== lesson.hours) {
+    return { ok: false, msg: '这节课已经点过名了，课时数改不了：先到点名页把这一天「清空今日点名」，再回来改' }
+  }
+  lesson.name = name
+  lesson.teacher = teacher
+  lesson.desc = desc
+  if (!locked) lesson.hours = hours
+  lesson.updatedAt = Date.now()
+  lesson.updatedBy = trimText(byName)
+  writeLessons(list)
+  return { ok: true, item: lessonRow(lesson, marks, Date.now()) }
+}
+
+// 一节课在「课程内容管理」列表里长什么样（页面直接用，不自己拼文案）
+function lessonRow(lesson, marks, now) {
+  const total = lesson.studentIds.length
+  const settled = settledCount(lesson, marks)
+  const charged = chargedHours(lesson, marks)
+  let statusText = '待上课'
+  let tagClass = 'tag-blue'
+  if (lesson.status === 'canceled') {
+    statusText = '已取消'
+    tagClass = 'tag-gray'
+  } else if (lesson.status === 'settled') {
+    statusText = '已结算'
+    tagClass = 'tag-green'
+  } else if (lesson.start <= now) {
+    statusText = '待点名'
+    tagClass = 'tag-orange'
+  }
+  const locked = hoursLocked(lesson, marks)
+  return {
+    id: lesson.id,
+    date: lesson.date,
+    dayText: dayTitle(lesson.date),
+    time: lesson.time,
+    name: lesson.name,
+    teacher: lesson.teacher,
+    hours: lesson.hours,
+    desc: lesson.desc || '',
+    statusText: statusText,
+    tagClass: tagClass,
+    settled: settled,
+    kidTotal: total,
+    charged: charged,
+    rolledText: settled ? '已点 ' + settled + '/' + total + ' 人 · 记 ' + charged + ' 课时' : '',
+    hoursLocked: locked,
+    hoursLockTip: locked ? '已经点过名：课时数改不了（先清空这一天的点名）' : ''
+  }
+}
+
+// 「课程内容管理」的列表：演示课表里所有的课，按时间从早到晚（页面自己按天分组）
+function listLessons() {
+  const list = ensureLessons()
+  const marks = readMarks()
+  const now = Date.now()
+  const out = []
+  for (let i = 0; i < list.length; i++) out.push(lessonRow(list[i], marks, now))
+  out.sort(function (a, b) {
+    return startTs(a.date, a.time) - startTs(b.date, b.time)
+  })
+  return out
+}
+
 /* ---------------- 课时页统计 ---------------- */
 
 function courseRow(lesson, marks, idx, now) {
@@ -852,6 +972,7 @@ function courseRow(lesson, marks, idx, now) {
     id: lesson.id,
     ico: String(lesson.name).charAt(0),
     name: lesson.name,
+    desc: lesson.desc || '',
     sub: WEEK_TXT[weekday(lesson.date)] + ' ' + lesson.time + ' · ' + lesson.teacher,
     val: val,
     bg: ROW_BGS[idx % ROW_BGS.length]
@@ -1020,6 +1141,14 @@ module.exports = {
   saveMarks: saveMarks,
   settleDue: settleDue,
   clearDay: clearDay,
+  updateLesson: updateLesson,
+  listLessons: listLessons,
+  MAX_NAME: MAX_NAME,
+  MAX_TEACHER: MAX_TEACHER,
+  MAX_DESC: MAX_DESC,
+  HOURS_CHOICES: HOURS_CHOICES,
+  HOURS_MIN: HOURS_MIN,
+  HOURS_MAX: HOURS_MAX,
   courseStats: courseStats,
   statusLabel: statusLabel,
   pillsOf: pillsOf,

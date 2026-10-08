@@ -36,3 +36,11 @@
 .hd-pick-hover {
   background: rgba(255, 255, 255, 0.34);
 }
+
+/* 课程内容简介（老师端「课程内容管理」里填的，家长在这里看到） */
+.row-desc {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #8A93A3;
+}

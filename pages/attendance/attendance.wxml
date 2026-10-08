@@ -71,6 +71,7 @@
           <view class="tag {{ls.tagClass}}">{{ls.statusText}}</view>
         </view>
         <view class="ls-sub">{{ls.subText}}</view>
+        <view class="ls-desc" wx:if="{{ls.desc}}">{{ls.desc}}</view>
 
         <view class="kid" wx:for="{{ls.kids}}" wx:key="id" wx:for-item="kid" wx:for-index="ki">
           <view class="kid-top">

@@ -150,6 +150,14 @@
   color: #8A93A3;
 }
 
+/* 课程内容简介（老师端「课程内容管理」里填的，点名时能看到） */
+.ls-desc {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #A6AEBE;
+}
+
 .kid {
   margin-top: 22rpx;
   padding-top: 22rpx;

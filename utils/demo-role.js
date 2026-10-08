@@ -52,6 +52,12 @@ const ALBUM_STAFF_TIP = '你是老师：相册里可以上传照片；建相册�
 const ROLL_PARENT_TIP = '点名是老师做的事，家长端没有这个权限。要给孩子点名，请到「我的 → 切换演示账号」切到老师端。'
 const ROLL_STAFF_TIP = '你是老师：点到课 / 请假 / 旷课，保存后自动扣课时（请假不扣、旷课照扣）。'
 
+// 「课程内容管理」页上的两句说明（页面顶部提示条与锁卡片用同一份文案）
+//   老师端：三个档位都能改 —— 改的是「这一节课」的课程名 / 老师 / 每节几课时 / 内容简介
+//   家长端：没有这个权限（课程内容是老师维护的）
+const COURSE_PARENT_TIP = '课程内容管理是老师做的事，家长端没有这个权限。要改课程内容，请到「我的 → 切换演示账号」切到老师端。'
+const COURSE_STAFF_TIP = '你是老师：这里改的是「这一节课」的课程名、老师、每节几课时和内容简介，家长端的课时页会跟着变。已经点过名的课，课时数要先「清空今日点名」才能改。'
+
 // 「孩子档案」页上的三句话（页面顶部提示条与锁卡片用同一份文案）
 //   老师端：能看，改档案由管理员负责（和相册同一种分工）
 //   家长端：只能看自己孩子的
@@ -194,6 +200,15 @@ function rollTip() {
   return ''
 }
 
+// 「课程内容管理」页的门槛：'' 表示能进
+//   老师端任何演示账号都能改（课程内容是老师维护的，和点名同一档）
+//   家长端进不去 —— 课程内容由老师维护，家长只负责看
+//   不是演示账号 → ''，照旧走云端白名单 / 本机体验管理员（notice.adminStatus）
+function courseTip() {
+  if (level() === 'parent') return COURSE_PARENT_TIP
+  return ''
+}
+
 // 「孩子档案」页的门槛：'' 表示不拦（家长端给一句说明：只能看自己孩子的档案）
 function childTip() {
   if (level() === 'parent') return CHILD_PARENT_TIP
@@ -205,6 +220,16 @@ function childTip() {
 //   家长端 → false（一票否决：点名是老师做的事）
 //   不是演示账号 → null，交给页面照旧走云端白名单 / 本机体验管理员
 function canRoll() {
+  const lv = level()
+  if (lv === '') return null
+  return lv !== 'parent'
+}
+
+// 能不能改课程内容（和 courseTip() 同一份口径，只是这里只管「能不能」）：
+//   老师端演示账号（超级管理员 / 管理员 / 普通老师）→ true（和点名同一档）
+//   家长端 → false（一票否决：课程内容由老师维护）
+//   不是演示账号 → null，交给页面照旧走云端白名单 / 本机体验管理员
+function canEditCourse() {
   const lv = level()
   if (lv === '') return null
   return lv !== 'parent'
@@ -250,6 +275,8 @@ module.exports = {
   ALBUM_STAFF_TIP: ALBUM_STAFF_TIP,
   ROLL_PARENT_TIP: ROLL_PARENT_TIP,
   ROLL_STAFF_TIP: ROLL_STAFF_TIP,
+  COURSE_PARENT_TIP: COURSE_PARENT_TIP,
+  COURSE_STAFF_TIP: COURSE_STAFF_TIP,
   CHILD_STAFF_TIP: CHILD_STAFF_TIP,
   CHILD_PARENT_TIP: CHILD_PARENT_TIP,
   CHILD_TIP: CHILD_TIP,
@@ -278,6 +305,8 @@ module.exports = {
   rollTip: rollTip,
   canRoll: canRoll,
   childTip: childTip,
+  courseTip: courseTip,
+  canEditCourse: canEditCourse,
   canEditChildren: canEditChildren,
   settingsTip: settingsTip,
   demoShort: demoShort

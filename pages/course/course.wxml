@@ -36,6 +36,7 @@
         <view class="row-main">
           <view class="row-name">{{item.name}}</view>
           <view class="row-sub">{{item.sub}}</view>
+          <view class="row-desc" wx:if="{{item.desc}}">{{item.desc}}</view>
         </view>
         <view class="row-val">{{item.val}}</view>
       </view>

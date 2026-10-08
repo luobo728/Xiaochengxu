@@ -18,7 +18,8 @@
     "pages/admin-members/admin-members",
     "pages/attendance/attendance",
     "pages/children/children",
-    "pages/children-edit/children-edit"
+    "pages/children-edit/children-edit",
+    "pages/course-admin/course-admin"
   ],
   "window": {
     "navigationStyle": "custom",

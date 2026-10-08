@@ -178,6 +178,16 @@
         <view class="arrow"></view>
       </view>
 
+      <!-- 课程内容管理入口（老师可见）：改每节课的课程名 / 老师 / 课时 / 内容简介 -->
+      <view class="row" wx:if="{{canCourse}}" bindtap="onCourseAdminTap">
+        <view class="row-ico" style="background:linear-gradient(135deg,#5EC8E5,#2E86C1)">课</view>
+        <view class="row-main">
+          <view class="row-name">课程内容管理</view>
+          <view class="row-sub">改课程名 / 老师 / 每节几课时 / 内容简介</view>
+        </view>
+        <view class="arrow"></view>
+      </view>
+
       <!-- 管理员设置入口（仅超级管理员可见）：设置 / 取消谁是管理员 -->
       <view class="row" wx:if="{{isSuper}}" bindtap="onMemberAdminTap">
         <view class="row-ico" style="background:linear-gradient(135deg,#33C3A1,#12A97F)">权</view>

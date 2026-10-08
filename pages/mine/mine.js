@@ -48,6 +48,8 @@ Page({
     canAlbum: false,
     // 是否显示「点名」入口：老师（含普通老师）都能点名，家长端一票否决
     canRoll: false,
+    // 是否显示「课程内容管理」入口：老师都能改（和点名同一档），家长端一票否决
+    canCourse: false,
     // 演示账号（纯本机）：切换后头部、底部、设置里那一行都跟着变
     accountSide: '',
     accountSub: '一键切家长端 / 老师端，看两边区别',
@@ -708,6 +710,16 @@ Page({
     })
   },
 
+  // 老师入口：课程内容管理（改「这一节课」的课程名 / 老师 / 每节几课时 / 内容简介）
+  onCourseAdminTap() {
+    wx.navigateTo({
+      url: '/pages/course-admin/course-admin',
+      fail() {
+        wx.showToast({ title: '打开失败', icon: 'none' })
+      }
+    })
+  },
+
   // 相册入口副标题：本班 / 全园各有多少本，拿不到就保持原文案
   refreshAlbumSub() {
     const myClass = album.myClassSync()
@@ -787,13 +799,16 @@ Page({
     const canAlbum = role.isDemo() ? role.canUploadAlbum() : isAdmin
     // 「点名」入口老师都能看见（家长端一票否决）：点名保存后自动扣课时
     const canRoll = role.isDemo() ? !role.isParent() : isAdmin
+    // 「课程内容管理」入口和点名同一档：老师都能改课程内容（家长端一票否决）
+    const canCourse = role.isDemo() ? !role.isParent() : isAdmin
     if (
       isAdmin !== this.data.isAdmin ||
       isSuper !== this.data.isSuper ||
       canAlbum !== this.data.canAlbum ||
-      canRoll !== this.data.canRoll
+      canRoll !== this.data.canRoll ||
+      canCourse !== this.data.canCourse
     ) {
-      this.setData({ isAdmin: isAdmin, isSuper: isSuper, canAlbum: canAlbum, canRoll: canRoll })
+      this.setData({ isAdmin: isAdmin, isSuper: isSuper, canAlbum: canAlbum, canRoll: canRoll, canCourse: canCourse })
     }
   },
 
