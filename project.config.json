@@ -5,6 +5,7 @@
     "minified": true,
     "uglifyFileName": false,
     "enhance": true,
+    "ignoreDevUnusedFiles": true,
     "packNpmRelationList": [],
     "babelSetting": {
       "ignore": [],
@@ -25,6 +26,10 @@
       {
         "type": "folder",
         "value": "docs"
+      },
+      {
+        "type": "folder",
+        "value": "tools"
       }
     ],
     "include": []
