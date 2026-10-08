@@ -19,6 +19,7 @@ const children = require('./children.js')
 
 const KEY_LESSONS = 'schedule_lessons_v1'
 const KEY_MARKS = 'schedule_marks_v1'
+const KEY_REMOVED = 'schedule_removed_v1' // 老师手动删掉的课 id（自动生成课表时跳过它们）
 
 // ===== 演示数据口径（要改演示范围只改这里）=====
 const CLS = '大一班'
@@ -181,6 +182,47 @@ function writeLessons(list) {
   }
 }
 
+// 「老师手动删掉的课」记一笔 id：课表是按日期自动生成的，不记的话删完下次进来又冒出来
+function readRemoved() {
+  try {
+    const raw = wx.getStorageSync(KEY_REMOVED)
+    if (raw && typeof raw.length === 'number') return raw
+  } catch (e) {
+    // 读失败按「没删过」处理
+  }
+  return []
+}
+
+function writeRemoved(ids) {
+  try {
+    wx.setStorageSync(KEY_REMOVED, ids)
+  } catch (e) {
+    // 写失败不影响本次结果
+  }
+}
+
+function removedSet() {
+  const arr = readRemoved()
+  const out = {}
+  for (let i = 0; i < arr.length; i++) out[arr[i]] = true
+  return out
+}
+
+function markRemoved(id) {
+  const arr = readRemoved()
+  if (arr.indexOf(id) === -1) arr.push(id)
+  writeRemoved(arr)
+}
+
+function unmarkRemoved(id) {
+  const arr = readRemoved()
+  const out = []
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] !== id) out.push(arr[i])
+  }
+  if (out.length !== arr.length) writeRemoved(out)
+}
+
 function readMarks() {
   try {
     const raw = wx.getStorageSync(KEY_MARKS)
@@ -272,6 +314,9 @@ function ensureLessons() {
   const list = readLessons()
   const has = {}
   for (let i = 0; i < list.length; i++) has[list[i].id] = true
+  // 老师手动删过的课也算「处理过了」：不然下一次进页面它又被自动生成回来
+  const gone = removedSet()
+  for (const k in gone) has[k] = true
   const start = shift(today(), DEMO.startOffset)
   let added = 0
   for (let i = 0; i < DEMO.weeks * 7; i++) {
@@ -866,12 +911,15 @@ function hoursLocked(lesson, marks) {
   return lessonRolled(lesson, marks)
 }
 
-// 改一节课的内容：patch = { name, teacher, desc, hours }
-// 返回 { ok, msg, item }；校验不过就带着人话原样返回（页面直接弹出来）
-function updateLesson(id, patch, byName) {
-  const list = ensureLessons()
-  const lesson = findLesson(list, String(id || ''))
-  if (!lesson) return { ok: false, msg: '这节课已经不在了，返回列表刷新一下' }
+/* ---------------- 加课 / 删课（老师自己排课） ----------------
+ * 课表平时是按日期自动生成的演示课表，老师也能自己加一节、删一节。两条线不能碰：
+ *   ① 过去的课加不了 —— 加进去会被「自动补算」当成上过的课，把所有人的课时都扣一遍；
+ *   ② 点过名的课删不了 —— 课时=钱，账已经记了，想删先把这一天「清空今日点名」。
+ * 删掉的课会记一笔 id（KEY_REMOVED），免得下一次进页面自动生成的课表又把它生回来。
+ */
+
+// 字段校验只写这一处：改课（updateLesson）和加课（addLesson）共用
+function checkLessonFields(patch) {
   const p = patch || {}
   const name = trimText(p.name)
   if (!name) return { ok: false, msg: '课程名不能空着' }
@@ -884,15 +932,103 @@ function updateLesson(id, patch, byName) {
   if (!(hours >= HOURS_MIN && hours <= HOURS_MAX) || Math.round(hours) !== hours) {
     return { ok: false, msg: '每节课时填 ' + HOURS_MIN + '~' + HOURS_MAX + ' 之间的整数' }
   }
+  return { ok: true, name: name, teacher: teacher, desc: desc, hours: hours }
+}
+
+// 新一节课的 id：L + 日期 + A/B/C…（这一天第几节）；删过的 id 不复用（免得翻出老的点名记录）
+function nextLessonId(list, day) {
+  const used = removedSet()
+  for (let i = 0; i < list.length; i++) used[list[i].id] = true
+  const base = 'L' + String(day).replace(/-/g, '')
+  const letters = 'ABCDEFGH'
+  for (let i = 0; i < letters.length; i++) {
+    const id = base + letters.charAt(i)
+    if (!used[id]) return id
+  }
+  return base + String(Date.now()).slice(-4)
+}
+
+// 加一节课：patch = { date, time, name, teacher, desc, hours }
+// 返回 { ok, msg, item }；校验不过就带着人话原样返回（页面直接弹出来）
+function addLesson(patch, byName) {
+  const p = patch || {}
+  const date = trimText(p.date)
+  const time = trimText(p.time)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { ok: false, msg: '请先选一个上课日期' }
+  if (!/^\d{2}:\d{2}$/.test(time)) return { ok: false, msg: '请先选一个上课时间' }
+  const f = checkLessonFields(p)
+  if (!f.ok) return f
+  const start = startTs(date, time)
+  if (start <= Date.now()) {
+    return { ok: false, msg: '这个时间已经过了：过去的课会被自动补算扣课时，加不了' }
+  }
+  const list = ensureLessons()
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].date === date && list[i].time === time) {
+      return { ok: false, msg: '这一天 ' + time + ' 已经有课了' }
+    }
+  }
+  const id = nextLessonId(list, date)
+  const lesson = {
+    id: id,
+    date: date,
+    time: time,
+    start: start,
+    name: f.name,
+    teacher: f.teacher,
+    desc: f.desc,
+    cls: CLS,
+    studentIds: studentIds(),
+    hours: f.hours,
+    status: 'planned',
+    createdAt: Date.now(),
+    createdBy: trimText(byName)
+  }
+  list.push(lesson)
+  list.sort(function (a, b) {
+    return a.start - b.start
+  })
+  writeLessons(list)
+  unmarkRemoved(id)
+  return { ok: true, item: lessonRow(lesson, readMarks(), Date.now()) }
+}
+
+// 删一节课：点过名的删不了（账已经记了，想删先「清空今日点名」）
+function removeLesson(id, byName) {
+  const lid = trimText(id)
+  const list = ensureLessons()
+  const lesson = findLesson(list, lid)
+  if (!lesson) return { ok: false, msg: '这节课已经不在了，返回列表刷新一下' }
+  const marks = readMarks()
+  if (lessonRolled(lesson, marks)) {
+    return { ok: false, msg: '这节课已经点过名了，删不了：先到点名页把这一天「清空今日点名」' }
+  }
+  const next = []
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].id !== lid) next.push(list[i])
+  }
+  writeLessons(next)
+  markRemoved(lid)
+  return { ok: true, id: lid, msg: '已删除这一节课', by: trimText(byName) }
+}
+
+// 改一节课的内容：patch = { name, teacher, desc, hours }
+// 返回 { ok, msg, item }；校验不过就带着人话原样返回（页面直接弹出来）
+function updateLesson(id, patch, byName) {
+  const list = ensureLessons()
+  const lesson = findLesson(list, String(id || ''))
+  if (!lesson) return { ok: false, msg: '这节课已经不在了，返回列表刷新一下' }
+  const f = checkLessonFields(patch)
+  if (!f.ok) return f
   const marks = readMarks()
   const locked = hoursLocked(lesson, marks)
-  if (locked && hours !== lesson.hours) {
+  if (locked && f.hours !== lesson.hours) {
     return { ok: false, msg: '这节课已经点过名了，课时数改不了：先到点名页把这一天「清空今日点名」，再回来改' }
   }
-  lesson.name = name
-  lesson.teacher = teacher
-  lesson.desc = desc
-  if (!locked) lesson.hours = hours
+  lesson.name = f.name
+  lesson.teacher = f.teacher
+  lesson.desc = f.desc
+  if (!locked) lesson.hours = f.hours
   lesson.updatedAt = Date.now()
   lesson.updatedBy = trimText(byName)
   writeLessons(list)
@@ -1142,6 +1278,8 @@ module.exports = {
   settleDue: settleDue,
   clearDay: clearDay,
   updateLesson: updateLesson,
+  addLesson: addLesson,
+  removeLesson: removeLesson,
   listLessons: listLessons,
   MAX_NAME: MAX_NAME,
   MAX_TEACHER: MAX_TEACHER,

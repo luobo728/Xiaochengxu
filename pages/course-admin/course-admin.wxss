@@ -355,3 +355,31 @@
 .btn-back {
   margin-top: 32rpx;
 }
+
+/* ---------- 添加一节课：日期 / 时间选择器 ---------- */
+.pick {
+  height: 88rpx;
+  line-height: 88rpx;
+  padding: 0 24rpx;
+  border-radius: 20rpx;
+  background: #F7F9FD;
+  font-size: 29rpx;
+  color: #1B1F27;
+}
+
+/* ---------- 删除这一节课（红字按钮） ---------- */
+.del-btn {
+  margin-top: 24rpx;
+  padding: 22rpx 0;
+  text-align: center;
+  border-radius: 999rpx;
+  border: 2rpx solid rgba(229, 69, 61, 0.35);
+  font-size: 26rpx;
+  color: #E5453D;
+}
+
+.mini.danger {
+  margin-top: 12rpx;
+  color: #E5453D;
+  background: rgba(229, 69, 61, 0.1);
+}

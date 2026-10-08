@@ -9,6 +9,7 @@ const root = path.resolve(__dirname, '..')
 /* ---------------- wx 模拟 ---------------- */
 const store = {}
 const toasts = []
+const modals = []
 const navBacks = []
 let scrolls = 0
 global.wx = {
@@ -31,6 +32,7 @@ global.wx = {
   showLoading: function () {},
   hideLoading: function () {},
   showModal: function (o) {
+    modals.push((o && o.title) || '')
     if (o && o.success) o.success({ confirm: true, cancel: false })
   },
   navigateTo: function () {},
@@ -338,6 +340,139 @@ async function main() {
   check('H4 「我的」页有课程内容管理入口（老师可见）', mineWxml.indexOf('{{canCourse}}') > -1 && mineWxml.indexOf('bindtap="onCourseAdminTap"') > -1)
   check('H5 入口跳的是新页面，且这个页面已在 app.json 里注册', mineJs.indexOf('/pages/course-admin/course-admin') > -1 && require(path.join(root, 'app.json')).pages.indexOf('pages/course-admin/course-admin') > -1)
 
+
+  /* ================= I. 加课 / 删课（老师自己排课） ================= */
+  const day0 = schedule.today()
+  const day20 = schedule.shift(day0, 20)
+  const tmrFirst = schedule.listDay(schedule.shift(day0, 1)).lessons[0]
+
+  check('I1 加课：日期 / 时间 / 课程名 / 课时数都要校验', (function () {
+    const a = schedule.addLesson({ date: '', time: '16:00', name: 'x', hours: 1 }, '测试老师')
+    const b = schedule.addLesson({ date: day20, time: '', name: 'x', hours: 1 }, '测试老师')
+    const c = schedule.addLesson({ date: day20, time: '16:00', name: '   ', hours: 1 }, '测试老师')
+    const d = schedule.addLesson({ date: day20, time: '16:00', name: 'x', hours: 0 }, '测试老师')
+    return a.ok === false && a.msg.indexOf('日期') > -1 && b.ok === false && b.msg.indexOf('时间') > -1 &&
+      c.ok === false && c.msg.indexOf('课程名不能空着') > -1 && d.ok === false && d.msg.indexOf('整数') > -1
+  })())
+  check('I2 加课：过去的课加不了（会被自动补算扣课时）', (function () {
+    const r = schedule.addLesson({ date: day0, time: '00:10', name: '冒烟测试 · 过去的课', hours: 1 }, '测试老师')
+    return r.ok === false && r.msg.indexOf('已经过了') > -1
+  })())
+  check('I3 加课：这一天这个点已经有课了 → 拒绝', (function () {
+    const r = schedule.addLesson({ date: tmrFirst.date, time: tmrFirst.time, name: '冒烟测试 · 撞车', hours: 1 }, '测试老师')
+    return r.ok === false && r.msg.indexOf('已经有课了') > -1
+  })(), tmrFirst.time)
+
+  const added = schedule.addLesson({ date: day20, time: '16:30', name: '冒烟测试 · 新加的课', teacher: '测试老师', desc: '加课自检用', hours: 2 }, '测试老师')
+  check('I4 加课：能加在演示课表之外的日子，列表里立刻有它', added.ok === true && (function () {
+    const row = findRow(schedule.listLessons(), added.item.id)
+    return !!row && row.name === '冒烟测试 · 新加的课' && row.hours === 2 && row.date === day20 && row.statusText === '待上课'
+  })(), added.item && added.item.id)
+  check('I5 加课：名单按当前孩子档案、id 不重号', (function () {
+    const rec = findRow(store['schedule_lessons_v1'] || [], added.item.id)
+    const ids = children.list().map(function (k) {
+      return k.id
+    }).join(',')
+    return !!rec && (rec.studentIds || []).join(',') === ids && /^L\d{8}[A-H]/.test(rec.id)
+  })())
+  check('I6 加课：加完课表还是按时间从早到晚排的', (function () {
+    const all = schedule.listLessons()
+    for (let i = 1; i < all.length; i++) {
+      if (all[i - 1].date + all[i - 1].time > all[i].date + all[i].time) return false
+    }
+    return true
+  })())
+
+  const addKids = children.list()
+  const beforeAdd = billing.hoursStat(addKids[0].id).left
+  const rowsAdd = []
+  for (let i = 0; i < addKids.length; i++) rowsAdd.push({ studentId: addKids[i].id, status: 'present' })
+  const settledAdd = await schedule.saveMarks(added.item.id, rowsAdd, '测试老师')
+  check('I7 加课：新加的课点名照常结算（按它的课时数扣）', settledAdd.ok === true && settledAdd.charged === addKids.length * 2 && billing.hoursStat(addKids[0].id).left === beforeAdd - 2, settledAdd.msg)
+
+  check('I8 删课：点过名的课删不了，提示先清空点名', (function () {
+    const r = schedule.removeLesson(added.item.id, '测试老师')
+    return r.ok === false && r.msg.indexOf('清空今日点名') > -1 && !!findRow(schedule.listLessons(), added.item.id)
+  })())
+  const clearedAdd = await schedule.clearDay(day20, '测试老师')
+  check('I9 删课：清空这一天的点名之后就能删了', clearedAdd.ok === true && (function () {
+    const r = schedule.removeLesson(added.item.id, '测试老师')
+    return r.ok === true && !findRow(schedule.listLessons(), added.item.id)
+  })())
+  check('I10 删课：删掉的课不会又被自动生成回来（★课表是自动生成的，得记住「删过」）', (function () {
+    schedule.ensureLessons()
+    schedule.ensureLessons()
+    return !findRow(schedule.listLessons(), added.item.id) && !findRow(store['schedule_lessons_v1'] || [], added.item.id)
+  })())
+  check('I11 删课：删掉演示课表里的一节也留得住（不是只有自己加的不回来）', (function () {
+    let future = null
+    const all = schedule.listLessons()
+    for (let i = 0; i < all.length; i++) {
+      if (all[i].date > day0 && !all[i].hoursLocked) {
+        future = all[i]
+        break
+      }
+    }
+    if (!future) return false
+    const r = schedule.removeLesson(future.id, '测试老师')
+    schedule.ensureLessons()
+    return r.ok === true && !findRow(schedule.listLessons(), future.id)
+  })())
+  check('I12 删课：删课不动账本（余额没变）', billing.hoursStat(addKids[0].id).left === beforeAdd, billing.hoursStat(addKids[0].id).left)
+  check('I13 删课：删掉的那个 id 记在「已删名单」里（自动生成课表时跳过它）', (function () {
+    const removed = store['schedule_removed_v1'] || []
+    return Array.isArray(removed) && removed.indexOf(added.item.id) > -1
+  })(), (store['schedule_removed_v1'] || []).length)
+  check('I14 加课：删过的时段还能重新加（id 换一个，不复用老 id）', (function () {
+    const again = schedule.addLesson({ date: day20, time: '16:30', name: '冒烟测试 · 删了再加', hours: 1 }, '测试老师')
+    return again.ok === true && again.item.id !== added.item.id
+  })())
+
+  /* ---------- 页面：添加 / 删除 ---------- */
+  setDemo('teacher')
+  const ictx = ctxOf(adminPage)
+  ictx.checkIdentity.call(ictx)
+  ictx.onAddTap()
+  check('I15 页面：点「＋ 添加课程」进添加态（字段清空、日期默认今天）', ictx.data.adding === true && ictx.data.editing === false && ictx.data.name === '' && ictx.data.date === day0 && ictx.data.time === '', [ictx.data.adding, ictx.data.date])
+  ictx.onDateChange({ detail: { value: day20 } })
+  ictx.onTimeChange({ detail: { value: '17:00' } })
+  ictx.onNameInput({ detail: { value: '冒烟测试 · 页面加的课' } })
+  check('I16 页面：选日期 / 时间 / 填课程名都同步到表单', ictx.data.date === day20 && ictx.data.time === '17:00' && ictx.data.name === '冒烟测试 · 页面加的课', [ictx.data.date, ictx.data.time])
+  toasts.length = 0
+  ictx.onAddSave()
+  await tick(10)
+  const pageAdded = findRow(schedule.listLessons(), ictx.data.editId)
+  check('I17 页面：添加成功 → 提示写明日期时间、列表刷新、自动进「修改这一节」', ictx.data.adding === false && ictx.data.editing === true && !!pageAdded && toasts.join('|').indexOf('已添加') > -1, toasts)
+
+  toasts.length = 0
+  ictx.onAddTap()
+  ictx.onDateChange({ detail: { value: day0 } })
+  ictx.onTimeChange({ detail: { value: '00:10' } })
+  ictx.onNameInput({ detail: { value: '冒烟测试 · 时间已过' } })
+  const countBefore = schedule.listLessons().length
+  ictx.onAddSave()
+  check('I18 页面：时间已经过了 → 弹提示且不落盘', toasts.join('|').indexOf('已经过了') > -1 && schedule.listLessons().length === countBefore, toasts)
+
+  toasts.length = 0
+  modals.length = 0
+  ictx.onCancelAdd()
+  ictx.onRowTap({ currentTarget: { dataset: { id: pageAdded.id } } })
+  ictx.onDelTap()
+  await tick(10)
+  check('I19 页面：删除先弹确认框，确认后从列表里消失', modals.length === 1 && modals[0].indexOf('删除这节课') > -1 && !findRow(schedule.listLessons(), pageAdded.id) && toasts.join('|').indexOf('已删除') > -1, [modals, toasts])
+
+  const lockRow3 = schedule.listDay(day0).lessons[0]
+  const lockRows3 = []
+  for (let i = 0; i < lockRow3.kids.length; i++) lockRows3.push({ studentId: lockRow3.kids[i].studentId, status: 'present' })
+  await schedule.saveMarks(lockRow3.id, lockRows3, '测试老师')
+  ictx.refreshList()
+  toasts.length = 0
+  ictx.onRowDelTap({ currentTarget: { dataset: { id: lockRow3.id } } })
+  await tick(10)
+  check('I20 页面：点过名的课点删除 → 弹「先清空点名」，列表里还在', toasts.join('|').indexOf('清空今日点名') > -1 && !!findRow(schedule.listLessons(), lockRow3.id), toasts)
+
+  const caWxml = fs.readFileSync(path.join(root, 'pages/course-admin/course-admin.wxml'), 'utf8')
+  check('I21 wxml：添加入口 / 日期时间选择器 / 删除按钮都接上了', caWxml.indexOf('bindtap="onAddTap"') > -1 && caWxml.indexOf('bindchange="onDateChange"') > -1 && caWxml.indexOf('bindchange="onTimeChange"') > -1 && caWxml.indexOf('bindtap="onDelTap"') > -1 && caWxml.indexOf('catchtap="onRowDelTap"') > -1)
   console.log(bad ? '\n❌ 失败 ' + bad + ' 项' : '\n✅ 课程内容编辑冒烟测试全部通过')
   process.exit(bad ? 1 : 0)
 }

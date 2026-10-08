@@ -13,6 +13,9 @@ const TMP = path.join(__dirname, '.tmp') // 临时备份目录（.gitignore 里�
 const SMOKE = path.join(__dirname, 'smoke_children.js')
 const BAK = path.join(TMP, 'bak_children')
 
+// 开发者工具开着的话先提醒一句（它会跟着重编译，模拟器容易卡成乱版）
+require(path.join(__dirname, 'devtools-check.js')).warn()
+
 const md5 = function (f) {
   return crypto.createHash('md5').update(fs.readFileSync(f)).digest('hex')
 }

@@ -32,6 +32,11 @@ Page({
     editing: false,
     editId: '',
     editTitle: '', // 「04-15 周三 09:20」
+    // 添加一节课（老师自己排课）
+    adding: false,
+    date: '',
+    time: '',
+    minDate: '', // 日期选择器的最早可选日期（今天）
     name: '',
     teacher: '',
     desc: '',
@@ -57,7 +62,8 @@ Page({
 
   onLoad() {
     this.setData({
-      statusBarHeight: (app.globalData && app.globalData.statusBarHeight) || 20
+      statusBarHeight: (app.globalData && app.globalData.statusBarHeight) || 20,
+      minDate: schedule.today() // 日期选择器最早只能选今天：过去的课会被自动补算
     })
     this.checkIdentity()
   },
@@ -200,8 +206,10 @@ Page({
   },
 
   // 不改了：编辑区回到「点下面任意一节课来改」
+  // 不改了 / 不添加了：编辑区回到「选一节课来改」
   onCancelEdit() {
     this.applyForm({
+      adding: false,
       editing: false,
       editId: '',
       editTitle: '',
@@ -209,6 +217,8 @@ Page({
       teacher: '',
       desc: '',
       hours: 1,
+      date: '',
+      time: '',
       hoursLocked: false,
       hoursLockTip: ''
     })
@@ -237,6 +247,118 @@ Page({
     if (hours) this.applyForm({ hours: hours })
   },
 
+  /* ---------------- 添加一节课 ---------------- */
+
+  // 切到「添加一节课」：日期默认今天（只能选今天以后），时间要自己选
+  onAddTap() {
+    this.applyForm({
+      adding: true,
+      editing: false,
+      editId: '',
+      editTitle: '',
+      name: '',
+      teacher: '',
+      desc: '',
+      hours: 1,
+      date: schedule.today(),
+      time: '',
+      hoursLocked: false,
+      hoursLockTip: ''
+    })
+    wx.pageScrollTo({ scrollTop: 0, duration: 200 })
+  },
+
+  // 不添加了
+  onCancelAdd() {
+    this.applyForm({ adding: false, date: '', time: '' })
+  },
+
+  onDateChange(e) {
+    this.applyForm({ date: (e.detail && e.detail.value) || '' })
+  },
+
+  onTimeChange(e) {
+    this.applyForm({ time: (e.detail && e.detail.value) || '' })
+  },
+
+  // 添加：数据层会拦「时间已经过了 / 这一天这个点已经有课 / 字段不合规」
+  onAddSave() {
+    if (this.data.saving) return
+    this.setData({ saving: true })
+    const res = schedule.addLesson({
+      date: this.data.date,
+      time: this.data.time,
+      name: this.data.name,
+      teacher: this.data.teacher,
+      desc: this.data.desc,
+      hours: this.data.hours
+    }, this.byName())
+    this.setData({ saving: false })
+    if (!res || !res.ok) {
+      wx.showToast({ title: (res && res.msg) || '添加失败', icon: 'none', duration: 2500 })
+      return
+    }
+    const item = res.item || {}
+    this.refreshList()
+    // 加完直接进「修改这一节」：老师能接着改，也能看到它排在课表哪儿
+    this.applyForm({
+      adding: false,
+      editing: true,
+      editId: item.id || '',
+      editTitle: (item.dayText || '') + ' ' + (item.time || ''),
+      date: '',
+      time: '',
+      hours: item.hours === undefined ? this.data.hours : item.hours,
+      hoursLocked: !!item.hoursLocked,
+      hoursLockTip: ''
+    })
+    wx.showToast({ title: '已添加：' + (item.dayText || '') + ' ' + (item.time || ''), icon: 'none' })
+  },
+
+  /* ---------------- 删除一节课 ---------------- */
+
+  // 编辑区里的「删除这一节课」
+  onDelTap() {
+    if (!this.data.editing || !this.data.editId) {
+      wx.showToast({ title: '先点下面课表里的一节课', icon: 'none' })
+      return
+    }
+    this.askDelete(this.data.editId, this.data.editTitle)
+  },
+
+  // 列表每行的「删除」
+  onRowDelTap(e) {
+    const id = (e.currentTarget.dataset || {}).id || ''
+    if (!id) return
+    const rows = this.data.rows || []
+    let row = null
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].id === id) row = rows[i]
+    }
+    this.askDelete(id, row ? row.dayText + ' ' + row.time : '')
+  },
+
+  // 删之前问一句；点过名的课数据层会拦（账已经记了，想删先清空点名）
+  askDelete(id, title) {
+    wx.showModal({
+      title: '删除这节课？',
+      content: (title ? '「' + title + '」' : '这一节') + '删掉后课表里就没有它了；已经点过名的课删不了，得先到点名页「清空今日点名」',
+      confirmText: '删除',
+      confirmColor: '#E5453D',
+      success: (r) => {
+        if (!r.confirm) return
+        const res = schedule.removeLesson(id, this.byName())
+        if (!res || !res.ok) {
+          wx.showToast({ title: (res && res.msg) || '删除失败', icon: 'none', duration: 2500 })
+          return
+        }
+        // 删掉的正是正在改的那一节：编辑区收起来
+        if (this.data.editId === id) this.onCancelEdit()
+        this.refreshList()
+        wx.showToast({ title: '已删除这一节课', icon: 'none' })
+      }
+    })
+  },
   /* ---------------- 保存 ---------------- */
 
   onSave() {

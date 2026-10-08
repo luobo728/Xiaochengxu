@@ -25,6 +25,10 @@
       <view class="staff-tip" wx:if="{{staffTip}}">{{staffTip}}</view>
 
       <!-- ========== 编辑区 ========== -->
+      <view class="editing-bar" wx:if="{{adding}}">
+        <view class="editing-txt">正在添加一节课</view>
+        <view class="editing-cancel" bindtap="onCancelAdd">取消添加</view>
+      </view>
       <view class="editing-bar" wx:if="{{editing}}">
         <view class="editing-txt">正在修改：{{editTitle}}</view>
         <view class="editing-cancel" bindtap="onCancelEdit">不改了</view>
@@ -32,13 +36,28 @@
 
       <view class="card">
         <view class="card-head">
-          <view class="card-title">{{editing ? '修改这节课的内容' : '选一节课来改'}}</view>
-          <view class="card-more" wx:if="{{editing}}">共 {{total}} 节</view>
+          <view class="card-title">{{adding ? '添加一节课' : (editing ? '修改这节课的内容' : '选一节课来改')}}</view>
+          <view class="card-more" wx:if="{{!adding}}" bindtap="onAddTap">＋ 添加课程</view>
+          <view class="card-more" wx:if="{{adding}}" bindtap="onCancelAdd">取消添加</view>
         </view>
 
-        <view class="empty" wx:if="{{!editing}}">点下面课表里任意一节课，这里就会变成修改它</view>
+        <view class="empty" wx:if="{{!adding && !editing}}">点下面课表里任意一节课来改它；也可以点右上角「＋ 添加课程」自己排一节</view>
 
         <block wx:else>
+          <view class="fld" wx:if="{{adding}}">
+            <view class="fld-lbl">上课日期<text class="fld-req">必填</text></view>
+            <picker mode="date" value="{{date}}" start="{{minDate}}" bindchange="onDateChange">
+              <view class="pick">{{date ? date : '点这里选日期'}}</view>
+            </picker>
+          </view>
+
+          <view class="fld" wx:if="{{adding}}">
+            <view class="fld-lbl">上课时间<text class="fld-req">必填</text></view>
+            <picker mode="time" value="{{time}}" bindchange="onTimeChange">
+              <view class="pick">{{time ? time : '点这里选时间'}}</view>
+            </picker>
+            <view class="opt-hint">只能排还没到的课：过去的课会被系统按到课自动补算，把所有人的课时扣一遍</view>
+          </view>
           <view class="fld">
             <view class="fld-lbl">课程名<text class="fld-req">必填</text></view>
             <input
@@ -89,7 +108,9 @@
             <view class="fld-count">还能写 {{descLeft}} 个字</view>
           </view>
 
-          <view class="btn-primary save-btn" bindtap="onSave">{{saving ? '正在保存…' : '保存修改'}}</view>
+          <view class="btn-primary save-btn" wx:if="{{adding}}" bindtap="onAddSave">{{saving ? '正在添加…' : '添加课程'}}</view>
+          <view class="btn-primary save-btn" wx:else bindtap="onSave">{{saving ? '正在保存…' : '保存修改'}}</view>
+          <view class="del-btn" wx:if="{{editing}}" bindtap="onDelTap">删除这一节课</view>
         </block>
       </view>
 
@@ -116,15 +137,16 @@
             </view>
             <view class="lrow-btns">
               <view class="mini edit" data-id="{{item.id}}" catchtap="onRowTap">编辑</view>
+              <view class="mini danger" data-id="{{item.id}}" catchtap="onRowDelTap">删除</view>
             </view>
           </view>
           <view class="hairline"></view>
         </block>
 
-        <view class="row-hint">点一行的「编辑」，上面就会变成修改这一节</view>
+        <view class="row-hint">点一行的「编辑」改它，点「删除」把这一节从课表里去掉（点过名的删不了）</view>
       </view>
 
-      <view class="foot-note">改的是「这一节课」：只影响这一天这一节，别的日子、别的时段都不动。课时数决定结算扣多少（课时=钱，增减只走账本），所以已经点过名的课不让改 —— 想改先到点名页把这一天「清空今日点名」；课程名、老师、内容简介随时能改。</view>
+      <view class="foot-note">这一页管课表：点右上角「＋ 添加课程」能自己排一节，点一行能改它、也能把它删掉。改的是「这一节课」——只影响这一天这一节，别的日子别的时段都不动。两条线不能碰：① 过去的课加不了（会被系统按到课自动补算，把所有人的课时扣一遍）；② 点过名的课不能改课时数、也不能删（课时=钱，账已经记了）—— 想动先到点名页把这一天「清空今日点名」。</view>
     </block>
   </view>
 

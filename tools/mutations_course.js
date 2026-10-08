@@ -12,6 +12,9 @@ const TMP = path.join(__dirname, '.tmp') // 临时备份目录（.gitignore 里�
 const SMOKE = path.join(__dirname, 'smoke_course.js')
 const BAK = path.join(TMP, 'bak_course')
 
+// 开发者工具开着的话先提醒一句（它会跟着重编译，模拟器容易卡成乱版）
+require(path.join(__dirname, 'devtools-check.js')).warn()
+
 const md5 = function (f) {
   return crypto.createHash('md5').update(fs.readFileSync(f)).digest('hex')
 }
@@ -54,10 +57,10 @@ const M = [
     want: 'B5 课时数只能是 1~9 的整数'
   },
   {
-    n: '6 数据层：找不到这节课也说存成功了',
+    n: '6 数据层：改课找不到这节课也说存成功了',
     f: 'utils/schedule.js',
-    from: "  if (!lesson) return { ok: false, msg: '这节课已经不在了，返回列表刷新一下' }",
-    to: "  if (!lesson) return { ok: true, msg: '' }",
+    from: "  const lesson = findLesson(list, String(id || ''))\n  if (!lesson) return { ok: false, msg: '这节课已经不在了，返回列表刷新一下' }",
+    to: "  const lesson = findLesson(list, String(id || ''))\n  if (!lesson) return { ok: true, msg: '' }",
     want: 'B7 找不到这节课时有明确提示'
   },
 
@@ -72,14 +75,14 @@ const M = [
   {
     n: '8 数据层：没点名的课改课时数不生效',
     f: 'utils/schedule.js',
-    from: '  if (!locked) lesson.hours = hours',
-    to: '  if (false) lesson.hours = hours',
+    from: '  if (!locked) lesson.hours = f.hours',
+    to: '  if (false) lesson.hours = f.hours',
     want: 'C4 没点名的课能改课时数'
   },
   {
     n: '9 数据层：内容简介不落盘',
     f: 'utils/schedule.js',
-    from: '  lesson.desc = desc',
+    from: '  lesson.desc = f.desc',
     to: "  lesson.desc = ''",
     want: 'C2 重新读一遍还是改后的内容（真的落盘了）'
   },
@@ -95,7 +98,7 @@ const M = [
   {
     n: '11 数据层：已点名的课也照改课时数（账和页面会对不上）',
     f: 'utils/schedule.js',
-    from: '  if (locked && hours !== lesson.hours) {',
+    from: '  if (locked && f.hours !== lesson.hours) {',
     to: '  if (false) {',
     want: 'D3 已点名的课改课时数被拦住，并说清怎么办'
   },
@@ -218,6 +221,95 @@ const M = [
     from: '    "pages/children-edit/children-edit",\n    "pages/course-admin/course-admin"',
     to: '    "pages/children-edit/children-edit"',
     want: 'H5 入口跳的是新页面，且这个页面已在 app.json 里注册'
+  },
+
+  /* ---------- 加课 / 删课 ---------- */
+  {
+    n: '28 加课：过去的课也照加（一进页面就被自动补算，所有人课时被扣）',
+    f: 'utils/schedule.js',
+    from: '  if (start <= Date.now()) {',
+    to: '  if (false) {',
+    want: 'I2 加课：过去的课加不了（会被自动补算扣课时）'
+  },
+  {
+    n: '29 加课：同一天同一时间能重复排（课表撞车）',
+    f: 'utils/schedule.js',
+    from: '    if (list[i].date === date && list[i].time === time) {',
+    to: '    if (false) {',
+    want: 'I3 加课：这一天这个点已经有课了 → 拒绝'
+  },
+  {
+    n: '30 加课：课程名空着也照加',
+    f: 'utils/schedule.js',
+    from: "  if (!name) return { ok: false, msg: '课程名不能空着' }",
+    to: "  if (false) return { ok: false, msg: '课程名不能空着' }",
+    want: 'I1 加课：日期 / 时间 / 课程名 / 课时数都要校验'
+  },
+  {
+    n: '31 加课：加完不写盘（刷新就没了）',
+    f: 'utils/schedule.js',
+    from: '  writeLessons(list)\n  unmarkRemoved(id)',
+    to: '  unmarkRemoved(id)',
+    want: 'I4 加课：能加在演示课表之外的日子，列表里立刻有它'
+  },
+  /* 说明：原来这里有一条「新加的课不带孩子名单」的变异，实测抓不住 —— 因为
+   * ensureLessons() 里的 syncRoster() 会把「今天以后、还没点名」的课的名单刷成最新名册，
+   * 所以 addLesson 里那份 studentIds 只是防御性写法，行为上等价。等价变异不留。 */
+  {
+    n: '33 删课：点过名的课也照删（账已经记了）',
+    f: 'utils/schedule.js',
+    from: '  if (lessonRolled(lesson, marks)) {',
+    to: '  if (false) {',
+    want: 'I8 删课：点过名的课删不了，提示先清空点名'
+  },
+  {
+    n: '34 删课：删了记录但不记「已删名单」（下次进页面又生成回来）',
+    f: 'utils/schedule.js',
+    from: '  markRemoved(lid)',
+    to: "  markRemoved('')",
+    want: 'I10 删课：删掉的课不会又被自动生成回来（★课表是自动生成的，得记住「删过」）'
+  },
+  {
+    n: '35 删课：自动生成课表时不看「已删名单」（删掉的课又冒出来）',
+    f: 'utils/schedule.js',
+    from: '  const gone = removedSet()\n  for (const k in gone) has[k] = true\n',
+    to: '',
+    want: 'I10 删课：删掉的课不会又被自动生成回来（★课表是自动生成的，得记住「删过」）'
+  },
+  {
+    n: '36 删课：删的时候把别的课也一起删了',
+    f: 'utils/schedule.js',
+    from: '    if (list[i].id !== lid) next.push(list[i])',
+    to: '    if (true) next.push(list[i])',
+    want: 'I9 删课：清空这一天的点名之后就能删了'
+  },
+  {
+    n: '37 页面：点「＋ 添加课程」不进添加态',
+    f: 'pages/course-admin/course-admin.js',
+    from: "      adding: true,\n      editing: false,\n      editId: '',\n      editTitle: '',\n      name: '',\n      teacher: '',\n      desc: '',\n      hours: 1,\n      date: schedule.today(),",
+    to: "      adding: false,\n      editing: false,\n      editId: '',\n      editTitle: '',\n      name: '',\n      teacher: '',\n      desc: '',\n      hours: 1,\n      date: schedule.today(),",
+    want: 'I15 页面：点「＋ 添加课程」进添加态（字段清空、日期默认今天）'
+  },
+  {
+    n: '38 页面：添加完不刷新列表（课表里看不到新课）',
+    f: 'pages/course-admin/course-admin.js',
+    from: '    const item = res.item || {}\n    this.refreshList()',
+    to: '    const item = res.item || {}',
+    want: 'I17 页面：添加成功 → 提示写明日期时间、列表刷新、自动进「修改这一节」'
+  },
+  {
+    n: '39 页面：删除时拿错 id（删不动）',
+    f: 'pages/course-admin/course-admin.js',
+    from: "    this.askDelete(id, row ? row.dayText + ' ' + row.time : '')",
+    to: "    this.askDelete('', '')",
+    want: 'I20 页面：点过名的课点删除 → 弹「先清空点名」，列表里还在'
+  },
+  {
+    n: '40 页面：删除假装成功（其实没删）',
+    f: 'pages/course-admin/course-admin.js',
+    from: '        const res = schedule.removeLesson(id, this.byName())',
+    to: '        const res = { ok: true }',
+    want: 'I19 页面：删除先弹确认框，确认后从列表里消失'
   }
 ]
 

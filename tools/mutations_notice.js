@@ -23,6 +23,9 @@ const ALLOWED = [
   'cloudfunctions/noticeAdmin/index.js'
 ]
 
+// 开发者工具开着的话先提醒一句（它会跟着重编译，模拟器容易卡成乱版）
+require(path.join(__dirname, 'devtools-check.js')).warn()
+
 const md5 = function (f) {
   return crypto.createHash('md5').update(fs.readFileSync(f)).digest('hex')
 }
