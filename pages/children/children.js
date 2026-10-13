@@ -56,6 +56,7 @@ Page({
     // 身份
     checked: false, // 校验完了没有（校验中先显示一句话，别闪一下）
     canEdit: false, // 能不能建档 / 改档 / 删档
+    demo: false, // 演示账号（「＋3 课时（测试用）」只给演示账号里的管理员看）
     demoLock: '', // 不能改时的一句说明（不是拦人，是说明白该找谁）
     curName: '', // 当前身份，例如「家长端 · 乐乐妈妈」
     tip: '', // 家长端顶部的一句话
@@ -139,6 +140,7 @@ Page({
     this.setData({
       checked: base.checked,
       canEdit: canEdit,
+      demo: role.isDemo(), // 「＋3 课时（测试用）」只给演示账号里的管理员看
       demoLock: lock,
       curName: base.curName,
       tip: base.tip,
@@ -194,6 +196,45 @@ Page({
       return
     }
     wx.navigateTo({ url: '/pages/children-edit/children-edit?id=' + id })
+  },
+
+  // 列表每行右侧的「＋3 课时」：只给演示账号里的管理员看（家长端 / 普通老师连按钮都没有）
+  //   点一下给这个孩子补 3 课时，可以重复点 —— 专门用来试「点名扣课时」
+  //   补课时也走唯一入口 applyHours；故意不写 ref：能重复点，方便反复试
+  onAdd3(e) {
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {}
+    const id = ds.id || ''
+    if (!this.data.canEdit || !id) {
+      wx.showToast({ title: this.data.demoLock || role.CHILD_TIP, icon: 'none', duration: 3000 })
+      return
+    }
+    if (this.adding3) return
+    this.adding3 = true
+    const kid = children.get(id)
+    const name = (kid && kid.name) || ds.name || ''
+    const that = this
+    billing
+      .applyHours({
+        amount: 3,
+        type: 'gift',
+        typeName: '补课时（测试）',
+        note: name + ' · 测试用：手工补 3 课时',
+        childId: id,
+        childName: name
+      })
+      .then(function (res) {
+        that.adding3 = false
+        if (res && res.ok) {
+          wx.showToast({ title: '已给 ' + name + ' 补 3 课时', icon: 'success' })
+          that.load()
+        } else {
+          wx.showToast({ title: (res && res.msg) || '没加上', icon: 'none' })
+        }
+      })
+      .catch(function () {
+        that.adding3 = false
+        wx.showToast({ title: '没加上，请再试一次', icon: 'none' })
+      })
   },
 
   // 建立孩子档案

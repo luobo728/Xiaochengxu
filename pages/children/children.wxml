@@ -29,6 +29,11 @@
       <view class="mode-tip">{{modeTip}}</view>
       <view class="parent-tip" wx:if="{{tip}}">{{tip}}</view>
       <view class="staff-tip" wx:if="{{roleTip}}">{{roleTip}}</view>
+      <!-- 加课时（测试用）提示条：只给演示账号里的管理员看，放到最上面，一进来就找得到 -->
+      <view class="add-banner" wx:if="{{canEdit && demo}}">
+        <view class="add-banner-t">＋3 课时（测试用）</view>
+        <view class="add-banner-s">点下面每个孩子右边的橙色按钮，就能给他补 3 课时，可以重复点</view>
+      </view>
 
       <view class="card">
         <view class="card-head">
@@ -50,6 +55,8 @@
             <view class="k-right">
               <view class="row-val {{item.leftClass}}">{{item.leftText}}</view>
               <view class="k-spent">{{item.spentText}}</view>
+              <!-- 加课时（测试用）：只给演示账号里的管理员看；catchtap 免得同时触发整行的点击 -->
+              <view class="k-add" wx:if="{{canEdit && demo}}" hover-class="k-add-hover" data-id="{{item.id}}" data-name="{{item.name}}" catchtap="onAdd3">＋3 课时</view>
             </view>
           </view>
           <view class="hairline"></view>

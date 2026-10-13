@@ -150,6 +150,45 @@
   color: #A6AEBE;
 }
 
+/* 加课时（测试用）提示条：橙色描边卡片，放在名单上面，一眼就能看到 */
+.add-banner {
+  margin-bottom: 20rpx;
+  padding: 20rpx 24rpx;
+  border: 2rpx solid #FFD79A;
+  border-radius: 16rpx;
+  background: #FFF7EA;
+  text-align: center;
+}
+
+.add-banner-t {
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #D97706;
+}
+
+.add-banner-s {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #B36A00;
+}
+
+/* 列表行里的「＋3 课时」（测试用）：只有演示账号里的管理员看得到，点一下给这个孩子补 3 课时 */
+.k-add {
+  margin-top: 12rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #FFB020, #F08A00);
+  box-shadow: 0 6rpx 16rpx rgba(240, 138, 0, 0.35);
+}
+
+.k-add-hover {
+  opacity: 0.82;
+}
+
 /* 课时快用完了：数字标红（和 .row-val 一起用） */
 .low {
   color: #E05252;

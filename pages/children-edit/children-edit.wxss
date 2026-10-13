@@ -167,16 +167,21 @@
   color: #5A6273;
 }
 
-/* 「＋3 课时（测试用）」：演示账号 + 管理员才画；描边小按钮，别和「保存修改」抢眼 */
+/* 「＋3 课时（测试用）」：演示账号 + 管理员才画；橙色大按钮，放在最上面一眼就看到 */
+.add3-card {
+  border: 2rpx solid #FFD79A;
+  background: #FFFDF8;
+}
+
 .add3-btn {
   margin-top: 20rpx;
-  padding: 20rpx 0;
-  width: 380rpx;
+  padding: 26rpx 0;
   border-radius: 999rpx;
-  border: 2rpx solid #C9D6FF;
-  background: #F2F6FF;
-  font-size: 25rpx;
-  color: #2E6BFF;
+  background: linear-gradient(135deg, #FFB020, #F08A00);
+  box-shadow: 0 10rpx 24rpx rgba(240, 138, 0, 0.35);
+  font-size: 31rpx;
+  font-weight: 600;
+  color: #FFFFFF;
   text-align: center;
 }
 
@@ -185,10 +190,11 @@
 }
 
 .add3-tip {
-  margin-top: 12rpx;
-  font-size: 21rpx;
+  margin-top: 14rpx;
+  font-size: 22rpx;
   line-height: 1.7;
-  color: #A6AEBE;
+  color: #B36A00;
+  text-align: center;
 }
 
 /* ---------- 按钮 ---------- */

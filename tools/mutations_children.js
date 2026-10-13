@@ -332,6 +332,41 @@ const M = [
     from: 'wx:elif="{{!canEdit}}"',
     to: 'wx:if="{{!canEdit}}"',
     want: 'H38 三分支相邻'
+  },
+  {
+    n: '44 名单页：「＋3 课时」不带孩子（补进设备大锅饭，不是这个孩子的账）',
+    f: 'pages/children/children.js',
+    from: '        childId: id,',
+    to: "        childId: '',",
+    want: 'G29 名单里点「＋3 课时」'
+  },
+  {
+    n: '45 名单页：「＋3 课时」不判断权限（普通老师 / 家长端也能加）',
+    f: 'pages/children/children.js',
+    from: '    if (!this.data.canEdit || !id) {',
+    to: '    if (!id) {',
+    want: 'G34 普通老师绕过界面调 onAdd3 也被拦'
+  },
+  {
+    n: '46 名单页结构：「＋3 课时」不判断演示账号（真账号也冒出来）',
+    f: 'pages/children/children.wxml',
+    from: 'class="k-add" wx:if="{{canEdit && demo}}"',
+    to: 'class="k-add" wx:if="{{canEdit}}"',
+    want: 'G37 名单每行的加课时按钮'
+  },
+  {
+    n: '47 名单页结构：加课时提示条不画（入口又藏回去了）',
+    f: 'pages/children/children.wxml',
+    from: 'class="add-banner" wx:if="{{canEdit && demo}}"',
+    to: 'class="add-banner" wx:if="{{false}}"',
+    want: 'G38 名单上面有加课时提示条'
+  },
+  {
+    n: '48 详情页样式：大按钮的样式丢了（变成没样式的裸文字）',
+    f: 'pages/children-edit/children-edit.wxss',
+    from: '.add3-btn {',
+    to: '.add3-btn-lost {',
+    want: 'H41 详情页按钮做大了'
   }
 ]
 

@@ -584,6 +584,74 @@ async function main() {
   check('G26 家长端提示条和老师端提示条是两条不同的线', childWxml.indexOf('wx:if="{{tip}}"') > -1 && childWxml.indexOf('wx:if="{{roleTip}}"') > -1)
   check('G27 校验中 / 校验完两个分支必须相邻（中间不夹注释）', childWxml.indexOf('wx:if="{{!checked}}"') > -1 && childWxml.indexOf('<block wx:else>') > childWxml.indexOf('wx:if="{{!checked}}"'))
 
+  // 「加课时入口做的明显点」：名单顶部提示条 + 每行橙色大按钮
+  const snapshotAdd = snap() // 这段只是验证「加课时入口」，补的课时用完立刻还原，别污染后面的流水断言
+  setDemo('admin')
+  const addListCtx = ctxOf(page)
+  addListCtx.checkIdentity()
+  await tick(20)
+  check('G28 演示账号 + 管理员：demo 标记为真（页面据此画加课时入口）',
+    addListCtx.data.demo === true && addListCtx.data.canEdit === true, addListCtx.data.demo)
+  const tianLeftG = billing.hoursStat('tian').left
+  const leleLeftG = billing.hoursStat('lele').left
+  toasts.length = 0
+  addListCtx.onAdd3({ currentTarget: { dataset: { id: 'tian', name: '甜甜' } } })
+  await tick(20)
+  check('G29 名单里点「＋3 课时」：只补这一行那个孩子，别的孩子一分不动',
+    toasts.length === 1 && toasts[0] === '已给 甜甜 补 3 课时' &&
+    billing.hoursStat('tian').left === tianLeftG + 3 && billing.hoursStat('lele').left === leleLeftG, toasts)
+  const tianRowG = findRow(addListCtx.data.rows, 'tian')
+  check('G30 补完名单立刻刷新（这一行余额跟着变）',
+    !!tianRowG && tianRowG.leftText === '余 ' + (tianLeftG + 3) + ' 课时', tianRowG && tianRowG.leftText)
+  toasts.length = 0
+  addListCtx.onAdd3({ currentTarget: { dataset: { id: 'tian', name: '甜甜' } } })
+  await tick(20)
+  check('G31 名单里补课时也故意不写 ref：可以重复点（再点一次又 +3）',
+    billing.hoursStat('tian').left === tianLeftG + 6, billing.hoursStat('tian').left)
+  check('G32 名单里补的课时也写在这个孩子名下（流水带 childId）', (function () {
+    const hit = ledger().filter(function (r) {
+      return r.childId === 'tian' && r.typeName === '补课时（测试）'
+    })
+    return hit.length === 2 && hit[0].childName === '甜甜'
+  })())
+
+  setDemo('staff')
+  const staffListCtx = ctxOf(page)
+  staffListCtx.checkIdentity()
+  await tick(20)
+  check('G33 普通老师：是演示账号，但没有改档权限 → 不画加课时入口',
+    staffListCtx.data.demo === true && staffListCtx.data.canEdit === false, staffListCtx.data.demo)
+  const tianLeftG2 = billing.hoursStat('tian').left
+  toasts.length = 0
+  staffListCtx.onAdd3({ currentTarget: { dataset: { id: 'tian', name: '甜甜' } } })
+  await tick(20)
+  check('G34 普通老师绕过界面调 onAdd3 也被拦，课时一分没动',
+    toasts.length === 1 && toasts[0] === role.CHILD_TIP && billing.hoursStat('tian').left === tianLeftG2, toasts)
+
+  setDemo('parent')
+  const parentListCtx = ctxOf(page)
+  parentListCtx.checkIdentity()
+  await tick(20)
+  check('G35 家长端：是演示账号，但权限一票否决 → 不画加课时入口',
+    parentListCtx.data.demo === true && parentListCtx.data.canEdit === false, parentListCtx.data.demo)
+  const leleLeftG2 = billing.hoursStat('lele').left
+  toasts.length = 0
+  parentListCtx.onAdd3({ currentTarget: { dataset: { id: 'lele', name: '乐乐' } } })
+  await tick(20)
+  check('G36 家长端绕过界面调 onAdd3 也被拦，乐乐课时没动',
+    toasts.length === 1 && toasts[0] === role.CHILD_TIP && billing.hoursStat('lele').left === leleLeftG2, toasts)
+  restore(snapshotAdd)
+
+  check('G37 名单每行的加课时按钮：catchtap（不误触整行）+ 只在「有权限 + 演示账号」时画',
+    childWxml.indexOf('class="k-add" wx:if="{{canEdit && demo}}"') > -1 && childWxml.indexOf('catchtap="onAdd3"') > -1)
+  check('G38 名单上面有加课时提示条，且排在名单卡片前面（一进来就看得到）',
+    childWxml.indexOf('class="add-banner" wx:if="{{canEdit && demo}}"') > -1 &&
+    childWxml.indexOf('add-banner') < childWxml.indexOf('class="card"'))
+  const childWxss = fs.readFileSync(path.join(root, 'pages/children/children.wxss'), 'utf8')
+  check('G39 提示条和每行按钮都是橙色（.add-banner / .k-add 都有定义，别是没样式的裸文字）',
+    childWxss.indexOf('.add-banner {') > -1 && childWxss.indexOf('.k-add {') > -1 &&
+    childWxss.indexOf('linear-gradient(135deg, #FFB020, #F08A00)') > -1)
+
   /* ================= H. 页面接线：pages/children-edit ================= */
   const editPage = loadPage('pages/children-edit/children-edit.js')
   setDemo('admin')
@@ -735,6 +803,12 @@ async function main() {
     editWxml.indexOf('wx:elif="{{!canEdit}}"') > editWxml.indexOf('wx:if="{{!checked}}"') &&
     editWxml.indexOf('<block wx:else>') > editWxml.indexOf('wx:elif="{{!canEdit}}"'))
   check('H39 锁卡片上写着「建档只有管理员能做」+ 当前身份', editWxml.indexOf('建档只有管理员能做') > -1 && editWxml.indexOf('{{demoLock}}') > -1 && editWxml.indexOf('{{curName}}') > -1)
+  check('H40 课时卡（＋3 课时）排在「孩子信息」表单前面：一进页面就看见',
+    editWxml.indexOf('add3-btn') > -1 && editWxml.indexOf('add3-btn') < editWxml.indexOf('孩子信息'))
+  const editWxss = fs.readFileSync(path.join(root, 'pages/children-edit/children-edit.wxss'), 'utf8')
+  check('H41 详情页按钮做大了：橙色卡片高亮（.add3-card）+ 大号橙色实心按钮（.add3-btn 有定义）',
+    editWxss.indexOf('.add3-card {') > -1 && editWxss.indexOf('.add3-btn {') > -1 &&
+    editWxss.indexOf('linear-gradient(135deg, #FFB020, #F08A00)') > -1)
 
   console.log(bad ? '\n❌ 失败 ' + bad + ' 项' : '\n✅ 孩子档案 + 按孩子分账冒烟测试全部通过')
   process.exit(bad ? 1 : 0)
