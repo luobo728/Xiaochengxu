@@ -12,10 +12,6 @@
           <view class="hero-welcome">今天也要开开心心哦</view>
         </view>
       </view>
-      <view class="hero-bell" hover-class="hero-bell-hover" bindtap="onBell">
-        <view class="ico-bell"></view>
-        <view class="badge"></view>
-      </view>
     </view>
 
     <!-- 活动滚动屏：自动轮播 -->
@@ -64,22 +60,6 @@
 
   <!-- ================= 内容区 ================= -->
   <view class="body">
-    <view class="sec-head">
-      <view class="sec-title">常用功能</view>
-    </view>
-    <view class="quick">
-      <view
-        class="quick-item"
-        hover-class="quick-item-hover"
-        wx:for="{{quickEntries}}"
-        wx:key="key"
-        data-key="{{item.key}}"
-        data-text="{{item.text}}"
-        bindtap="onQuickTap">
-        <view class="quick-ico" style="background:{{item.bg}}">{{item.icon}}</view>
-        <view class="quick-txt">{{item.text}}</view>
-      </view>
-    </view>
 
     <!-- 今日安排 -->
     <view class="card">
@@ -122,6 +102,15 @@
       <view class="empty" wx:if="{{!notices.length}}">暂无通知</view>
     </view>
 
+    <!-- 今日食谱：一行入口（原来挤在「常用功能」里，收成一行，视觉噪音少一半） -->
+    <view class="entry" hover-class="entry-hover" bindtap="onMealTap">
+      <view class="entry-ico" style="background:linear-gradient(135deg,#FFB020,#F08A00)">食</view>
+      <view class="entry-main">
+        <view class="entry-name">今日食谱</view>
+        <view class="entry-sub">早 / 早点 / 午 / 午点 / 晚 · 点开看图</view>
+      </view>
+      <view class="arrow"></view>
+    </view>
     <view class="foot-tip">阳光幼儿园 · 家园共育</view>
   </view>
 </view>

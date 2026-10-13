@@ -1,16 +1,8 @@
-// pages/index/index.js —— 首页：活动滚动屏 + 常用功能 + 今日安排 + 最新通知
+// pages/index/index.js —— 首页：活动滚动屏 + 今日安排 + 最新通知 + 今日食谱（一行入口）
 const app = getApp()
 const menu = require('../../utils/menu.js')
 const activity = require('../../utils/activity.js')
 const notice = require('../../utils/notice.js')
-
-// 常用功能入口（bg 为渐变背景，icon 为中文单字，避免依赖图片资源）
-const QUICK_ENTRIES = [
-  { key: 'meal', text: '今日食谱', icon: '食', bg: 'linear-gradient(135deg,#FFB020,#F08A00)' },
-  { key: 'leave', text: '请假申请', icon: '假', bg: 'linear-gradient(135deg,#4C8BFF,#2D5FEF)' },
-  { key: 'notice', text: '通知公告', icon: '通', bg: 'linear-gradient(135deg,#3FC5A0,#12A182)' },
-  { key: 'growth', text: '成长档案', icon: '档', bg: 'linear-gradient(135deg,#FF7A59,#F0432B)' }
-]
 
 const TODAY_PLANS = [
   { id: 'p1', time: '08:30', name: '晨间游戏与早操', teacher: '李老师', room: '中庭', done: true },
@@ -26,7 +18,6 @@ Page({
     actIndex: 0,
     marqueeText: '',
     marqueeDuration: 20,
-    quickEntries: QUICK_ENTRIES,
     todayPlans: TODAY_PLANS,
     notices: [],
     // 页面是否在前台，用来暂停动画（隐藏时停掉跑马灯/轮播，省性能）
@@ -117,29 +108,15 @@ Page({
     })
   },
 
-  onBell() {
-    wx.showToast({ title: '暂无新消息', icon: 'none' })
-  },
-
-  onQuickTap(e) {
-    const key = e.currentTarget.dataset.key
-    if (key === 'meal') {
-      wx.navigateTo({ url: '/pages/menu/menu' })
-      return
-    }
-    if (key === 'notice') {
-      // 打开最新一条通知，家长常用的就是这个
-      const first = (this.data.notices || [])[0]
-      if (first && first.id) {
-        wx.navigateTo({ url: '/pages/notice/notice?id=' + encodeURIComponent(first.id) })
-        return
+  // 今日食谱：从首页一行入口进（原来放在「常用功能」里）
+  onMealTap() {
+    wx.navigateTo({
+      url: '/pages/menu/menu',
+      fail() {
+        wx.showToast({ title: '打开失败', icon: 'none' })
       }
-      wx.switchTab({ url: '/pages/campus/campus' })
-      return
-    }
-    wx.showToast({ title: (e.currentTarget.dataset.text || '功能') + ' 待接入', icon: 'none' })
+    })
   },
-
   onNoticeTap(e) {
     const id = (e.currentTarget.dataset || {}).id || ''
     wx.navigateTo({
