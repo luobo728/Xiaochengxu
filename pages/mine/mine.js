@@ -68,37 +68,6 @@ Page({
       { id: 2, num: '0', lbl: '已上课时' },
       { id: 3, num: '0', lbl: '在册孩子' }
     ],
-    // 常用功能
-    tools: [
-      {
-        id: 1,
-        ico: '报',
-        name: '我的报名',
-        sub: '亲子运动会 · 待参加',
-        bg: 'linear-gradient(135deg,#59A2FF,#2E6BFF)'
-      },
-      {
-        id: 2,
-        ico: '费',
-        name: '缴费记录',
-        sub: '本学期已缴清',
-        bg: 'linear-gradient(135deg,#4FD1A5,#12A182)'
-      },
-      {
-        id: 3,
-        ico: '假',
-        name: '请假申请',
-        sub: '提交请假、查看审批',
-        bg: 'linear-gradient(135deg,#FFB45B,#F08A24)'
-      },
-      {
-        id: 4,
-        ico: '师',
-        name: '联系老师',
-        sub: '王老师 · 大一班主班',
-        bg: 'linear-gradient(135deg,#9B8CFF,#6A5BEF)'
-      }
-    ],
     // 设置项
     noticeOn: true,
     cacheSize: '12.6 MB',

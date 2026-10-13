@@ -800,6 +800,15 @@ function chargedHours(lesson, marks) {
   return n
 }
 
+// 这节课「对这个孩子」已经扣了多少课时（不传孩子 = 全班合计）
+// 「本周课时」只列还没扣的课：已经扣过的都进了下面的「课时明细」
+function chargedOf(lesson, marks, childId) {
+  const cid = String(childId || '')
+  if (!cid) return chargedHours(lesson, marks)
+  const m = marks[markId(lesson.id, cid)]
+  return m ? round2(m.settledHours) : 0
+}
+
 // 一节课的展示字段
 function decorateLesson(lesson, marks, now) {
   const kids = []
@@ -1115,7 +1124,7 @@ function courseRow(lesson, marks, idx, now) {
   }
 }
 
-// 近 30 天课时明细（只取 unit = 'hour' 的流水，最多 10 条）
+// 近 30 天课时明细（只取 unit = 'hour' 的流水，最多 4 条：再多了卡片太长；本周已扣的课也都在这里）
 // 看单个孩子时不用再写名字（每行都是他的）；看合计时每行标出这是谁的课时
 function recordRows(items, childId) {
   const out = []
@@ -1137,7 +1146,7 @@ function recordRows(items, childId) {
       val: (amount > 0 ? '+' : '') + amount + ' 课时',
       gray: amount > 0
     })
-    if (out.length >= 10) break
+    if (out.length >= 4) break
   }
   return out
 }
@@ -1165,7 +1174,8 @@ function buildStats(childId) {
       weekTotal++
       if (lesson.studentIds.length && settledCount(lesson, marks) >= lesson.studentIds.length) weekDone++
     }
-    rows.push(courseRow(lesson, marks, rows.length, now))
+    // 已经扣过课时的课不再占「本周课时」的位置：它们已经在下面的「课时明细」里了
+    if (chargedOf(lesson, marks, cid) <= 0) rows.push(courseRow(lesson, marks, rows.length, now))
   }
   // 一周 14 节课，列表只挑「离今天最近的 6 节」给家长看（不然卡片太长）
   if (rows.length > 6) {

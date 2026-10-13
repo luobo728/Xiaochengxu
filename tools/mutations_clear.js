@@ -212,6 +212,22 @@ const M = [
     from: 'bindtap="onPill"',
     to: 'bindtap="onSave"',
     want: 'J3 状态胶囊绑在 onPill 上，并把 li / ki / key 传下去'
+  },
+
+  /* ---------- 课时页：本周课时 / 明细 ---------- */
+  {
+    n: '27 课时页：已扣课时的课也照样列在「本周课时」里（没归类到明细）',
+    f: 'utils/schedule.js',
+    from: '    if (chargedOf(lesson, marks, cid) <= 0) rows.push(courseRow(lesson, marks, rows.length, now))',
+    to: '    if (true) rows.push(courseRow(lesson, marks, rows.length, now))',
+    want: 'F4 本周课时只列「还没扣课时」的课（已扣的归到明细，不重复列）'
+  },
+  {
+    n: '28 课时页：明细不封顶（一次列 10 条，卡片太长）',
+    f: 'utils/schedule.js',
+    from: '    if (out.length >= 4) break',
+    to: '    if (out.length >= 10) break',
+    want: 'F5 课时明细最多 4 条，每行带日期 / 课程名 / 课时数'
   }
 ]
 

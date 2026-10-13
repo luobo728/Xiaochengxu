@@ -398,12 +398,40 @@ async function main() {
     }
     return st.weekTotal === n
   })(), st.weekTotal)
-  check('F4 本周课程每行字段齐全（含内容简介和配色）', st.weekCourses.length > 0 && st.weekCourses.length <= 6 && st.weekCourses.every(function (r) {
-    return !!r.id && !!r.name && !!r.sub && !!r.val && !!r.bg && !!r.ico && typeof r.desc === 'string'
-  }), st.weekCourses.length)
-  check('F5 明细只取课时流水，最多 10 条，每行带日期 / 课程名 / 课时数', st.records.length > 0 && st.records.length <= 10 && st.records.every(function (r) {
+  check('F4 本周课时只列「还没扣课时」的课（已扣的归到明细，不重复列）', (function () {
+    if (st.weekCourses.length > 6) return false
+    for (let i = 0; i < st.weekCourses.length; i++) {
+      const r = st.weekCourses[i]
+      // 已扣 / 已结算的课不该再出现在「本周课时」里
+      if (r.val.indexOf('已扣') > -1 || r.val.indexOf('已结算') > -1) return false
+      if (!r.id || !r.name || !r.sub || !r.bg || !r.ico || typeof r.desc !== 'string') return false
+    }
+    return true
+  })(), st.weekCourses.map(function (r) {
+    return r.val
+  }))
+  check('F4b 这一周确实有已扣课时的课（说明上面的过滤不是空转）', (function () {
+    const ws = schedule.shift(schedule.today(), -((schedule.weekday(schedule.today()) + 6) % 7))
+    const we = schedule.shift(ws, 6)
+    const all = schedule.listLessons()
+    let charged = 0
+    for (let i = 0; i < all.length; i++) {
+      if (all[i].date >= ws && all[i].date <= we && all[i].charged > 0) charged++
+    }
+    return charged > 0
+  })())
+  check('F5 课时明细最多 4 条，每行带日期 / 课程名 / 课时数', st.records.length > 0 && st.records.length <= 4 && st.records.every(function (r) {
     return /^\d\d-\d\d /.test(r.date) && !!r.name && /课时$/.test(r.val)
-  }), st.records[0])
+  }), st.records.length)
+  check('F5b 本周扣掉的课时能在明细里找到（归了类也没丢账）', (function () {
+    const name = schedule.listDay(schedule.today()).lessons[0].name
+    for (let i = 0; i < st.records.length; i++) {
+      if (st.records[i].name.indexOf(name) > -1) return true
+    }
+    return false
+  })(), st.records.map(function (r) {
+    return r.name
+  }))
   check('F6 明细里退回的写 +、扣掉的写 -', (function () {
     for (let i = 0; i < st.records.length; i++) {
       if (st.records[i].val.charAt(0) === '+' && st.records[i].gray !== true) return false

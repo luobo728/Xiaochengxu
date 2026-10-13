@@ -104,19 +104,8 @@
       <view class="bill-tip">新生扫码领 {{claimHours}} 课时 · 每天打卡返 ¥{{checkinReward}} 余额</view>
     </view>
 
-    <!-- 常用功能 -->
+    <!-- 班级相册（原来和那排假入口挤在一个卡片里：那 4 个点了只弹「功能开发中」，已按需求删掉） -->
     <view class="card">
-      <view class="card-head">
-        <view class="card-title">常用功能</view>
-      </view>
-      <view class="row" wx:for="{{tools}}" wx:key="id" bindtap="onMoreTap">
-        <view class="row-ico" style="background:{{item.bg}}">{{item.ico}}</view>
-        <view class="row-main">
-          <view class="row-name">{{item.name}}</view>
-          <view class="row-sub">{{item.sub}}</view>
-        </view>
-        <view class="arrow"></view>
-      </view>
       <!-- 班级相册：所有家长都能看本班 + 全园的照片 -->
       <view class="row" bindtap="onAlbumTap">
         <view class="row-ico" style="background:linear-gradient(135deg,#FFB07C,#F2703F)">册</view>
